@@ -1,26 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: 0 82 204;          /* #0052CC - Jira Blue */
+  --color-primary-hover: 0 101 255;   /* #0065FF */
+  --color-primary-light: 222 235 255; /* #DEEBFF */
+  --color-secondary: 66 82 110;       /* #42526E */
+  --color-secondary-light: 223 225 230; /* #DFE1E6 */
+  --status-backlog: 66 82 110;        /* Gray */
+  --status-progress: 0 82 204;        /* Blue */
+  --status-review: 101 84 192;        /* Purple */
+  --status-done: 54 179 126;          /* Green */
+  --priority-critical: 222 53 11;     /* Red */
+  --priority-high: 255 153 31;        /* Orange */
+  --priority-medium: 255 171 0;       /* Yellow */
+  --priority-low: 54 179 126;         /* Green */
+  --alert-error: 222 53 11;           /* Red */
+  --alert-warning: 255 153 31;        /* Orange */
+  --alert-success: 54 179 126;        /* Green */
+  --alert-info: 0 82 204;             /* Blue */
+  --bg-app: 244 245 247;              /* #F4F5F7 */
+  --bg-surface: 255 255 255;          /* #FFFFFF */
+  --bg-hover: 235 236 240;            /* #EBECF0 */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: rgb(var(--bg-app));
+  color: rgb(var(--color-secondary));
+  font-family: var(--font-geist-sans), 'Inter', -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
 }
+
+/* Typography Scale */
+.text-xs { font-size: 11px; }
+.text-sm { font-size: 13px; }
+.text-base { font-size: 15px; }
+.text-md { font-size: 16px; }
+.text-lg { font-size: 18px; }
+.text-xl { font-size: 24px; }
+.text-2xl { font-size: 32px; }
+
+/* Animations */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-in-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slide-up { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes scale-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.fade-in { animation: fade-in 0.2s ease-out; }
+.slide-in-right { animation: slide-in-right 0.3s ease-out; }
+.slide-up { animation: slide-up 0.2s ease-out; }
+.scale-in { animation: scale-in 0.2s ease-out; }
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgb(var(--color-secondary-light)); border-radius: 3px; }
+
+/* Focus styles */
+*:focus-visible { outline: 2px solid rgb(var(--color-primary)); outline-offset: 2px; }

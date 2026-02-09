@@ -144,7 +144,7 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
                                     >
                                         <div className="flex flex-col">
                                             {statusTasks.map((task, index) => (
-                                                <KanbanTask key={task.id} task={task} index={index} projectId={projectId} />
+                                                <KanbanTask key={task.id} task={task} index={index} projectId={projectId} statuses={statuses} />
                                             ))}
                                             {provided.placeholder}
                                         </div>

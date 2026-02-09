@@ -81,14 +81,14 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                 )}>
                     {!collapsed && (
                         <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                            <div className="h-8 w-8 rounded-lg flex items-center justify-center shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0052CC 0%, #0747A6 100%)' }}>
                                 <Briefcase className="w-4 h-4 text-white" />
                             </div>
                             <span className="font-bold text-gray-800 tracking-tight text-lg truncate">TaskFlow</span>
                         </div>
                     )}
                     {collapsed && (
-                        <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                        <div className="h-8 w-8 rounded-lg flex items-center justify-center shadow-md" style={{ background: 'linear-gradient(135deg, #0052CC 0%, #0747A6 100%)' }}>
                             <Briefcase className="w-4 h-4 text-white" />
                         </div>
                     )}
@@ -96,7 +96,10 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                     {!collapsed && (
                         <button
                             onClick={handleToggle}
-                            className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+                            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+                            style={{ backgroundColor: 'transparent' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             aria-label="Collapse sidebar"
                         >
                             <PanelLeftClose className="w-4 h-4" />
@@ -124,16 +127,32 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                                     className={cn(
                                         'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative',
                                         active
-                                            ? 'bg-blue-50 text-blue-700 font-medium'
-                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                                            ? 'font-medium'
+                                            : 'text-gray-600 hover:text-gray-900',
                                         collapsed && 'justify-center px-2'
                                     )}
+                                    style={active ? {
+                                        backgroundColor: 'rgb(var(--color-primary-light))',
+                                        color: 'rgb(var(--color-primary))'
+                                    } : {
+                                        backgroundColor: 'transparent'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!active) {
+                                            e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!active) {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                        }
+                                    }}
                                     aria-current={active ? 'page' : undefined}
                                 >
                                     <Icon className={cn(
                                         "w-5 h-5 flex-shrink-0 transition-colors",
-                                        active ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
-                                    )} aria-hidden="true" />
+                                        active ? "" : "text-gray-500 group-hover:text-gray-700"
+                                    )} style={active ? { color: 'rgb(var(--color-primary))' } : {}} aria-hidden="true" />
 
                                     {!collapsed && (
                                         <span className="text-sm">{item.name}</span>
@@ -141,7 +160,7 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
 
                                     {/* Active Indicator Bar */}
                                     {active && !collapsed && (
-                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full" />
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full" style={{ backgroundColor: 'rgb(var(--color-primary))' }} />
                                     )}
                                 </Link>
                             );
@@ -180,15 +199,31 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                                         className={cn(
                                             'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm group',
                                             isActive(`/projects/${project.id}`)
-                                                ? 'bg-blue-50 text-blue-700'
-                                                : 'text-gray-600 hover:bg-gray-50'
+                                                ? ''
+                                                : 'text-gray-600'
                                         )}
+                                        style={isActive(`/projects/${project.id}`) ? {
+                                            backgroundColor: 'rgb(var(--color-primary-light))',
+                                            color: 'rgb(var(--color-primary))'
+                                        } : {
+                                            backgroundColor: 'transparent'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!isActive(`/projects/${project.id}`)) {
+                                                e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!isActive(`/projects/${project.id}`)) {
+                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                            }
+                                        }}
                                         title={project.name}
                                     >
                                         <div className={cn(
                                             "w-2 h-2 rounded-full flex-shrink-0 transition-colors",
-                                            isActive(`/projects/${project.id}`) ? "bg-blue-600" : "bg-gray-300 group-hover:bg-gray-400"
-                                        )} aria-hidden="true" />
+                                            isActive(`/projects/${project.id}`) ? "" : "group-hover:bg-gray-400"
+                                        )} style={isActive(`/projects/${project.id}`) ? { backgroundColor: 'rgb(var(--color-primary))' } : { backgroundColor: 'rgb(209 213 219)' }} aria-hidden="true" />
                                         <span className="truncate">{project.name}</span>
                                     </Link>
                                 ))}
@@ -202,6 +237,9 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                     <button
                         onClick={handleToggle}
                         className="w-full p-4 flex justify-center text-gray-400 hover:text-gray-600 transition-colors border-t border-gray-100"
+                        style={{ backgroundColor: 'transparent' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                         <PanelLeftOpen className="w-5 h-5" />
                     </button>
@@ -214,9 +252,12 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                 )}>
                     <div
                         className={cn(
-                            'flex items-center gap-3 rounded-lg hover:bg-white hover:shadow-sm transition-all cursor-pointer p-2',
+                            'flex items-center gap-3 rounded-lg hover:shadow-sm transition-all cursor-pointer p-2',
                             collapsed && 'justify-center'
                         )}
+                        style={{ backgroundColor: 'transparent' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-surface))'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                         <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm text-white font-medium text-xs">
                             <User className="w-4 h-4" />

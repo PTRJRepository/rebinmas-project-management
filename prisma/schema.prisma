@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../dev.db"
+}
+
+model User {
+  id        String    @id @default(cuid())
+  username  String
+  email     String    @unique
+  role      String    @default("MEMBER") // ADMIN, PM, MEMBER
+  avatarUrl String?
+  
+  projectsOwned Project[]
+  tasksAssigned Task[]
+  comments      Comment[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  
+  tasks       Task[]
+  statuses    TaskStatus[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TaskStatus {
+  id        String   @id @default(cuid())
+  name      String
+  order     Int      @default(0)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  
+  tasks     Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, name])
+}
+
+model Task {
+  id             String     @id @default(cuid())
+  title          String
+  description    String?
+  priority       String     @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  dueDate        DateTime?
+  estimatedHours Float?
+  actualHours    Float?
+
+  documentation  String?    // Store blocks from Novel editor (JSON string)
+  progress       Int        @default(0) // 0-100 percentage
+  lastAlertSent  DateTime?
+
+  projectId      String
+  project        Project    @relation(fields: [projectId], references: [id])
+
+  statusId       String
+  status         TaskStatus @relation(fields: [statusId], references: [id])
+
+  assigneeId     String?
+  assignee       User?      @relation(fields: [assigneeId], references: [id])
+
+  comments       Comment[]
+  attachments    Attachment[]
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  taskId    String
+  fileName  String
+  fileUrl   String
+  fileType  String   // 'image', 'document'
+  fileSize  Int      // Size in bytes
+  createdAt DateTime @default(now())
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}

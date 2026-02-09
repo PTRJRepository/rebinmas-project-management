@@ -5,6 +5,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, ArrowUp, Minus, ArrowDown, ChevronRight, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -99,6 +100,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
     const [title, setTitle] = useState(task.title);
     const [isMoving, setIsMoving] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const router = useRouter();
 
     // Find current status index and next status
     const currentStatusIndex = statuses.findIndex(s => s.id === task.statusId);
@@ -147,6 +149,19 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
         }
     };
 
+    const handleCardClick = (e: React.MouseEvent) => {
+        // Don't navigate if clicking on interactive elements
+        if (
+            e.target instanceof HTMLButtonElement ||
+            e.target instanceof HTMLInputElement ||
+            (e.target as HTMLElement).closest('button') ||
+            (e.target as HTMLElement).closest('input')
+        ) {
+            return;
+        }
+        router.push(`/projects/${projectId}/board/${task.id}`);
+    };
+
     return (
         <Draggable draggableId={task.id} index={index}>
             {(provided, snapshot) => (
@@ -173,6 +188,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                             getPriorityBorderColor(task.priority),
                             deadlineInfo.isOverdue && "bg-red-50/80 hover:bg-red-100/80"
                         )}
+                        onClick={handleCardClick}
                     >
                         <CardContent className="p-4 space-y-3">
                             {/* Header: Priority Badge & Title */}

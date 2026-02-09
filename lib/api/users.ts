@@ -1,0 +1,29 @@
+import { prisma } from '@/lib/prisma';
+
+// Mock user for MVP - replace with real auth later
+export const MOCK_USER_ID = 'mock-user-1';
+
+export async function getMockUser() {
+  let user = await prisma.user.findUnique({
+    where: { id: MOCK_USER_ID },
+  });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        id: MOCK_USER_ID,
+        username: 'Demo User',
+        email: 'demo@example.com',
+        role: 'PM',
+      },
+    });
+  }
+
+  return user;
+}
+
+export async function getAllUsers() {
+  return prisma.user.findMany({
+    orderBy: { username: 'asc' },
+  });
+}

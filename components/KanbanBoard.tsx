@@ -1,17 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd'
-import { Card, CardContent } from '@/components/ui/card'
+import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { updateTaskStatus } from '@/app/actions/task'
-import { Badge } from '@/components/ui/badge'
-import { Calendar, Clock, AlertCircle, CheckCircle2, Circle, Plus, MoreHorizontal } from 'lucide-react'
+import { Calendar, Circle, Plus, X, Filter } from 'lucide-react'
 import { KanbanTask } from '@/components/KanbanTask'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createTask } from '@/app/actions/task'
-import { Loader2, X } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import { KanbanColumn, getStatusColor } from '@/components/kanban/KanbanColumn'
+import { DeadlineAlertBar } from '@/components/notifications/DeadlineAlertBar'
+import { useToast } from '@/components/ui/use-toast'
+import { Badge } from '@/components/ui/badge'
 
 interface Task {
     id: string
@@ -39,28 +41,13 @@ interface KanbanBoardProps {
     projectId: string
 }
 
-// Column header colors
-const getColumnStyles = (index: number, total: number) => {
-    // Professional gradients
-    const gradients = [
-        'from-blue-600 to-indigo-600',
-        'from-purple-600 to-pink-600',
-        'from-orange-500 to-red-500',
-        'from-teal-500 to-emerald-600'
-    ];
-
-    // Cycle through gradients if more columns than gradients
-    const gradient = gradients[index % gradients.length];
-
-    if (index === total - 1) return 'from-green-600 to-emerald-700'; // Done column always green
-    return gradient;
-}
-
 export default function KanbanBoard({ initialTasks, statuses, projectId }: KanbanBoardProps) {
     const [tasks, setTasks] = useState(initialTasks)
     const [addingToStatusId, setAddingToStatusId] = useState<string | null>(null)
     const [newTaskTitle, setNewTaskTitle] = useState('')
     const [isCreating, setIsCreating] = useState(false)
+    const [filteredTaskIds, setFilteredTaskIds] = useState<string[]>([])
+    const { toast } = useToast()
 
     const onDragEnd = async (result: DropResult) => {
         const { destination, source, draggableId } = result
@@ -69,6 +56,7 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
         if (destination.droppableId === source.droppableId && destination.index === source.index) return
 
         const newStatusId = destination.droppableId
+        const oldStatusId = source.droppableId
 
         // Optimistic update
         const updatedTasks = tasks.map(task =>
@@ -78,6 +66,57 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
 
         // Server update
         await updateTaskStatus(draggableId, newStatusId, projectId)
+
+        // Show toast notification
+        const task = tasks.find(t => t.id === draggableId)
+        const oldStatus = statuses.find(s => s.id === oldStatusId)
+        const newStatus = statuses.find(s => s.id === newStatusId)
+
+        toast({
+            title: "Task moved",
+            description: `"${task?.title}" moved from ${oldStatus?.name} to ${newStatus?.name}`,
+        })
+    }
+
+    const handleMoveToNext = async (taskId: string) => {
+        const task = tasks.find(t => t.id === taskId)
+        if (!task) return
+
+        const currentStatusIndex = statuses.findIndex(s => s.id === task.statusId)
+        const nextStatus = currentStatusIndex < statuses.length - 1 ? statuses[currentStatusIndex + 1] : null
+
+        if (!nextStatus) return
+
+        // Optimistic update
+        const updatedTasks = tasks.map(t =>
+            t.id === taskId ? { ...t, statusId: nextStatus.id } : t
+        )
+        setTasks(updatedTasks)
+
+        // Server update
+        await updateTaskStatus(taskId, nextStatus.id, projectId)
+
+        // Show toast notification
+        toast({
+            title: "Task advanced",
+            description: `"${task.title}" moved to ${nextStatus.name}`,
+        })
+    }
+
+    const handleFilterTasks = (taskIds: string[]) => {
+        setFilteredTaskIds(taskIds)
+        toast({
+            title: "Filter applied",
+            description: `Showing ${taskIds.length} urgent tasks`,
+        })
+    }
+
+    const handleClearFilter = () => {
+        setFilteredTaskIds([])
+        toast({
+            title: "Filter cleared",
+            description: "Showing all tasks",
+        })
     }
 
     const handleCreateTask = async (statusId: string) => {
@@ -106,51 +145,88 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
     }
 
     const getTasksByStatus = (statusId: string) => {
-        return tasks.filter(task => task.statusId === statusId)
+        let statusTasks = tasks.filter(task => task.statusId === statusId)
+
+        // Apply filter if active
+        if (filteredTaskIds.length > 0) {
+            statusTasks = statusTasks.filter(task => filteredTaskIds.includes(task.id))
+        }
+
+        return statusTasks
     }
 
+    const isFilterActive = filteredTaskIds.length > 0
+
     return (
-        <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex h-full gap-6 overflow-x-auto pb-6">
-                {statuses.map((status, index) => {
-                    const statusTasks = getTasksByStatus(status.id)
-                    const isAdding = addingToStatusId === status.id
+        <div className="flex flex-col h-full">
+            {/* Deadline Alert Bar */}
+            <DeadlineAlertBar
+                tasks={tasks}
+                onFilterTasks={handleFilterTasks}
+            />
 
-                    return (
-                        <div key={status.id} className="flex-shrink-0 w-80 flex flex-col">
-                            {/* Column Header */}
-                            <div className={cn(
-                                "mb-3 rounded-lg p-3 shadow-md text-white flex items-center justify-between bg-gradient-to-r",
-                                getColumnStyles(index, statuses.length)
-                            )}>
-                                <div className="flex items-center gap-2 font-semibold">
-                                    <span className="text-sm uppercase tracking-wider opacity-90">{status.name}</span>
-                                </div>
-                                <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-bold">
-                                    {statusTasks.length}
-                                </span>
-                            </div>
+            {/* Filter Indicator Bar */}
+            {isFilterActive && (
+                <div className="sticky top-0 z-30 w-full bg-blue-500 text-white px-4 py-2 shadow-md flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4" />
+                        <span className="text-sm font-medium">
+                            Filtering {filteredTaskIds.length} urgent tasks
+                        </span>
+                        <Badge variant="secondary" className="bg-blue-600 text-white">
+                            {filteredTaskIds.length}
+                        </Badge>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleClearFilter}
+                        className="text-white hover:bg-blue-600"
+                    >
+                        <X className="w-4 h-4 mr-1" />
+                        Clear Filter
+                    </Button>
+                </div>
+            )}
 
-                            {/* Droppable Area */}
-                            <Droppable droppableId={status.id}>
+            {/* Kanban Board */}
+            <DragDropContext onDragEnd={onDragEnd}>
+                <div className="flex-1 gap-6 overflow-x-auto pb-6 p-6">
+                    {statuses.map((status, index) => {
+                        const statusTasks = getTasksByStatus(status.id)
+                        const isAdding = addingToStatusId === status.id
+                        const statusColor = getStatusColor(index, statuses.length)
+
+                        return (
+                            <KanbanColumn
+                                key={status.id}
+                                status={status.id}
+                                statusName={status.name}
+                                statusColor={statusColor}
+                                tasks={statusTasks}
+                                index={index}
+                                totalColumns={statuses.length}
+                                onAddTask={() => {
+                                    setAddingToStatusId(status.id)
+                                    setNewTaskTitle('')
+                                }}
+                            >
                                 {(provided, snapshot) => (
-                                    <div
-                                        {...provided.droppableProps}
-                                        ref={provided.innerRef}
-                                        className={cn(
-                                            "flex-1 rounded-xl p-2 min-h-[500px] transition-colors duration-200",
-                                            snapshot.isDraggingOver ? "bg-blue-50/50 ring-2 ring-blue-200" : "bg-gray-100/50"
-                                        )}
-                                    >
-                                        <div className="flex flex-col">
-                                            {statusTasks.map((task, index) => (
-                                                <KanbanTask key={task.id} task={task} index={index} projectId={projectId} statuses={statuses} />
-                                            ))}
-                                            {provided.placeholder}
-                                        </div>
+                                    <>
+                                        {statusTasks.map((task, taskIndex) => (
+                                            <KanbanTask
+                                                key={task.id}
+                                                task={task}
+                                                index={taskIndex}
+                                                projectId={projectId}
+                                                statuses={statuses}
+                                                onMoveToNext={handleMoveToNext}
+                                            />
+                                        ))}
+                                        {provided.placeholder}
 
                                         {/* Quick Add Interface */}
-                                        {isAdding ? (
+                                        {isAdding && (
                                             <div className="mt-2 p-3 bg-white rounded-lg shadow-sm border border-blue-200 animate-in fade-in zoom-in-95 duration-200">
                                                 <Input
                                                     autoFocus
@@ -182,41 +258,14 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
                                                     </Button>
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <Button
-                                                variant="ghost"
-                                                className="w-full mt-2 text-gray-500 hover:text-gray-900 justify-start hover:bg-gray-200/50"
-                                                onClick={() => {
-                                                    setAddingToStatusId(status.id)
-                                                    setNewTaskTitle('')
-                                                }}
-                                            >
-                                                <Plus className="w-4 h-4 mr-2" />
-                                                Add Task
-                                            </Button>
                                         )}
-
-                                        {/* Empty State (only show if no tasks AND not adding) */}
-                                        {statusTasks.length === 0 && !isAdding && !snapshot.isDraggingOver && (
-                                            <div
-                                                className="flex flex-col items-center justify-center py-12 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg m-1 cursor-pointer hover:bg-gray-50 transition-colors"
-                                                onClick={() => setAddingToStatusId(status.id)}
-                                            >
-                                                <div className="bg-gray-100 p-3 rounded-full mb-3">
-                                                    <Circle className="h-6 w-6 text-gray-300" />
-                                                </div>
-                                                <p className="text-sm font-medium">No tasks yet</p>
-                                                <p className="text-xs text-gray-400 mt-1">Click to add one</p>
-                                            </div>
-                                        )}
-
-                                    </div>
+                                    </>
                                 )}
-                            </Droppable>
-                        </div>
-                    )
-                })}
-            </div>
-        </DragDropContext>
+                            </KanbanColumn>
+                        )
+                    })}
+                </div>
+            </DragDropContext>
+        </div>
     )
 }

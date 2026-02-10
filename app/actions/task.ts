@@ -2,6 +2,7 @@
 
 import { PrismaClient } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
+import { getCurrentUser } from '@/app/actions/auth'
 
 const prisma = new PrismaClient()
 
@@ -23,10 +24,15 @@ export async function getTasks(projectId: string) {
 }
 
 export async function createTask(formData: FormData) {
+    const session = await getCurrentUser()
+    if (!session) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
     const title = formData.get('title') as string
     const projectId = formData.get('projectId') as string
     const statusId = formData.get('statusId') as string
-    const assigneeId = formData.get('assigneeId') as string
+    let assigneeId = formData.get('assigneeId') as string
     const priority = formData.get('priority') as string
     const description = formData.get('description') as string
     const dueDate = formData.get('dueDate') as string

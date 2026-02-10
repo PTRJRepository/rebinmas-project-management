@@ -21,13 +21,15 @@ interface Task {
     description?: string | null
     priority: string
     statusId: string
-    dueDate?: Date | null
+    dueDate: Date | null
     estimatedHours?: number | null
     assignee?: {
         id: string
         username: string
+        name: string
         avatarUrl?: string | null
     } | null
+    lastAlertSent?: Date | null
 }
 
 interface Status {
@@ -161,7 +163,14 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
         <div className="flex flex-col h-full">
             {/* Deadline Alert Bar */}
             <DeadlineAlertBar
-                tasks={tasks}
+                tasks={tasks.map(t => ({
+                    ...t,
+                    assignee: t.assignee ? {
+                        id: t.assignee.id,
+                        name: t.assignee.name || t.assignee.username,
+                        avatarUrl: t.assignee.avatarUrl || undefined
+                    } : undefined
+                }))}
                 onFilterTasks={handleFilterTasks}
             />
 
@@ -191,7 +200,7 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
 
             {/* Kanban Board */}
             <DragDropContext onDragEnd={onDragEnd}>
-                <div className="flex flex-row gap-4 overflow-x-auto overflow-y-hidden pb-4 p-4 items-start">
+                <div className="flex flex-row gap-6 overflow-x-auto overflow-y-hidden pb-4 px-4 h-full items-start">
                     {statuses.map((status, index) => {
                         const statusTasks = getTasksByStatus(status.id)
                         const isAdding = addingToStatusId === status.id

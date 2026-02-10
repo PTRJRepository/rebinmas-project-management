@@ -80,9 +80,9 @@ export function ThemeProvider({
   };
 
   // Prevent flash of wrong theme
-  if (!mounted) {
-    return <>{children}</>;
-  }
+  // if (!mounted) {
+  //   return <>{children}</>;
+  // }
 
   return (
     <ThemeContext.Provider value={value}>

@@ -1,0 +1,144 @@
+2026-02-09T09:08:57.057631Z  INFO tailwindcss_oxide::scanner: Provided sources:
+2026-02-09T09:08:57.058202Z  INFO tailwindcss_oxide::scanner: Source: PublicSourceEntry { base: "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker", pattern: "**/*", negated: false }
+2026-02-09T09:08:57.059589Z  INFO tailwindcss_oxide::scanner: Optimized sources:
+2026-02-09T09:08:57.059647Z  INFO tailwindcss_oxide::scanner: Source: Auto { base: "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker" }
+2026-02-09T09:08:57.066792Z  INFO scan_sources: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.070999Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app"
+2026-02-09T09:08:57.071659Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions"
+2026-02-09T09:08:57.071972Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions\\dashboard.ts"
+2026-02-09T09:08:57.072102Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions\\project.ts"
+2026-02-09T09:08:57.072203Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions\\task.ts"
+2026-02-09T09:08:57.072391Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\api"
+2026-02-09T09:08:57.072621Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\api\\seed"
+2026-02-09T09:08:57.072812Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\api\\seed\\route.ts"
+2026-02-09T09:08:57.073012Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\globals.css"
+2026-02-09T09:08:57.073127Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\layout.tsx"
+2026-02-09T09:08:57.073228Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\page.tsx"
+2026-02-09T09:08:57.073379Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects"
+2026-02-09T09:08:57.073597Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\page.tsx"
+2026-02-09T09:08:57.073767Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]"
+2026-02-09T09:08:57.074043Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]\\board"
+2026-02-09T09:08:57.074295Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]\\board\\page.tsx"
+2026-02-09T09:08:57.074445Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]\\page.tsx"
+2026-02-09T09:08:57.074758Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components"
+2026-02-09T09:08:57.075060Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\CreateTaskDialog.tsx"
+2026-02-09T09:08:57.075169Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\KanbanBoard.tsx"
+2026-02-09T09:08:57.075334Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui"
+2026-02-09T09:08:57.075589Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\badge.tsx"
+2026-02-09T09:08:57.075783Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\button.tsx"
+2026-02-09T09:08:57.075882Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\card.tsx"
+2026-02-09T09:08:57.075965Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\dialog.tsx"
+2026-02-09T09:08:57.076046Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\input.tsx"
+2026-02-09T09:08:57.076123Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\label.tsx"
+2026-02-09T09:08:57.076255Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\eslint.config.mjs"
+2026-02-09T09:08:57.076364Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\lib"
+2026-02-09T09:08:57.076500Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\lib\\prisma.ts"
+2026-02-09T09:08:57.076556Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\lib\\utils.ts"
+2026-02-09T09:08:57.076635Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\next.config.ts"
+2026-02-09T09:08:57.076831Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\package.json"
+2026-02-09T09:08:57.076884Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\postcss.config.mjs"
+2026-02-09T09:08:57.076976Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma"
+2026-02-09T09:08:57.077116Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations"
+2026-02-09T09:08:57.077247Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations\\20260209082144_init"
+2026-02-09T09:08:57.077379Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations\\20260209082144_init\\migration.sql"
+2026-02-09T09:08:57.077452Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations\\migration_lock.toml"
+2026-02-09T09:08:57.077550Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\schema.prisma"
+2026-02-09T09:08:57.077608Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\seed.js"
+2026-02-09T09:08:57.077671Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\seed.ts"
+2026-02-09T09:08:57.077773Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public"
+2026-02-09T09:08:57.077890Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\file.svg"
+2026-02-09T09:08:57.077942Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\globe.svg"
+2026-02-09T09:08:57.078019Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\next.svg"
+2026-02-09T09:08:57.078174Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\vercel.svg"
+2026-02-09T09:08:57.078234Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\window.svg"
+2026-02-09T09:08:57.078310Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\README.md"
+2026-02-09T09:08:57.078378Z  INFO scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\tsconfig.json"
+2026-02-09T09:08:57.078482Z  INFO scan_sources: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.078493Z  INFO extract_candidates: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.078501Z  INFO extract_candidates:read_all_files: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.078506Z  INFO extract_candidates:read_all_files: tailwindcss_oxide::scanner: Reading 35 file(s)
+2026-02-09T09:08:57.080561Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]\\page.tsx"
+2026-02-09T09:08:57.080561Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\lib\\prisma.ts"
+2026-02-09T09:08:57.080675Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\eslint.config.mjs"
+2026-02-09T09:08:57.080586Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\package.json"
+2026-02-09T09:08:57.080604Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\lib\\utils.ts"
+2026-02-09T09:08:57.080570Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\layout.tsx"
+2026-02-09T09:08:57.080726Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\page.tsx"
+2026-02-09T09:08:57.080946Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\next.svg"
+2026-02-09T09:08:57.080979Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\seed.js"
+2026-02-09T09:08:57.080974Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\page.tsx"
+2026-02-09T09:08:57.081057Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\next.config.ts"
+2026-02-09T09:08:57.081063Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]\\board\\page.tsx"
+2026-02-09T09:08:57.081044Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions\\task.ts"
+2026-02-09T09:08:57.081024Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\CreateTaskDialog.tsx"
+2026-02-09T09:08:57.081162Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions\\project.ts"
+2026-02-09T09:08:57.081191Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\postcss.config.mjs"
+2026-02-09T09:08:57.081031Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions\\dashboard.ts"
+2026-02-09T09:08:57.081225Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\button.tsx"
+2026-02-09T09:08:57.081294Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\api\\seed\\route.ts"
+2026-02-09T09:08:57.081377Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\window.svg"
+2026-02-09T09:08:57.081452Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations\\20260209082144_init\\migration.sql"
+2026-02-09T09:08:57.081455Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\seed.ts"
+2026-02-09T09:08:57.081489Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\card.tsx"
+2026-02-09T09:08:57.081467Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\file.svg"
+2026-02-09T09:08:57.081522Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\input.tsx"
+2026-02-09T09:08:57.081498Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\dialog.tsx"
+2026-02-09T09:08:57.081575Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\vercel.svg"
+2026-02-09T09:08:57.081553Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\label.tsx"
+2026-02-09T09:08:57.081560Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\KanbanBoard.tsx"
+2026-02-09T09:08:57.081674Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\tsconfig.json"
+2026-02-09T09:08:57.081728Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations\\migration_lock.toml"
+2026-02-09T09:08:57.081731Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\README.md"
+2026-02-09T09:08:57.081764Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\schema.prisma"
+2026-02-09T09:08:57.081775Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui\\badge.tsx"
+2026-02-09T09:08:57.081785Z  INFO tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public\\globe.svg"
+2026-02-09T09:08:57.082061Z  INFO extract_candidates:read_all_files: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.082083Z  INFO extract_candidates:parse_all_blobs: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.082090Z  INFO extract_candidates:parse_all_blobs:extract: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.083369Z  INFO extract_candidates:parse_all_blobs:extract: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.083457Z  INFO extract_candidates:parse_all_blobs: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.083474Z  INFO extract_candidates:read_all_files: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.083479Z  INFO extract_candidates:read_all_files: tailwindcss_oxide::scanner: Reading 1 file(s)
+2026-02-09T09:08:57.083926Z  INFO extract_candidates:read_all_files: tailwindcss_oxide::scanner: Reading "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\globals.css"
+2026-02-09T09:08:57.083940Z  INFO extract_candidates:read_all_files: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.083950Z  INFO extract_candidates:extract_css_variables: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.083956Z  INFO extract_candidates:extract_css_variables:extract: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.084140Z  INFO extract_candidates:extract_css_variables:extract: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.084150Z  INFO extract_candidates:extract_css_variables: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.084820Z  INFO extract_candidates: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.085907Z  INFO get_files: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.085934Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.087846Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app"
+2026-02-09T09:08:57.088004Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions"
+2026-02-09T09:08:57.088257Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\api"
+2026-02-09T09:08:57.088403Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\api\\seed"
+2026-02-09T09:08:57.088707Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects"
+2026-02-09T09:08:57.088879Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]"
+2026-02-09T09:08:57.089007Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]\\board"
+2026-02-09T09:08:57.089234Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components"
+2026-02-09T09:08:57.089415Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui"
+2026-02-09T09:08:57.089760Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\lib"
+2026-02-09T09:08:57.090179Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma"
+2026-02-09T09:08:57.090313Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations"
+2026-02-09T09:08:57.090440Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations\\20260209082144_init"
+2026-02-09T09:08:57.090805Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public"
+2026-02-09T09:08:57.091221Z  INFO get_files:scan_sources: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.091439Z  INFO get_files: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.091883Z  INFO get_globs: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.091896Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: enter
+2026-02-09T09:08:57.093612Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app"
+2026-02-09T09:08:57.093895Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\actions"
+2026-02-09T09:08:57.094222Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\api"
+2026-02-09T09:08:57.094393Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\api\\seed"
+2026-02-09T09:08:57.094754Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects"
+2026-02-09T09:08:57.094963Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]"
+2026-02-09T09:08:57.095129Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\app\\projects\\[id]\\board"
+2026-02-09T09:08:57.095430Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components"
+2026-02-09T09:08:57.095685Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\components\\ui"
+2026-02-09T09:08:57.096148Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\lib"
+2026-02-09T09:08:57.096680Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma"
+2026-02-09T09:08:57.096859Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations"
+2026-02-09T09:08:57.097031Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\prisma\\migrations\\20260209082144_init"
+2026-02-09T09:08:57.097441Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: Discovering "D:\\Gawean Rebinmas\\Schedule Tracker\\schedule-tracker\\public"
+2026-02-09T09:08:57.097886Z  INFO get_globs:scan_sources: tailwindcss_oxide::scanner: exit
+2026-02-09T09:08:57.103433Z  INFO get_globs: tailwindcss_oxide::scanner: exit

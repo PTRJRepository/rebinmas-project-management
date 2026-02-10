@@ -29,10 +29,9 @@ export function AppShell({ children }: AppShellProps) {
             <Sidebar projects={projects} collapsed={collapsed} onCollapse={setCollapsed} />
             <main
                 id="main-content"
-                className={`w-full transition-all duration-300 ease-in-out p-6 ${collapsed ? 'pl-20' : 'pl-72'}`}
+                className={`w-full transition-all duration-300 ease-in-out ${collapsed ? 'pl-16' : 'pl-64'}`}
             >
                 <div className="w-full">
-                    <Breadcrumbs projects={projects} />
                     <div className="fade-in-up">
                         {children}
                     </div>

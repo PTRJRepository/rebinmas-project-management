@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,6 +10,7 @@ import { Calendar, Clock, User, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDeadlineInfo, getDeadlineClasses, formatDeadline } from '@/lib/deadline-utils';
 import { updateTask } from '@/app/actions/task';
+import { useToast } from "@/components/ui/use-toast";
 
 interface Task {
     id: string;
@@ -60,9 +61,61 @@ const getProgressColor = (progress: number) => {
 
 export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
     const deadlineInfo = getDeadlineInfo(task.dueDate ? new Date(task.dueDate) : null);
+    const { toast } = useToast();
+
+    // Local state for controlled inputs
+    const [priority, setPriority] = useState(task.priority);
+    const [dueDate, setDueDate] = useState(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
+    const [estimatedHours, setEstimatedHours] = useState(task.estimatedHours?.toString() || '');
+
+    // Sync state with props when task data changes
+    useEffect(() => {
+        setPriority(task.priority);
+        setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
+        setEstimatedHours(task.estimatedHours?.toString() || '');
+    }, [task]);
 
     const handleDocumentationChange = async (content: string, jsonContent?: object) => {
-        await updateTask(task.id, { documentation: JSON.stringify(jsonContent) }, projectId);
+        const result = await updateTask(task.id, { documentation: JSON.stringify(jsonContent) }, projectId);
+        if (!result.success) {
+            toast({ variant: "destructive", description: "Failed to save documentation" });
+        }
+    };
+
+    const handlePriorityChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newPriority = e.target.value;
+        setPriority(newPriority);
+        const result = await updateTask(task.id, { priority: newPriority }, projectId);
+        if (result.success) {
+            toast({ description: "Priority updated" });
+        } else {
+            toast({ variant: "destructive", description: "Failed to update priority" });
+        }
+    };
+
+    const handleDueDateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newDateStr = e.target.value;
+        setDueDate(newDateStr);
+        const date = newDateStr ? new Date(newDateStr) : null;
+        const result = await updateTask(task.id, { dueDate: date }, projectId);
+        if (result.success) {
+            toast({ description: "Due date updated" });
+        } else {
+            toast({ variant: "destructive", description: "Failed to update due date" });
+        }
+    };
+
+    const handleHoursBlur = async () => {
+        const val = parseFloat(estimatedHours);
+        const hours = isNaN(val) ? null : val;
+        if (hours !== task.estimatedHours) {
+            const result = await updateTask(task.id, { estimatedHours: hours }, projectId);
+            if (result.success) {
+                toast({ description: "Estimated hours updated" });
+            } else {
+                toast({ variant: "destructive", description: "Failed to update hours" });
+            }
+        }
     };
 
     return (
@@ -73,7 +126,7 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                     <CardTitle className="text-lg">Task Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {/* Project */}
+                    {/* Project (Read-only) */}
                     <div className="flex items-center gap-3">
                         <FolderOpen className="h-5 w-5 text-gray-500 shrink-0" />
                         <div className="flex-1 min-w-0">
@@ -84,21 +137,29 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                         </div>
                     </div>
 
-                    {/* Priority */}
+                    {/* Priority (Editable) */}
                     <div className="flex items-center gap-3">
                         <div className="h-5 w-5 shrink-0" />
                         <div className="flex-1 min-w-0">
                             <p className="text-sm text-gray-600">Priority</p>
-                            <Badge className={cn(
-                                "text-xs font-semibold px-2 py-1 border mt-1",
-                                getPriorityColor(task.priority)
-                            )}>
-                                {task.priority}
-                            </Badge>
+                            <select
+                                value={priority}
+                                onChange={handlePriorityChange}
+                                className={cn(
+                                    "text-xs font-semibold px-2 py-1 border mt-1 rounded cursor-pointer",
+                                    getPriorityColor(priority),
+                                    "bg-white text-gray-900 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                )}
+                            >
+                                <option value="LOW">LOW</option>
+                                <option value="MEDIUM">MEDIUM</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                            </select>
                         </div>
                     </div>
 
-                    {/* Assignee */}
+                    {/* Assignee (Read-only for now - requires user list) */}
                     {task.assignee && (
                         <div className="flex items-center gap-3">
                             <User className="h-5 w-5 text-gray-500 shrink-0" />
@@ -119,35 +180,39 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                         </div>
                     )}
 
-                    {/* Due Date */}
-                    {task.dueDate && (
-                        <div className="flex items-center gap-3">
-                            <Calendar className="h-5 w-5 text-gray-500 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-600">Due Date</p>
-                                <div className={cn(
-                                    "inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md font-medium mt-1",
-                                    getDeadlineClasses(deadlineInfo)
-                                )}>
-                                    <Calendar className="w-3.5 h-3.5" />
-                                    <span>{formatDeadline(new Date(task.dueDate))}</span>
-                                </div>
-                            </div>
+                    {/* Due Date (Editable) */}
+                    <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-gray-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-600">Due Date</p>
+                            <input
+                                type="date"
+                                value={dueDate}
+                                onChange={handleDueDateChange}
+                                className={cn(
+                                    "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 mt-1",
+                                    getDeadlineClasses(deadlineInfo) // Note: this uses task.dueDate (prop), not state. This is fine as it updates after server response.
+                                )}
+                            />
                         </div>
-                    )}
+                    </div>
 
-                    {/* Estimated Hours */}
-                    {task.estimatedHours && (
-                        <div className="flex items-center gap-3">
-                            <Clock className="h-5 w-5 text-gray-500 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-600">Estimated Time</p>
-                                <p className="text-sm font-medium text-gray-900 mt-1">
-                                    {task.estimatedHours}h
-                                </p>
-                            </div>
+                    {/* Estimated Hours (Editable) */}
+                    <div className="flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-gray-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-600">Estimated Time (Hours)</p>
+                            <input
+                                type="number"
+                                step="0.5"
+                                value={estimatedHours}
+                                onChange={(e) => setEstimatedHours(e.target.value)}
+                                onBlur={handleHoursBlur}
+                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                                placeholder="0.0"
+                            />
                         </div>
-                    )}
+                    </div>
                 </CardContent>
             </Card>
 

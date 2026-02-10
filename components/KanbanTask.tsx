@@ -171,7 +171,8 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                     {...provided.dragHandleProps}
                     className={cn(
                         "mb-3 group",
-                        snapshot.isDragging && "z-50"
+                        snapshot.isDragging && "z-50",
+                        "print:mb-2 print:break-inside-avoid"
                     )}
                     style={{
                         ...provided.draggableProps.style,
@@ -186,11 +187,12 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                             "cursor-grab active:cursor-grabbing border-l-4 transition-all duration-200 hover:shadow-lg",
                             snapshot.isDragging ? "shadow-2xl ring-2 ring-indigo-500/30 opacity-95" : "shadow-sm",
                             getPriorityBorderColor(task.priority),
-                            deadlineInfo.isOverdue && "bg-red-50/80 hover:bg-red-100/80"
+                            deadlineInfo.isOverdue && "bg-red-50/80 hover:bg-red-100/80",
+                            "print:cursor-auto print:shadow-none print:border-l-4 print:hover:shadow-none"
                         )}
                         onClick={handleCardClick}
                     >
-                        <CardContent className="p-4 space-y-3">
+                        <CardContent className="p-4 space-y-3 print:p-3 print:space-y-2">
                             {/* Header: Priority Badge & Title */}
                             <div className="space-y-2">
                                 <div className="flex items-start justify-between gap-2">
@@ -200,7 +202,8 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                             <TooltipTrigger asChild>
                                                 <Badge className={cn(
                                                     "text-xs font-semibold px-2 py-0.5 border flex items-center gap-1 shrink-0",
-                                                    getPriorityColor(task.priority)
+                                                    getPriorityColor(task.priority),
+                                                    "print:border-2 print:shadow-none"
                                                 )}>
                                                     {getPriorityIcon(task.priority)}
                                                     <span className="uppercase">{task.priority}</span>
@@ -212,7 +215,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                         </Tooltip>
                                     </TooltipProvider>
 
-                                    {/* Move to Next Button */}
+                                    {/* Move to Next Button - Hide on print */}
                                     {canMoveToNext && (
                                         <TooltipProvider>
                                             <Tooltip>
@@ -223,7 +226,8 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                                         className={cn(
                                                             "shrink-0 p-1 rounded-md transition-all duration-200",
                                                             "hover:bg-indigo-100 text-gray-500 hover:text-indigo-600",
-                                                            "disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            "disabled:opacity-50 disabled:cursor-not-allowed",
+                                                            "print:hidden"
                                                         )}
                                                     >
                                                         <ChevronRight className={cn(
@@ -253,7 +257,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                 ) : (
                                     <h4
                                         onClick={() => setIsEditing(true)}
-                                        className="font-semibold text-base text-gray-900 leading-snug cursor-text hover:text-indigo-600 transition-colors line-clamp-2"
+                                        className="font-semibold text-base text-gray-900 leading-snug cursor-text hover:text-indigo-600 transition-colors line-clamp-2 print:cursor-auto print:hover:text-gray-900"
                                         title="Click to edit title"
                                     >
                                         {title}
@@ -263,7 +267,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
 
                             {/* Description Preview */}
                             {task.description && (
-                                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+                                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed print:text-gray-800">
                                     {task.description}
                                 </p>
                             )}
@@ -283,7 +287,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                             )}
 
                             {/* Footer: Meta & Actions */}
-                            <div className="flex items-center justify-between pt-1">
+                            <div className="flex items-center justify-between pt-1 print:flex-wrap print:gap-2">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     {/* Deadline with Urgency Colors */}
                                     {task.dueDate && (
@@ -292,11 +296,12 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                                 <TooltipTrigger asChild>
                                                     <div className={cn(
                                                         "flex items-center gap-1.5 text-xs px-2 py-1 rounded-md font-medium transition-colors",
-                                                        getDeadlineClasses(deadlineInfo)
+                                                        getDeadlineClasses(deadlineInfo),
+                                                        "print:border print:border-gray-400 print:bg-white print:text-gray-900"
                                                     )}>
-                                                        <Calendar className="w-3.5 h-3.5" />
-                                                        <span>
-                                                            {formatDeadline(new Date(task.dueDate))}
+                                                        <Calendar className="w-3.5 h-3.5 print:hidden" />
+                                                        <span className="print:block print:inline">
+                                                            Due: {new Date(task.dueDate).toLocaleDateString()}
                                                         </span>
                                                     </div>
                                                 </TooltipTrigger>
@@ -317,8 +322,8 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-700 font-medium">
-                                                        <Clock className="w-3.5 h-3.5" />
+                                                    <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-700 font-medium print:border print:border-gray-400">
+                                                        <Clock className="w-3.5 h-3.5 print:hidden" />
                                                         <span>{task.estimatedHours}h</span>
                                                     </div>
                                                 </TooltipTrigger>
@@ -335,7 +340,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Avatar className="h-7 w-7 border-2 border-white shadow-sm cursor-pointer hover:scale-110 transition-transform">
+                                                <Avatar className="h-7 w-7 border-2 border-white shadow-sm cursor-pointer hover:scale-110 transition-transform print:cursor-auto print:hover:scale-100">
                                                     <AvatarImage src={task.assignee.avatarUrl || undefined} />
                                                     <AvatarFallback className="text-xs bg-indigo-500 text-white font-semibold">
                                                         {task.assignee.username.substring(0, 2).toUpperCase()}
@@ -355,7 +360,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
 
                             {/* Overdue Warning Banner */}
                             {deadlineInfo.isOverdue && (
-                                <div className="flex items-center gap-1.5 text-xs text-red-700 bg-red-100 px-2 py-1.5 rounded-md font-medium animate-pulse">
+                                <div className="flex items-center gap-1.5 text-xs text-red-700 bg-red-100 px-2 py-1.5 rounded-md font-medium animate-pulse print:animate-none print:border print:border-red-400">
                                     <Calendar className="w-3 h-3" />
                                     <span>Overdue by {Math.abs(deadlineInfo.daysUntilDue || 0)} days</span>
                                 </div>

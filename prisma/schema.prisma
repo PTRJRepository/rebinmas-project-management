@@ -14,13 +14,15 @@ model User {
   id        String    @id @default(cuid())
   username  String
   email     String    @unique
+  password  String
+  name      String
   role      String    @default("MEMBER") // ADMIN, PM, MEMBER
   avatarUrl String?
-  
+
   projectsOwned Project[]
   tasksAssigned Task[]
   comments      Comment[]
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -31,9 +33,10 @@ model Project {
   description String?
   startDate   DateTime?
   endDate     DateTime?
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
   ownerId     String
   owner       User     @relation(fields: [ownerId], references: [id])
-  
+
   tasks       Task[]
   statuses    TaskStatus[]
 
@@ -70,7 +73,7 @@ model Task {
   lastAlertSent  DateTime?
 
   projectId      String
-  project        Project    @relation(fields: [projectId], references: [id])
+  project        Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   statusId       String
   status         TaskStatus @relation(fields: [statusId], references: [id])

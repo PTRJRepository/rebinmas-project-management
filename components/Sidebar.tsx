@@ -10,14 +10,15 @@ import {
     ChevronLeft,
     ChevronRight,
     Home,
-    User,
     PanelLeftClose,
     PanelLeftOpen,
-    Briefcase
+    Briefcase,
+    Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { UserMenu } from '@/components/auth/user-menu';
 
 interface SidebarProps {
     projects?: Array<{
@@ -94,6 +95,8 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                         </div>
                     )}
 
+
+
                     {!collapsed && (
                         <div className="flex items-center gap-1">
                             <ThemeToggle />
@@ -117,81 +120,53 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                     Or just keep the header item interactive?
                 */}
 
-                {/* Navigation */}
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar" aria-label="Main navigation">
-                    <TooltipProvider delayDuration={0}>
-                        {navItems.map((item) => {
-                            const Icon = item.icon;
-                            const active = isActive(item.href);
-
-                            const linkContent = (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative',
-                                        active
-                                            ? 'font-medium'
-                                            : 'text-gray-600 hover:text-gray-900',
-                                        collapsed && 'justify-center px-2'
-                                    )}
-                                    style={active ? {
-                                        backgroundColor: 'rgb(var(--color-primary-light))',
-                                        color: 'rgb(var(--color-primary))'
-                                    } : {
-                                        backgroundColor: 'transparent'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (!active) {
-                                            e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))';
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (!active) {
-                                            e.currentTarget.style.backgroundColor = 'transparent';
-                                        }
-                                    }}
-                                    aria-current={active ? 'page' : undefined}
-                                >
-                                    <Icon className={cn(
-                                        "w-5 h-5 flex-shrink-0 transition-colors",
-                                        active ? "" : "text-gray-500 group-hover:text-gray-700"
-                                    )} style={active ? { color: 'rgb(var(--color-primary))' } : {}} aria-hidden="true" />
-
-                                    {!collapsed && (
-                                        <span className="text-sm">{item.name}</span>
-                                    )}
-
-                                    {/* Active Indicator Bar */}
-                                    {active && !collapsed && (
-                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full" style={{ backgroundColor: 'rgb(var(--color-primary))' }} />
-                                    )}
-                                </Link>
-                            );
-
-                            if (collapsed) {
+                <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 custom-scrollbar">
+                    {/* Main Menu */}
+                    <div>
+                        <div className={cn(
+                            "text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3",
+                            collapsed && "text-center"
+                        )}>
+                            {collapsed ? 'Menu' : 'Main Menu'}
+                        </div>
+                        <div className="space-y-1">
+                            {navItems.map((item) => {
+                                const active = isActive(item.href);
                                 return (
-                                    <Tooltip key={item.href}>
-                                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                                        <TooltipContent side="right" className="font-medium bg-gray-900 text-white border-0">
-                                            {item.name}
-                                        </TooltipContent>
-                                    </Tooltip>
-                                )
-                            }
-
-                            return linkContent;
-                        })}
-                    </TooltipProvider>
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={cn(
+                                            'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group',
+                                            collapsed && 'justify-center px-0',
+                                            active
+                                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-200'
+                                        )}
+                                        title={collapsed ? item.name : undefined}
+                                    >
+                                        <item.icon className={cn(
+                                            "flex-shrink-0 transition-colors",
+                                            collapsed ? "w-5 h-5" : "w-5 h-5",
+                                            active ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                                        )} />
+                                        {!collapsed && (
+                                            <span className="font-medium text-sm">{item.name}</span>
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
 
                     {/* Divider */}
-                    {!collapsed && <div className="my-4 border-t border-gray-100 mx-2" />}
+                    {!collapsed && <div className="border-t border-gray-100 dark:border-white/10 mx-2" />}
 
                     {/* Projects Section */}
                     {!collapsed && projects.length > 0 && (
-                        <div className="mt-2 animate-in fade-in duration-300">
+                        <div className="animate-in fade-in duration-300">
                             <div className="px-3 py-2 flex items-center justify-between group cursor-pointer">
-                                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-600 transition-colors">
+                                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
                                     Recent Projects
                                 </span>
                             </div>
@@ -203,31 +178,17 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                                         className={cn(
                                             'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm group',
                                             isActive(`/projects/${project.id}`)
-                                                ? ''
-                                                : 'text-gray-600'
+                                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
                                         )}
-                                        style={isActive(`/projects/${project.id}`) ? {
-                                            backgroundColor: 'rgb(var(--color-primary-light))',
-                                            color: 'rgb(var(--color-primary))'
-                                        } : {
-                                            backgroundColor: 'transparent'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (!isActive(`/projects/${project.id}`)) {
-                                                e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))';
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            if (!isActive(`/projects/${project.id}`)) {
-                                                e.currentTarget.style.backgroundColor = 'transparent';
-                                            }
-                                        }}
                                         title={project.name}
                                     >
                                         <div className={cn(
                                             "w-2 h-2 rounded-full flex-shrink-0 transition-colors",
-                                            isActive(`/projects/${project.id}`) ? "" : "group-hover:bg-gray-400"
-                                        )} style={isActive(`/projects/${project.id}`) ? { backgroundColor: 'rgb(var(--color-primary))' } : { backgroundColor: 'rgb(209 213 219)' }} aria-hidden="true" />
+                                            isActive(`/projects/${project.id}`)
+                                                ? "bg-blue-600 dark:bg-blue-400"
+                                                : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500"
+                                        )} aria-hidden="true" />
                                         <span className="truncate">{project.name}</span>
                                     </Link>
                                 ))}
@@ -235,45 +196,18 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                         </div>
                     )}
                 </nav>
-
                 {/* Collapse Toggle for Collapsed State */}
                 {collapsed && (
                     <button
                         onClick={handleToggle}
-                        className="w-full p-4 flex justify-center text-gray-400 hover:text-gray-600 transition-colors border-t border-gray-100"
-                        style={{ backgroundColor: 'transparent' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        className="w-full p-4 flex justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-t border-gray-100 dark:border-white/10"
                     >
                         <PanelLeftOpen className="w-5 h-5" />
                     </button>
                 )}
 
                 {/* User Profile */}
-                <div className={cn(
-                    "border-t border-gray-100 bg-gray-50/50",
-                    collapsed ? "p-2" : "p-4"
-                )}>
-                    <div
-                        className={cn(
-                            'flex items-center gap-3 rounded-lg hover:shadow-sm transition-all cursor-pointer p-2',
-                            collapsed && 'justify-center'
-                        )}
-                        style={{ backgroundColor: 'transparent' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-surface))'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm text-white font-medium text-xs">
-                            <User className="w-4 h-4" />
-                        </div>
-                        {!collapsed && (
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 truncate">Demo User</p>
-                                <p className="text-xs text-gray-500 truncate">Pro Plan</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                <UserMenu collapsed={collapsed} />
             </div>
         </aside>
     );

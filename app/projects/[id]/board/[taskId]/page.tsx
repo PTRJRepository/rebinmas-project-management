@@ -1,6 +1,7 @@
 import { getTask } from '@/app/actions/task'
 import { TaskDetailHeader } from '@/components/task/TaskDetailHeader'
 import { TaskMetadata } from '@/components/task/TaskMetadata'
+import { TaskDescriptionEditor } from '@/components/task/TaskDescriptionEditor'
 import { notFound } from 'next/navigation'
 
 export default async function TaskDetailPage({
@@ -24,32 +25,22 @@ export default async function TaskDetailPage({
             />
 
             {/* Main Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Main Content Area (2/3) */}
                         <div className="lg:col-span-2 space-y-6">
-                            {/* Description Section */}
-                            <div className="bg-white rounded-lg border border-gray-200 p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                                    Description
-                                </h2>
-                                {task.description ? (
-                                    <div className="prose prose-sm max-w-none text-gray-700">
-                                        <p>{task.description}</p>
-                                    </div>
-                                ) : (
-                                    <p className="text-gray-500 italic">No description provided</p>
-                                )}
-                            </div>
+                            {/* Description Section - Interactive Editor */}
+                            <TaskDescriptionEditor task={task} projectId={id} />
 
                             {/* Comments Section (Future Enhancement) */}
-                            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                            {/* 
+                            <div className="bg-white rounded-lg border border-gray-200">
                                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                                     Comments
                                 </h2>
                                 {task.comments && task.comments.length > 0 ? (
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 p-6">
                                         {task.comments.map((comment) => (
                                             <div
                                                 key={comment.id}
@@ -75,17 +66,19 @@ export default async function TaskDetailPage({
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-gray-500 italic">No comments yet</p>
+                                    <p className="text-gray-500 italic p-6">No comments yet</p>
                                 )}
                             </div>
+                            */}
 
                             {/* Attachments Section (Future Enhancement) */}
+                            {/* 
                             {task.attachments && task.attachments.length > 0 && (
-                                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                <div className="bg-white rounded-lg border border-gray-200">
                                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
                                         Attachments
                                     </h2>
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 p-6">
                                         {task.attachments.map((attachment) => (
                                             <a
                                                 key={attachment.id}
@@ -98,19 +91,17 @@ export default async function TaskDetailPage({
                                                     <p className="text-sm font-medium text-gray-900">
                                                         {attachment.fileName}
                                                     </p>
-                                                    <p className="text-xs text-gray-500">
-                                                        {(attachment.fileSize / 1024).toFixed(1)} KB
-                                                    </p>
                                                 </div>
                                             </a>
                                         ))}
                                     </div>
                                 </div>
                             )}
+                            */}
                         </div>
 
                         {/* Sidebar (1/3) */}
-                        <div className="lg:col-span-1">
+                        <div className="space-y-6">
                             <TaskMetadata task={task} projectId={id} />
                         </div>
                     </div>

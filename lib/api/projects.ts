@@ -67,7 +67,21 @@ export async function updateProject(id: string, data: Prisma.ProjectUpdateInput)
   });
 }
 
+
+
 export async function deleteProject(id: string) {
+  // Manual cascade delete since schema doesn't have onDelete: Cascade
+  // 1. Delete all tasks (this will cascade to comments and attachments if those have onDelete: Cascade)
+  await prisma.task.deleteMany({
+    where: { projectId: id },
+  });
+
+  // 2. Delete all task statuses
+  await prisma.taskStatus.deleteMany({
+    where: { projectId: id },
+  });
+
+  // 3. Delete the project
   return prisma.project.delete({
     where: { id },
   });

@@ -22,8 +22,8 @@ async function gitCommitAndPush() {
       // Continue with the commit process
     }
 
-    console.log('Committing changes with message "redesign more futuristic UI"...');
-    const { stdout: commitStdout, stderr: commitStderr } = await execAsync('git commit -m "redesign more futuristic UI" --allow-empty');
+    console.log('Committing changes with message "memperbaiki desain lebih futuristik"...');
+    const { stdout: commitStdout, stderr: commitStderr } = await execAsync('git commit -m "memperbaiki desain lebih futuristik" --allow-empty');
     if (commitStderr) console.error(`Commit stderr: ${commitStderr}`);
     console.log(`Commit stdout: ${commitStdout}`);
 

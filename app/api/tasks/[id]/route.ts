@@ -19,6 +19,11 @@ export async function GET(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
+    // Security check: user can only access tasks from their own projects
+    if (task.project.ownerId !== session.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     return NextResponse.json(task);
   } catch (error) {
     console.error('Error fetching task:', error);
@@ -38,6 +43,15 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
+
+    // First, verify task belongs to user's project
+    const existingTask = await getTaskById(id);
+    if (!existingTask) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+    if (existingTask.project.ownerId !== session.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Handle status update specifically
     if (body.statusId) {
@@ -64,6 +78,16 @@ export async function DELETE(
     }
 
     const { id } = await params;
+
+    // First, verify task belongs to user's project
+    const existingTask = await getTaskById(id);
+    if (!existingTask) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+    if (existingTask.project.ownerId !== session.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await deleteTask(id);
     return NextResponse.json({ success: true });
   } catch (error) {

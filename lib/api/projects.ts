@@ -1,8 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
-export async function getProjects() {
+export async function getProjects(userId?: string) {
   return prisma.project.findMany({
+    where: userId ? { ownerId: userId } : undefined,
     include: {
       owner: true,
       _count: {

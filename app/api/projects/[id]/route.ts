@@ -19,6 +19,11 @@ export async function GET(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
+    // Security check: user can only access their own projects
+    if (project.ownerId !== session.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     return NextResponse.json(project);
   } catch (error) {
     console.error('Error fetching project:', error);
@@ -38,6 +43,15 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
+
+    // First, check if user owns this project
+    const existingProject = await getProjectById(id);
+    if (!existingProject) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+    if (existingProject.ownerId !== session.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Convert date strings to Date objects
     const updateData: any = {
@@ -74,6 +88,16 @@ export async function DELETE(
     }
 
     const { id } = await params;
+
+    // First, check if user owns this project
+    const existingProject = await getProjectById(id);
+    if (!existingProject) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+    if (existingProject.ownerId !== session.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await deleteProject(id);
     return NextResponse.json({ success: true });
   } catch (error) {

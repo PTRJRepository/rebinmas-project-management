@@ -9,7 +9,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const projects = await getProjects();
+    // Only fetch projects owned by the current user
+    const projects = await getProjects(session.id);
     return NextResponse.json(projects);
   } catch (error) {
     console.error('Error fetching projects:', error);

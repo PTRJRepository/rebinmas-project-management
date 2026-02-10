@@ -245,6 +245,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                 </div>
 
                                 {/* Inline Editable Title */}
+
                                 {isEditing ? (
                                     <Input
                                         ref={inputRef}

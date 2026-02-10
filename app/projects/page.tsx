@@ -398,16 +398,16 @@ export default function DashboardPage() {
         {loading ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-96 bg-gray-200 animate-pulse rounded-xl" />
+              <div key={i} className="h-96 bg-slate-800/40 animate-pulse rounded-xl border border-cyan-500/10" />
             ))}
           </div>
         ) : filteredProjects.length === 0 ? (
-          <Card className="border border-dashed border-gray-300 bg-white">
+          <Card className="border border-dashed border-cyan-500/20 glass-card">
             <CardContent className="p-12 text-center">
-              <FolderKanban className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Tidak ada proyek ditemukan</h3>
-              <p className="text-gray-500 mb-6">Buat proyek pertama Anda untuk memulai</p>
-              <Button onClick={() => setDialogOpen(true)} className="bg-blue-600 text-white">
+              <FolderKanban className="w-16 h-16 mx-auto text-sky-400/40 mb-4" />
+              <h3 className="text-lg font-semibold text-sky-100 mb-2">Tidak ada proyek ditemukan</h3>
+              <p className="text-sky-400/70 mb-6">Buat proyek pertama Anda untuk memulai</p>
+              <Button onClick={() => setDialogOpen(true)} className="btn-neon-primary">
                 <Plus className="w-4 h-4 mr-2" />
                 Buat Proyek
               </Button>
@@ -440,21 +440,21 @@ export default function DashboardPage() {
                       const deadlineInfo = getDeadlineInfo(project.endDate);
                       const priority = project.priority || 'MEDIUM';
                       const priorityColors = {
-                        LOW: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
-                        MEDIUM: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
-                        HIGH: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
-                        CRITICAL: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+                        LOW: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-400/30', shadow: 'shadow-[0_0_10px_rgba(74,222,128,0.3)]' },
+                        MEDIUM: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-400/30', shadow: 'shadow-[0_0_10px_rgba(250,204,21,0.3)]' },
+                        HIGH: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-400/30', shadow: 'shadow-[0_0_10px_rgba(251,146,60,0.3)]' },
+                        CRITICAL: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-400/30', shadow: 'shadow-[0_0_10px_rgba(248,113,113,0.3)]' },
                       };
                       const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
 
                       return (
                         <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
                           <Card className={cn(
-                            "h-full border hover:shadow-lg transition-all cursor-pointer overflow-hidden flex flex-col",
-                            deadlineInfo?.color === 'red' ? "border-red-400 shadow-red-100" :
-                              deadlineInfo?.color === 'amber' ? "border-amber-400 shadow-amber-100" :
-                                "border-amber-200",
-                            starredProjects.has(project.id) && "ring-2 ring-amber-200"
+                            "glass-card h-full border hover:shadow-[0_0_25px_rgba(251,191,36,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col",
+                            deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
+                              deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
+                                "border-amber-400/20",
+                            starredProjects.has(project.id) && "ring-2 ring-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.3)]"
                           )}>
                             {/* Banner Image */}
                             <div className="relative h-32 overflow-hidden bg-gray-100">
@@ -472,8 +472,8 @@ export default function DashboardPage() {
                               <div className="absolute top-2 left-2 flex gap-2">
                                 {/* Priority Badge */}
                                 <span className={cn(
-                                  "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide",
-                                  priorityStyle.bg, priorityStyle.text
+                                  "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide border",
+                                  priorityStyle.bg, priorityStyle.text, priorityStyle.border, priorityStyle.shadow
                                 )}>
                                   {priority}
                                 </span>
@@ -575,17 +575,17 @@ export default function DashboardPage() {
             </div>
 
             {/* RENCANA - Proyek yang akan datang */}
-            <div className="bg-white rounded-xl border border-blue-200 shadow-sm overflow-hidden">
-              <div className="bg-blue-50 border-b border-blue-200 px-5 py-3">
+            <div className="glass-card rounded-xl border border-sky-500/30 shadow-[0_0_20px_rgba(56,189,248,0.15)] overflow-hidden">
+              <div className="bg-sky-500/10 border-b border-sky-500/20 px-5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.7)]"></div>
                     <div>
-                      <h2 className="text-base font-semibold text-blue-900">Rencana</h2>
-                      <p className="text-xs text-blue-700">Proyek yang akan datang</p>
+                      <h2 className="text-base font-semibold text-sky-400" style={{ textShadow: '0 0 10px rgba(56,189,248,0.5)' }}>Rencana</h2>
+                      <p className="text-xs text-sky-400/70">Proyek yang akan datang</p>
                     </div>
                   </div>
-                  <span className="text-xl font-bold text-blue-700">{rencana.length}</span>
+                  <span className="text-xl font-bold text-sky-400">{rencana.length}</span>
                 </div>
               </div>
               <div className="p-4">
@@ -597,21 +597,21 @@ export default function DashboardPage() {
                       const deadlineInfo = getDeadlineInfo(project.endDate);
                       const priority = project.priority || 'MEDIUM';
                       const priorityColors = {
-                        LOW: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
-                        MEDIUM: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
-                        HIGH: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
-                        CRITICAL: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+                        LOW: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-400/30', shadow: 'shadow-[0_0_10px_rgba(74,222,128,0.3)]' },
+                        MEDIUM: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-400/30', shadow: 'shadow-[0_0_10px_rgba(250,204,21,0.3)]' },
+                        HIGH: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-400/30', shadow: 'shadow-[0_0_10px_rgba(251,146,60,0.3)]' },
+                        CRITICAL: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-400/30', shadow: 'shadow-[0_0_10px_rgba(248,113,113,0.3)]' },
                       };
                       const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
 
                       return (
                         <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
                           <Card className={cn(
-                            "h-full border hover:shadow-lg transition-all cursor-pointer overflow-hidden flex flex-col",
-                            deadlineInfo?.color === 'red' ? "border-red-300" :
-                              deadlineInfo?.color === 'amber' ? "border-amber-300" :
-                                "border-gray-200",
-                            starredProjects.has(project.id) && "ring-2 ring-blue-200"
+                            "glass-card h-full border hover:shadow-[0_0_25px_rgba(56,189,248,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col",
+                            deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
+                              deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
+                                "border-sky-400/20",
+                            starredProjects.has(project.id) && "ring-2 ring-sky-400/40 shadow-[0_0_20px_rgba(56,189,248,0.3)]"
                           )}>
                             {/* Banner Image */}
                             <div className="relative h-32 overflow-hidden bg-gray-100">
@@ -629,8 +629,8 @@ export default function DashboardPage() {
                               <div className="absolute top-2 left-2 flex gap-2">
                                 {/* Priority Badge */}
                                 <span className={cn(
-                                  "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide",
-                                  priorityStyle.bg, priorityStyle.text
+                                  "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide border",
+                                  priorityStyle.bg, priorityStyle.text, priorityStyle.border, priorityStyle.shadow
                                 )}>
                                   {priority}
                                 </span>
@@ -735,17 +735,17 @@ export default function DashboardPage() {
             </div>
 
             {/* SELESAI - Proyek yang sudah selesai */}
-            <div className="bg-white rounded-xl border border-green-200 shadow-sm overflow-hidden">
-              <div className="bg-green-50 border-b border-green-200 px-5 py-3">
+            <div className="glass-card rounded-xl border border-green-500/30 shadow-[0_0_20px_rgba(74,222,128,0.15)] overflow-hidden">
+              <div className="bg-green-500/10 border-b border-green-500/20 px-5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.7)]"></div>
                     <div>
-                      <h2 className="text-base font-semibold text-green-900">Selesai</h2>
-                      <p className="text-xs text-green-700">Sudah selesai</p>
+                      <h2 className="text-base font-semibold text-green-400" style={{ textShadow: '0 0 10px rgba(74,222,128,0.5)' }}>Selesai</h2>
+                      <p className="text-xs text-green-400/70">Sudah selesai</p>
                     </div>
                   </div>
-                  <span className="text-xl font-bold text-green-700">{selesai.length}</span>
+                  <span className="text-xl font-bold text-green-400">{selesai.length}</span>
                 </div>
               </div>
               <div className="p-4">
@@ -756,19 +756,19 @@ export default function DashboardPage() {
                     {selesai.map((project) => {
                       const priority = project.priority || 'MEDIUM';
                       const priorityColors = {
-                        LOW: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
-                        MEDIUM: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
-                        HIGH: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
-                        CRITICAL: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+                        LOW: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-400/30', shadow: 'shadow-[0_0_10px_rgba(74,222,128,0.3)]' },
+                        MEDIUM: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-400/30', shadow: 'shadow-[0_0_10px_rgba(250,204,21,0.3)]' },
+                        HIGH: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-400/30', shadow: 'shadow-[0_0_10px_rgba(251,146,60,0.3)]' },
+                        CRITICAL: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-400/30', shadow: 'shadow-[0_0_10px_rgba(248,113,113,0.3)]' },
                       };
                       const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
 
                       return (
                         <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
                           <Card className={cn(
-                            "h-full border hover:shadow-lg transition-all cursor-pointer opacity-75 hover:opacity-100 overflow-hidden flex flex-col",
-                            "border-green-200",
-                            starredProjects.has(project.id) && "ring-2 ring-green-200"
+                            "glass-card h-full border hover:shadow-[0_0_25px_rgba(74,222,128,0.25)] transition-all cursor-pointer opacity-60 hover:opacity-100 overflow-hidden flex flex-col",
+                            "border-green-400/20",
+                            starredProjects.has(project.id) && "ring-2 ring-green-400/40 shadow-[0_0_20px_rgba(74,222,128,0.3)]"
                           )}>
                             {/* Banner Image */}
                             <div className="relative h-32 overflow-hidden bg-gray-100">
@@ -897,11 +897,11 @@ export default function DashboardPage() {
       )}
 
 
-      {/* --- Dialogs --- */}
+      {/* --- Dialogs with Neon Styling --- */}
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent className="sm:max-w-[500px] bg-white">
+        <DialogContent className="sm:max-w-[500px] glass-panel border-cyan-500/20">
           <DialogHeader>
-            <DialogTitle>{editingProject ? 'Edit Proyek' : 'Buat Proyek Baru'}</DialogTitle>
+            <DialogTitle className="text-sky-100 heading-glow">{editingProject ? 'Edit Proyek' : 'Buat Proyek Baru'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveProject} className="space-y-4 mt-2">
             <div className="space-y-2">
@@ -967,8 +967,8 @@ export default function DashboardPage() {
               )}
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
-              <Button type="submit" className="bg-blue-600 text-white">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="border-cyan-500/30 text-sky-400 hover:bg-cyan-500/10">Batal</Button>
+              <Button type="submit" className="btn-neon-primary">
                 {editingProject ? 'Simpan Perubahan' : 'Buat Proyek'}
               </Button>
             </DialogFooter>
@@ -977,13 +977,13 @@ export default function DashboardPage() {
       </Dialog>
 
       <Dialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] glass-panel border-red-500/20">
           <DialogHeader>
-            <DialogTitle className="text-red-600">Hapus Proyek</DialogTitle>
+            <DialogTitle className="text-red-400" style={{ textShadow: '0 0 10px rgba(248,113,113,0.5)' }}>Hapus Proyek</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-gray-600">
-              Apakah Anda yakin ingin menghapus <span className="font-semibold text-gray-900">{projectToDelete?.name}</span>?
+            <p className="text-sm text-sky-300">
+              Apakah Anda yakin ingin menghapus <span className="font-semibold text-sky-100">{projectToDelete?.name}</span>?
               Tindakan ini tidak dapat dibatalkan dan akan menghapus semua tugas terkait.
             </p>
           </div>
@@ -991,12 +991,14 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               onClick={() => setProjectToDelete(null)}
+              className="border-cyan-500/30 text-sky-400 hover:bg-cyan-500/10"
             >
               Batal
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
+              className="bg-red-500/90 hover:bg-red-500 text-white shadow-[0_0_15px_rgba(248,113,113,0.4)]"
             >
               Hapus Proyek
             </Button>

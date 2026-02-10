@@ -1,9 +1,22 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
-export async function getTasks(filters?: { projectId?: string; statusId?: string; assigneeId?: string }) {
+export async function getTasks(filters?: { projectId?: string; statusId?: string; assigneeId?: string; userId?: string }) {
+  const where: Prisma.TaskWhereInput = filters ? {
+    projectId: filters.projectId,
+    statusId: filters.statusId,
+    assigneeId: filters.assigneeId,
+  } : {};
+
+  // If userId is provided, only fetch tasks from projects owned by that user
+  if (filters?.userId) {
+    where.project = {
+      ownerId: filters.userId
+    };
+  }
+
   return prisma.task.findMany({
-    where: filters,
+    where,
     include: {
       project: true,
       status: true,

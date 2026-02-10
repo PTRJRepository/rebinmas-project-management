@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface SidebarProps {
     projects?: Array<{
@@ -94,16 +95,19 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                     )}
 
                     {!collapsed && (
-                        <button
-                            onClick={handleToggle}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
-                            style={{ backgroundColor: 'transparent' }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                            aria-label="Collapse sidebar"
-                        >
-                            <PanelLeftClose className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                            <ThemeToggle />
+                            <button
+                                onClick={handleToggle}
+                                className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+                                style={{ backgroundColor: 'transparent' }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                aria-label="Collapse sidebar"
+                            >
+                                <PanelLeftClose className="w-4 h-4" />
+                            </button>
+                        </div>
                     )}
                 </div>
 

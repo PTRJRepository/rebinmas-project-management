@@ -60,3 +60,80 @@ body {
 
 /* Focus styles */
 *:focus-visible { outline: 2px solid rgb(var(--color-primary)); outline-offset: 2px; }
+
+/* Dark Mode Styles */
+.dark {
+  --color-primary: 90 150 255;          /* Lighter blue for dark mode */
+  --color-primary-hover: 120 170 255;   /* Lighter blue hover */
+  --color-primary-light: 30 50 90;      /* Darker primary light */
+  --color-secondary: 220 220 225;       /* Lighter text for dark mode */
+  --color-secondary-light: 60 65 75;    /* Darker secondary light */
+  --status-backlog: 140 140 150;         /* Lighter gray */
+  --status-progress: 90 150 255;         /* Lighter blue */
+  --status-review: 170 140 230;          /* Lighter purple */
+  --status-done: 100 200 140;            /* Lighter green */
+  --priority-critical: 255 100 80;       /* Lighter red */
+  --priority-high: 255 180 80;           /* Lighter orange */
+  --priority-medium: 255 200 100;        /* Lighter yellow */
+  --priority-low: 100 200 140;           /* Lighter green */
+  --alert-error: 255 100 80;             /* Lighter red */
+  --alert-warning: 255 180 80;           /* Lighter orange */
+  --alert-success: 100 200 140;          /* Lighter green */
+  --alert-info: 90 150 255;              /* Lighter blue */
+  --bg-app: 20 20 25;                    /* Dark background */
+  --bg-surface: 30 30 40;                /* Dark surface */
+  --bg-hover: 45 45 55;                  /* Dark hover */
+}
+
+/* Additional dark mode specific styles */
+.dark body {
+  background: rgb(var(--bg-app));
+  color: rgb(var(--color-secondary));
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-secondary-light));
+}
+
+/* Dark mode border colors */
+.dark .border-gray-200,
+.dark .border-gray-100 {
+  border-color: rgb(50 50 60);
+}
+
+/* Dark mode hover states */
+.dark .hover\\:bg-gray-100:hover {
+  background-color: rgb(var(--bg-hover));
+}
+
+/* Dark mode text colors */
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: rgb(var(--color-secondary));
+}
+
+.dark .text-gray-600 {
+  color: rgb(180 180 190);
+}
+
+.dark .text-gray-500 {
+  color: rgb(140 140 150);
+}
+
+.dark .text-gray-400 {
+  color: rgb(120 120 130);
+}
+
+/* Dark mode backgrounds */
+.dark .bg-white {
+  background-color: rgb(var(--bg-surface));
+}
+
+.dark .bg-gray-50 {
+  background-color: rgb(25 25 35);
+}
+
+/* Muted foreground color for dark mode */
+.dark .text-muted-foreground {
+  color: rgb(160 160 170);
+}

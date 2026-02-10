@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -32,6 +33,7 @@ interface Project {
   endDate: Date | null;
   bannerImage: string | null;
   priority: string | null;
+  status?: string | null;  // Manual status: 'SEKARANG', 'RENCANA', 'SELESAI', or null (auto)
   createdAt: Date;
   owner: {
     id: string;
@@ -54,6 +56,7 @@ interface Task {
 
 export default function DashboardPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,9 +73,14 @@ export default function DashboardPage() {
     startDate: '',
     endDate: '',
     bannerImage: '',
+    status: '',  // Manual status selection
   });
 
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+
+  // Drag and Drop states
+  const [draggedProject, setDraggedProject] = useState<Project | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -122,7 +130,7 @@ export default function DashboardPage() {
         toast({ title: "Success", description: "Project saved successfully" });
         setDialogOpen(false);
         setEditingProject(null);
-        setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '' });
+        setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '', status: '' });
         fetchData();
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -182,6 +190,7 @@ export default function DashboardPage() {
       startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
       endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
       bannerImage: project.bannerImage || '',
+      status: project.status || '',
     });
     setDialogOpen(true);
   };
@@ -190,8 +199,72 @@ export default function DashboardPage() {
     setDialogOpen(open);
     if (!open) {
       setEditingProject(null);
-      setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '' });
+      setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '', status: '' });
     }
+  };
+
+  // Drag and Drop handlers
+  const handleDragStart = (project: Project) => {
+    setDraggedProject(project);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedProject(null);
+    setDragOverSection(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, section: string) => {
+    e.preventDefault();
+    setDragOverSection(section);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverSection(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStatus: string) => {
+    e.preventDefault();
+    setDragOverSection(null);
+
+    if (!draggedProject || draggedProject.status === targetStatus) {
+      setDraggedProject(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/projects/${draggedProject.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...draggedProject,
+          status: targetStatus
+        }),
+      });
+
+      if (res.ok) {
+        const updatedProject = await res.json();
+        // Update local state
+        setProjects(projects.map(p => p.id === draggedProject.id ? { ...p, status: targetStatus } : p));
+        toast({
+          title: "Berhasil",
+          description: `Proyek dipindahkan ke ${targetStatus === 'SEKARANG' ? 'Sekarang' : targetStatus === 'RENCANA' ? 'Rencana' : 'Selesai'}`
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Gagal memindahkan proyek"
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Terjadi kesalahan saat memindahkan proyek"
+      });
+    }
+
+    setDraggedProject(null);
   };
 
   // Helper function to get deadline info
@@ -232,7 +305,7 @@ export default function DashboardPage() {
     };
   };
 
-  // Categorize projects
+  // Categorize projects - manual status takes precedence
   const categorizeProjects = (projects: Project[]) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -242,6 +315,19 @@ export default function DashboardPage() {
     const selesai: Project[] = [];
 
     projects.forEach(project => {
+      // Manual status takes precedence
+      if (project.status) {
+        if (project.status === 'RENCANA') {
+          rencana.push(project);
+        } else if (project.status === 'SELESAI') {
+          selesai.push(project);
+        } else {
+          sekarang.push(project);  // SEKARANG or any other value
+        }
+        return;
+      }
+
+      // Auto-categorize based on dates
       const startDate = project.startDate ? new Date(project.startDate) : null;
       const endDate = project.endDate ? new Date(project.endDate) : null;
 
@@ -318,7 +404,7 @@ export default function DashboardPage() {
             <Button
               onClick={() => {
                 setEditingProject(null);
-                setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '' });
+                setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '', status: '' });
                 setDialogOpen(true);
               }}
               className="btn-neon-primary"
@@ -418,7 +504,15 @@ export default function DashboardPage() {
           <div className="space-y-6">
 
             {/* SEKARANG - Proyek yang sedang berjalan */}
-            <div className="glass-card rounded-xl border border-amber-500/30 shadow-[0_0_20px_rgba(251,191,36,0.15)] overflow-hidden">
+            <div
+              className={cn(
+                "glass-card rounded-xl border shadow-[0_0_20px_rgba(251,191,36,0.15)] overflow-hidden transition-all duration-200",
+                dragOverSection === 'SEKARANG' ? "border-amber-400 ring-4 ring-amber-400/30 scale-[1.01]" : "border-amber-500/30"
+              )}
+              onDragOver={(e) => handleDragOver(e, 'SEKARANG')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'SEKARANG')}
+            >
               <div className="bg-amber-500/10 border-b border-amber-500/20 px-5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -433,9 +527,11 @@ export default function DashboardPage() {
               </div>
               <div className="p-4">
                 {sekarang.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-8">Tidak ada proyek aktif</p>
+                  <p className="text-sm text-gray-400 text-center py-8">
+                    {draggedProject ? 'Drop proyek di sini' : 'Tidak ada proyek aktif'}
+                  </p>
                 ) : (
-                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {sekarang.map((project) => {
                       const deadlineInfo = getDeadlineInfo(project.endDate);
                       const priority = project.priority || 'MEDIUM';
@@ -448,14 +544,21 @@ export default function DashboardPage() {
                       const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
 
                       return (
-                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
-                          <Card className={cn(
-                            "glass-card h-full border hover:shadow-[0_0_25px_rgba(251,191,36,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col",
-                            deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
-                              deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
-                                "border-amber-400/20",
-                            starredProjects.has(project.id) && "ring-2 ring-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.3)]"
-                          )}>
+                        <div key={project.id} className="w-full">
+                          <Card
+                            draggable
+                            onDragStart={() => handleDragStart(project)}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => router.push(`/projects/${project.id}`)}
+                            className={cn(
+                              "glass-card h-full border hover:shadow-[0_0_25px_rgba(251,191,36,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col",
+                              draggedProject?.id === project.id ? "opacity-50 scale-95" : "",
+                              deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
+                                deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
+                                  "border-amber-400/20",
+                              starredProjects.has(project.id) && "ring-2 ring-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.3)]"
+                            )}
+                          >
                             {/* Banner Image */}
                             <div className="relative h-32 overflow-hidden bg-gray-100">
                               <img
@@ -491,7 +594,7 @@ export default function DashboardPage() {
 
                               {/* Project name overlay at bottom */}
                               <div className="absolute bottom-2 left-3 right-3">
-                                <h3 className="font-bold text-white text-sm line-clamp-1 drop-shadow-lg">{project.name}</h3>
+                                <h3 className="font-bold text-white text-sm drop-shadow-lg whitespace-normal break-words">{project.name}</h3>
                               </div>
                             </div>
 
@@ -566,7 +669,7 @@ export default function DashboardPage() {
                               </div>
                             </CardContent>
                           </Card>
-                        </Link>
+                        </div>
                       );
                     })}
                   </div>
@@ -575,7 +678,15 @@ export default function DashboardPage() {
             </div>
 
             {/* RENCANA - Proyek yang akan datang */}
-            <div className="glass-card rounded-xl border border-sky-500/30 shadow-[0_0_20px_rgba(56,189,248,0.15)] overflow-hidden">
+            <div
+              className={cn(
+                "glass-card rounded-xl border shadow-[0_0_20px_rgba(56,189,248,0.15)] overflow-hidden transition-all duration-200",
+                dragOverSection === 'RENCANA' ? "border-sky-400 ring-4 ring-sky-400/30 scale-[1.01]" : "border-sky-500/30"
+              )}
+              onDragOver={(e) => handleDragOver(e, 'RENCANA')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'RENCANA')}
+            >
               <div className="bg-sky-500/10 border-b border-sky-500/20 px-5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -590,9 +701,11 @@ export default function DashboardPage() {
               </div>
               <div className="p-4">
                 {rencana.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-8">Tidak ada proyek terencana</p>
+                  <p className="text-sm text-gray-400 text-center py-8">
+                    {draggedProject ? 'Drop proyek di sini' : 'Tidak ada proyek terencana'}
+                  </p>
                 ) : (
-                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {rencana.map((project) => {
                       const deadlineInfo = getDeadlineInfo(project.endDate);
                       const priority = project.priority || 'MEDIUM';
@@ -605,14 +718,21 @@ export default function DashboardPage() {
                       const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
 
                       return (
-                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
-                          <Card className={cn(
-                            "glass-card h-full border hover:shadow-[0_0_25px_rgba(56,189,248,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col",
-                            deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
-                              deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
-                                "border-sky-400/20",
-                            starredProjects.has(project.id) && "ring-2 ring-sky-400/40 shadow-[0_0_20px_rgba(56,189,248,0.3)]"
-                          )}>
+                        <div key={project.id} className="w-full">
+                          <Card
+                            draggable
+                            onDragStart={() => handleDragStart(project)}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => router.push(`/projects/${project.id}`)}
+                            className={cn(
+                              "glass-card h-full border hover:shadow-[0_0_25px_rgba(56,189,248,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col",
+                              draggedProject?.id === project.id ? "opacity-50 scale-95" : "",
+                              deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
+                                deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
+                                  "border-sky-400/20",
+                              starredProjects.has(project.id) && "ring-2 ring-sky-400/40 shadow-[0_0_20px_rgba(56,189,248,0.3)]"
+                            )}
+                          >
                             {/* Banner Image */}
                             <div className="relative h-32 overflow-hidden bg-gray-100">
                               <img
@@ -641,7 +761,7 @@ export default function DashboardPage() {
 
                               {/* Project name overlay at bottom */}
                               <div className="absolute bottom-2 left-3 right-3">
-                                <h3 className="font-bold text-white text-sm line-clamp-1 drop-shadow-lg">{project.name}</h3>
+                                <h3 className="font-bold text-white text-sm drop-shadow-lg whitespace-normal break-words">{project.name}</h3>
                               </div>
                             </div>
 
@@ -726,7 +846,7 @@ export default function DashboardPage() {
                               </div>
                             </CardContent>
                           </Card>
-                        </Link>
+                        </div>
                       );
                     })}
                   </div>
@@ -735,7 +855,15 @@ export default function DashboardPage() {
             </div>
 
             {/* SELESAI - Proyek yang sudah selesai */}
-            <div className="glass-card rounded-xl border border-green-500/30 shadow-[0_0_20px_rgba(74,222,128,0.15)] overflow-hidden">
+            <div
+              className={cn(
+                "glass-card rounded-xl border shadow-[0_0_20px_rgba(74,222,128,0.15)] overflow-hidden transition-all duration-200",
+                dragOverSection === 'SELESAI' ? "border-green-400 ring-4 ring-green-400/30 scale-[1.01]" : "border-green-500/30"
+              )}
+              onDragOver={(e) => handleDragOver(e, 'SELESAI')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'SELESAI')}
+            >
               <div className="bg-green-500/10 border-b border-green-500/20 px-5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -750,9 +878,11 @@ export default function DashboardPage() {
               </div>
               <div className="p-4">
                 {selesai.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-8">Belum ada proyek selesai</p>
+                  <p className="text-sm text-gray-400 text-center py-8">
+                    {draggedProject ? 'Drop proyek di sini' : 'Belum ada proyek selesai'}
+                  </p>
                 ) : (
-                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {selesai.map((project) => {
                       const priority = project.priority || 'MEDIUM';
                       const priorityColors = {
@@ -764,12 +894,19 @@ export default function DashboardPage() {
                       const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
 
                       return (
-                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
-                          <Card className={cn(
-                            "glass-card h-full border hover:shadow-[0_0_25px_rgba(74,222,128,0.25)] transition-all cursor-pointer opacity-60 hover:opacity-100 overflow-hidden flex flex-col",
-                            "border-green-400/20",
-                            starredProjects.has(project.id) && "ring-2 ring-green-400/40 shadow-[0_0_20px_rgba(74,222,128,0.3)]"
-                          )}>
+                        <div key={project.id} className="w-full">
+                          <Card
+                            draggable
+                            onDragStart={() => handleDragStart(project)}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => router.push(`/projects/${project.id}`)}
+                            className={cn(
+                              "glass-card h-full border hover:shadow-[0_0_25px_rgba(74,222,128,0.25)] transition-all cursor-pointer opacity-60 hover:opacity-100 overflow-hidden flex flex-col",
+                              draggedProject?.id === project.id ? "opacity-50 scale-95" : "",
+                              "border-green-400/20",
+                              starredProjects.has(project.id) && "ring-2 ring-green-400/40 shadow-[0_0_20px_rgba(74,222,128,0.3)]"
+                            )}
+                          >
                             {/* Banner Image */}
                             <div className="relative h-32 overflow-hidden bg-gray-100">
                               <img
@@ -802,7 +939,7 @@ export default function DashboardPage() {
 
                               {/* Project name overlay at bottom */}
                               <div className="absolute bottom-2 left-3 right-3">
-                                <h3 className="font-bold text-white text-sm line-clamp-1 drop-shadow-lg line-through">{project.name}</h3>
+                                <h3 className="font-bold text-white text-sm drop-shadow-lg line-through whitespace-normal break-words">{project.name}</h3>
                               </div>
                             </div>
 
@@ -852,7 +989,7 @@ export default function DashboardPage() {
                               </div>
                             </CardContent>
                           </Card>
-                        </Link>
+                        </div>
                       );
                     })}
                   </div>
@@ -942,6 +1079,21 @@ export default function DashboardPage() {
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Kategori Proyek</Label>
+              <select
+                id="status"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-800/60 border border-cyan-500/20 rounded-lg text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)]"
+              >
+                <option value="">Otomatis (berdasarkan tanggal)</option>
+                <option value="SEKARANG">Sekarang (sedang berjalan)</option>
+                <option value="RENCANA">Rencana (akan datang)</option>
+                <option value="SELESAI">Selesai (sudah selesai)</option>
+              </select>
+              <p className="text-xs text-sky-400/70">Pilih kategori secara manual, atau biarkan kosong untuk otomatis berdasarkan tanggal</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="bannerImage">URL Banner Proyek</Label>

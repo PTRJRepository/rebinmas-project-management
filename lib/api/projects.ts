@@ -40,6 +40,7 @@ export async function createProject(data: {
   endDate?: Date;
   bannerImage?: string;
   priority?: string;
+  status?: string | null;  // Manual status: SEKARANG, RENCANA, SELESAI, or null
   ownerId: string;
 }) {
   const project = await prisma.project.create({
@@ -50,6 +51,7 @@ export async function createProject(data: {
       endDate: data.endDate,
       bannerImage: data.bannerImage,
       priority: data.priority || 'MEDIUM',
+      status: data.status || null,  // Manual status (null = auto by date)
       ownerId: data.ownerId,
       statuses: {
         create: [

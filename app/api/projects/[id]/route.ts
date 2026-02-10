@@ -69,6 +69,11 @@ export async function PATCH(
       updateData.endDate = new Date(body.endDate);
     }
 
+    // Handle status field (null = auto by date)
+    if (body.status !== undefined) {
+      updateData.status = body.status || null;
+    }
+
     const project = await updateProject(id, updateData);
     return NextResponse.json(project);
   } catch (error) {

@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       endDate: body.endDate ? new Date(body.endDate) : undefined,
       bannerImage: body.bannerImage,
       priority: body.priority || 'MEDIUM',
+      status: body.status || null,  // Manual status (null = auto by date)
       ownerId: session.id,
     });
 

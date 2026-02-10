@@ -22,8 +22,8 @@ async function gitCommitAndPush() {
       // Continue with the commit process
     }
 
-    console.log('Committing changes with message "memperbaiki desain lebih futuristik"...');
-    const { stdout: commitStdout, stderr: commitStderr } = await execAsync('git commit -m "memperbaiki desain lebih futuristik" --allow-empty');
+    console.log('Committing changes with message "menamahkan sistem drag and drop untuk task card"...');
+    const { stdout: commitStdout, stderr: commitStderr } = await execAsync('git commit -m "menamahkan sistem drag and drop untuk task card" --allow-empty');
     if (commitStderr) console.error(`Commit stderr: ${commitStderr}`);
     console.log(`Commit stdout: ${commitStdout}`);
 

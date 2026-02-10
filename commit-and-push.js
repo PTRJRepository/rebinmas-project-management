@@ -22,8 +22,8 @@ async function gitCommitAndPush() {
       // Continue with the commit process
     }
 
-    console.log('Committing changes with message "memprbaiki maslah run builde"...');
-    const { stdout: commitStdout, stderr: commitStderr } = await execAsync('git commit -m "memprbaiki maslah run builde" --allow-empty');
+    console.log('Committing changes with message "build a project"...');
+    const { stdout: commitStdout, stderr: commitStderr } = await execAsync('git commit -m "build a project" --allow-empty');
     if (commitStderr) console.error(`Commit stderr: ${commitStderr}`);
     console.log(`Commit stdout: ${commitStdout}`);
 

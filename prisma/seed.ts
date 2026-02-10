@@ -11,6 +11,8 @@ async function main() {
     create: {
       email: 'demo@example.com',
       username: 'Demo User',
+      password: 'password', // Add a dummy password
+      name: 'Demo User',    // Add a dummy name
       role: 'PM',
       avatarUrl: 'https://github.com/shadcn.png',
     },

@@ -284,14 +284,15 @@ export default function ProjectBoardClient({
               </button>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={handlePrint}
-              className="print:hidden"
-            >
-              <Printer className="mr-2 h-4 w-4" />
-              Print
-            </Button>
+            <Link href={`/projects/${project.id}/report`}>
+              <Button
+                variant="outline"
+                className="print:hidden"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print Report
+              </Button>
+            </Link>
             <CreateTaskDialog projectId={project.id} statuses={project.statuses} />
           </div>
         </div>

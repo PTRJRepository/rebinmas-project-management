@@ -107,7 +107,7 @@ export default function BoardPageClient({ projectId, project, tasks }: BoardPage
             )}
 
             {/* Kanban Board */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden">
+            <div className="flex-1 overflow-hidden">
                 <KanbanBoard
                     initialTasks={displayTasks}
                     statuses={project.statuses || []}

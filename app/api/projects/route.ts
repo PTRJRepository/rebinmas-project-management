@@ -4,6 +4,11 @@ import { getCurrentUser } from '@/app/actions/auth';
 
 export async function GET() {
   try {
+    const session = await getCurrentUser();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const projects = await getProjects();
     return NextResponse.json(projects);
   } catch (error) {

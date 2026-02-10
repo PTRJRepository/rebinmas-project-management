@@ -283,24 +283,24 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-6 sticky top-0 z-40">
+    <div className="min-h-screen">
+      {/* Header with Neon Styling */}
+      <div className="glass-panel border-b border-cyan-500/10 px-6 py-6 sticky top-0 z-40">
         <div className="max-w-full mx-auto flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-semibold text-sky-100 heading-glow">
               Dashboard Proyek
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-sky-400/70 mt-1">
               Kelola proyek Anda dari rencana hingga selesai
             </p>
           </div>
           <div className="flex gap-3 items-center">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400/50" />
               <Input
                 placeholder="Cari proyek..."
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="pl-10 pr-4 py-2 border border-cyan-500/20 rounded-lg text-sm w-64 bg-slate-800/60 text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -309,7 +309,7 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               onClick={handlePrint}
-              className="border-gray-200"
+              className="border-cyan-500/30 text-sky-400 hover:bg-cyan-500/10 hover:shadow-[0_0_10px_rgba(34,211,238,0.3)]"
             >
               <Printer className="w-4 h-4 mr-2" />
               Print
@@ -321,7 +321,7 @@ export default function DashboardPage() {
                 setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '' });
                 setDialogOpen(true);
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="btn-neon-primary"
             >
               <Plus className="w-4 h-4 mr-2" />
               Proyek Baru
@@ -332,62 +332,62 @@ export default function DashboardPage() {
 
       <main className="px-6 py-6">
 
-        {/* Stats Cards */}
+        {/* Stats Cards with Neon Styling */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="border border-gray-200 shadow-sm bg-white">
+          <Card className="glass-card border border-cyan-500/20 hover:shadow-[0_0_20px_rgba(56,189,248,0.2)] transition-all duration-300">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Proyek</p>
-                  <h3 className="text-2xl font-semibold text-gray-900 mt-1">{stats.totalProjects}</h3>
+                  <p className="text-sm text-sky-400">Total Proyek</p>
+                  <h3 className="text-2xl font-semibold text-cyan-400 mt-1 text-neon-blue">{stats.totalProjects}</h3>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <FolderKanban className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                  <FolderKanban className="w-6 h-6 text-cyan-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-amber-200 shadow-sm bg-amber-50">
+          <Card className="glass-card border border-amber-500/20 hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all duration-300">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-amber-700">Sekarang</p>
-                  <h3 className="text-2xl font-semibold text-amber-900 mt-1">{stats.sekarangCount}</h3>
-                  <p className="text-xs text-amber-600">Sedang berjalan</p>
+                  <p className="text-sm text-amber-400">Sekarang</p>
+                  <h3 className="text-2xl font-semibold text-amber-400 mt-1" style={{ textShadow: '0 0 10px rgba(251,191,36,0.5)' }}>{stats.sekarangCount}</h3>
+                  <p className="text-xs text-amber-400/70">Sedang berjalan</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-amber-600" />
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                  <Clock className="w-6 h-6 text-amber-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-blue-200 shadow-sm bg-blue-50">
+          <Card className="glass-card border border-sky-500/20 hover:shadow-[0_0_20px_rgba(56,189,248,0.2)] transition-all duration-300">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-700">Rencana</p>
-                  <h3 className="text-2xl font-semibold text-blue-900 mt-1">{stats.rencanaCount}</h3>
-                  <p className="text-xs text-blue-600">Akan datang</p>
+                  <p className="text-sm text-sky-400">Rencana</p>
+                  <h3 className="text-2xl font-semibold text-sky-400 mt-1" style={{ textShadow: '0 0 10px rgba(56,189,248,0.5)' }}>{stats.rencanaCount}</h3>
+                  <p className="text-xs text-sky-400/70">Akan datang</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center shadow-[0_0_15px_rgba(56,189,248,0.3)]">
+                  <Calendar className="w-6 h-6 text-sky-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-green-200 shadow-sm bg-green-50">
+          <Card className="glass-card border border-green-500/20 hover:shadow-[0_0_20px_rgba(74,222,128,0.2)] transition-all duration-300">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-700">Selesai</p>
-                  <h3 className="text-2xl font-semibold text-green-900 mt-1">{stats.selesaiCount}</h3>
-                  <p className="text-xs text-green-600">Sudah selesai</p>
+                  <p className="text-sm text-green-400">Selesai</p>
+                  <h3 className="text-2xl font-semibold text-green-400 mt-1" style={{ textShadow: '0 0 10px rgba(74,222,128,0.5)' }}>{stats.selesaiCount}</h3>
+                  <p className="text-xs text-green-400/70">Sudah selesai</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center shadow-[0_0_15px_rgba(74,222,128,0.3)]">
+                  <CheckCircle2 className="w-6 h-6 text-green-400" />
                 </div>
               </div>
             </CardContent>
@@ -418,17 +418,17 @@ export default function DashboardPage() {
           <div className="space-y-6">
 
             {/* SEKARANG - Proyek yang sedang berjalan */}
-            <div className="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
-              <div className="bg-amber-50 border-b border-amber-200 px-5 py-3">
+            <div className="glass-card rounded-xl border border-amber-500/30 shadow-[0_0_20px_rgba(251,191,36,0.15)] overflow-hidden">
+              <div className="bg-amber-500/10 border-b border-amber-500/20 px-5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></div>
+                    <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.7)] animate-pulse"></div>
                     <div>
-                      <h2 className="text-base font-semibold text-amber-900">Sekarang</h2>
-                      <p className="text-xs text-amber-700">Sedang berjalan</p>
+                      <h2 className="text-base font-semibold text-amber-400" style={{ textShadow: '0 0 10px rgba(251,191,36,0.5)' }}>Sekarang</h2>
+                      <p className="text-xs text-amber-400/70">Sedang berjalan</p>
                     </div>
                   </div>
-                  <span className="text-xl font-bold text-amber-700">{sekarang.length}</span>
+                  <span className="text-xl font-bold text-amber-400">{sekarang.length}</span>
                 </div>
               </div>
               <div className="p-4">

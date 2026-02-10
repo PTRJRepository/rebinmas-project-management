@@ -9,23 +9,48 @@ import { useToast } from "@/components/ui/use-toast";
 interface TaskDescriptionEditorProps {
     task: {
         id: string;
-        description?: string | null;
+        documentation?: string | null;
     };
     projectId: string;
 }
 
 export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditorProps) {
     const [isEditing, setIsEditing] = useState(false);
-    const [description, setDescription] = useState(task.description || '');
+    const [documentation, setDocumentation] = useState(task.documentation || '');
     const { toast } = useToast();
 
     const handleSave = async () => {
-        const result = await updateTask(task.id, { description }, projectId);
+        const result = await updateTask(task.id, { documentation }, projectId);
         if (result.success) {
             setIsEditing(false);
-            toast({ description: "Description updated" });
+            toast({ description: "Documentation updated" });
         } else {
-            toast({ variant: "destructive", description: "Failed to update description" });
+            toast({ variant: "destructive", description: "Failed to update documentation" });
+        }
+    };
+
+    const handleImageUpload = async (file: File): Promise<string> => {
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ variant: "destructive", description: "File size too large (max 5MB)" });
+            throw new Error("File too large");
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error('Upload failed');
+
+            const data = await response.json();
+            return data.url;
+        } catch (error) {
+            toast({ variant: "destructive", description: "Failed to upload image" });
+            throw error;
         }
     };
 
@@ -33,7 +58,7 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
         <div className="bg-slate-900 rounded-lg border border-slate-700">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
                 <h2 className="text-lg font-semibold text-slate-100">
-                    Description
+                    Documentation
                 </h2>
                 {!isEditing ? (
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="text-slate-400 hover:text-slate-200 hover:bg-slate-800">
@@ -43,7 +68,7 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm" onClick={() => {
                             setIsEditing(false);
-                            setDescription(task.description || '');
+                            setDocumentation(task.documentation || '');
                         }} className="text-slate-400 hover:text-slate-200 hover:bg-slate-800">
                             Cancel
                         </Button>
@@ -57,19 +82,20 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
             <div className="p-6">
                 {isEditing ? (
                     <NovelEditor
-                        content={description}
-                        onChange={(content) => setDescription(content)}
-                        placeholder="Add a description..."
+                        content={documentation}
+                        onChange={(content) => setDocumentation(content)}
+                        onImageUpload={handleImageUpload}
+                        placeholder="Add documentation (drag & drop images supported)..."
                         className="min-h-[200px]"
                     />
                 ) : (
-                    description ? (
+                    documentation ? (
                         <div
                             className="prose prose-invert prose-slate max-w-none text-slate-300"
-                            dangerouslySetInnerHTML={{ __html: description }}
+                            dangerouslySetInnerHTML={{ __html: documentation }}
                         />
                     ) : (
-                        <p className="text-slate-500 italic">No description provided</p>
+                        <p className="text-slate-500 italic">No documentation provided</p>
                     )
                 )}
             </div>

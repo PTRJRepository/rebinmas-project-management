@@ -60,30 +60,30 @@ const getPriorityIcon = (priority: string) => {
 const getPriorityColor = (priority: string) => {
     switch (priority) {
         case 'CRITICAL':
-            return 'bg-red-500 text-white border-red-600';
+            return 'bg-red-500/90 text-white border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.4)]';
         case 'HIGH':
-            return 'bg-orange-500 text-white border-orange-600';
+            return 'bg-orange-500/90 text-white border-orange-400/50 shadow-[0_0_10px_rgba(249,115,22,0.4)]';
         case 'MEDIUM':
-            return 'bg-yellow-500 text-white border-yellow-600';
+            return 'bg-yellow-500/90 text-slate-900 border-yellow-400/50 shadow-[0_0_10px_rgba(234,179,8,0.4)]';
         case 'LOW':
-            return 'bg-green-500 text-white border-green-600';
+            return 'bg-green-500/90 text-white border-green-400/50 shadow-[0_0_10px_rgba(34,197,94,0.4)]';
         default:
-            return 'bg-gray-500 text-white border-gray-600';
+            return 'bg-slate-500/90 text-white border-slate-400/50';
     }
 };
 
 const getPriorityBorderColor = (priority: string) => {
     switch (priority) {
         case 'CRITICAL':
-            return 'border-l-red-500';
+            return 'border-l-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)]';
         case 'HIGH':
-            return 'border-l-orange-500';
+            return 'border-l-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.3)]';
         case 'MEDIUM':
-            return 'border-l-yellow-500';
+            return 'border-l-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.3)]';
         case 'LOW':
-            return 'border-l-green-500';
+            return 'border-l-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)]';
         default:
-            return 'border-l-gray-500';
+            return 'border-l-slate-400';
     }
 };
 
@@ -184,11 +184,11 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                 >
                     <Card
                         className={cn(
-                            "cursor-grab active:cursor-grabbing border-l-4 transition-all duration-200 hover:shadow-lg",
-                            snapshot.isDragging ? "shadow-2xl ring-2 ring-indigo-500/30 opacity-95" : "shadow-sm",
+                            "glass-card cursor-grab active:cursor-grabbing border-l-4 transition-all duration-300",
+                            snapshot.isDragging ? "shadow-2xl ring-2 ring-cyan-400/40 opacity-95 scale-105" : "hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(56,189,248,0.2)]",
                             getPriorityBorderColor(task.priority),
-                            deadlineInfo.isOverdue && "bg-red-50/80 hover:bg-red-100/80",
-                            "print:cursor-auto print:shadow-none print:border-l-4 print:hover:shadow-none"
+                            deadlineInfo.isOverdue && "bg-red-500/10 hover:bg-red-500/15",
+                            "print:cursor-auto print:shadow-none print:border-l-4 print:hover:shadow-none print:hover:scale-100"
                         )}
                         onClick={handleCardClick}
                     >
@@ -225,7 +225,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                                         disabled={isMoving}
                                                         className={cn(
                                                             "shrink-0 p-1 rounded-md transition-all duration-200",
-                                                            "hover:bg-indigo-100 text-gray-500 hover:text-indigo-600",
+                                                            "hover:bg-cyan-500/20 text-sky-400 hover:text-cyan-400 hover:shadow-[0_0_10px_rgba(34,211,238,0.3)]",
                                                             "disabled:opacity-50 disabled:cursor-not-allowed",
                                                             "print:hidden"
                                                         )}
@@ -252,12 +252,12 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                         onChange={(e) => setTitle(e.target.value)}
                                         onBlur={handleSave}
                                         onKeyDown={handleKeyDown}
-                                        className="h-8 text-sm font-medium px-2 py-1 border-indigo-300 focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                        className="h-8 text-sm font-medium px-2 py-1 border-cyan-400/30 focus-visible:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400/20"
                                     />
                                 ) : (
                                     <h4
                                         onClick={() => setIsEditing(true)}
-                                        className="font-semibold text-base text-gray-900 leading-snug cursor-text hover:text-indigo-600 transition-colors line-clamp-2 print:cursor-auto print:hover:text-gray-900"
+                                        className="font-semibold text-base text-sky-50 leading-snug cursor-text hover:text-cyan-400 transition-colors line-clamp-2 print:cursor-auto print:hover:text-gray-900"
                                         title="Click to edit title"
                                     >
                                         {title}
@@ -322,7 +322,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-700 font-medium print:border print:border-gray-400">
+                                                    <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-slate-800/60 text-sky-300 border border-sky-500/20 font-medium print:border print:border-gray-400">
                                                         <Clock className="w-3.5 h-3.5 print:hidden" />
                                                         <span>{task.estimatedHours}h</span>
                                                     </div>
@@ -340,9 +340,9 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Avatar className="h-7 w-7 border-2 border-white shadow-sm cursor-pointer hover:scale-110 transition-transform print:cursor-auto print:hover:scale-100">
+                                                <Avatar className="h-7 w-7 border-2 border-cyan-400/30 shadow-[0_0_10px_rgba(34,211,238,0.2)] cursor-pointer hover:scale-110 hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-all duration-300 print:cursor-auto print:hover:scale-100 print:shadow-none print:border-gray-400">
                                                     <AvatarImage src={task.assignee.avatarUrl || undefined} />
-                                                    <AvatarFallback className="text-xs bg-indigo-500 text-white font-semibold">
+                                                    <AvatarFallback className="text-xs bg-gradient-to-br from-cyan-500 to-sky-600 text-white font-semibold">
                                                         {task.assignee.username.substring(0, 2).toUpperCase()}
                                                     </AvatarFallback>
                                                 </Avatar>

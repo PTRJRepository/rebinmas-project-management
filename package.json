@@ -33,6 +33,7 @@
     "@tiptap/react": "^2.1.13",
     "@tiptap/starter-kit": "^2.1.13",
     "@types/bcryptjs": "^2.4.6",
+    "@types/uuid": "9.0.8",
     "bcryptjs": "^3.0.3",
     "browserify-fs": "^1.0.0",
     "class-variance-authority": "^0.7.1",
@@ -45,7 +46,8 @@
     "process": "^0.11.10",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "uuid": "9.0.1"
   },
   "devDependencies": {
     "@prisma/client": "5.10.2",

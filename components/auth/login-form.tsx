@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/app/actions/auth';
+import { Loader2, Lock, Mail } from 'lucide-react';
 
 export function LoginForm() {
   const router = useRouter();
@@ -33,56 +34,83 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-6 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+    <form onSubmit={handleSubmit} className="backdrop-blur-xl bg-slate-900/40 border border-white/10 p-8 rounded-2xl shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+      {/* Decorative gradient border effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-blue-500/10 pointer-events-none" />
+
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md text-sm">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-200 px-4 py-3 rounded-lg text-sm flex items-center gap-2 mb-6 backdrop-blur-sm">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
           {error}
         </div>
       )}
 
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email address
+      <div className="space-y-6 relative z-10">
+        <div className="space-y-2">
+          <label htmlFor="email" className="block text-xs font-bold text-cyan-500/80 uppercase tracking-wider ml-1">
+            Email Address
           </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-            placeholder="you@example.com"
-            disabled={loading}
-          />
+          <div className="relative group/input">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within/input:text-cyan-400 transition-colors">
+              <Mail className="h-5 w-5" />
+            </div>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="block w-full pl-10 pr-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all duration-300 sm:text-sm hover:border-slate-600/50"
+              placeholder="you@example.com"
+              disabled={loading}
+            />
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <div className="space-y-2">
+          <label htmlFor="password" className="block text-xs font-bold text-cyan-500/80 uppercase tracking-wider ml-1">
             Password
           </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-            placeholder="••••••••"
-            disabled={loading}
-          />
+          <div className="relative group/input">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within/input:text-cyan-400 transition-colors">
+              <Lock className="h-5 w-5" />
+            </div>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              className="block w-full pl-10 pr-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all duration-300 sm:text-sm hover:border-slate-600/50"
+              placeholder="••••••••"
+              disabled={loading}
+            />
+          </div>
         </div>
       </div>
 
-      <div>
+      <div className="mt-8 relative z-10">
         <button
           type="submit"
           disabled={loading}
-          className="group relative w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="group/btn relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-bold uppercase tracking-widest rounded-lg text-white overflow-hidden bg-slate-900 transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Signing in...' : 'Sign in'}
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-cyan-500 to-blue-600 opacity-80 group-hover/btn:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 w-full h-full bg-[size:200%_auto] animate-shine bg-[linear-gradient(110deg,transparent,45%,rgba(255,255,255,0.3),55%,transparent)] bg-[length:250%_100%]" />
+
+          <span className="relative flex items-center gap-2">
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                SIGNING IN...
+              </>
+            ) : (
+              'SIGN IN'
+            )}
+          </span>
         </button>
       </div>
     </form>
   );
+
 }

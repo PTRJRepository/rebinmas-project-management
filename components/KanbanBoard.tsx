@@ -159,8 +159,11 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
 
     const isFilterActive = filteredTaskIds.length > 0
 
+    // Filter statuses to only include the required ones
+    const displayStatuses = statuses.filter(s => ['To Do', 'In Progress', 'Done'].includes(s.name));
+
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
             {/* Deadline Alert Bar */}
             <DeadlineAlertBar
                 tasks={tasks.map(t => ({
@@ -200,77 +203,78 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
 
             {/* Kanban Board */}
             <DragDropContext onDragEnd={onDragEnd}>
-                <div className="flex flex-row gap-6 overflow-x-auto overflow-y-hidden pb-4 px-4 h-full items-start">
-                    {statuses.map((status, index) => {
+                <div className="grid grid-cols-3 gap-6 h-full p-4 overflow-hidden">
+                    {displayStatuses.map((status, index) => {
                         const statusTasks = getTasksByStatus(status.id)
                         const isAdding = addingToStatusId === status.id
-                        const statusColor = getStatusColor(index, statuses.length)
+                        const statusColor = getStatusColor(index, displayStatuses.length)
 
                         return (
-                            <KanbanColumn
-                                key={status.id}
-                                status={status.id}
-                                statusName={status.name}
-                                statusColor={statusColor}
-                                tasks={statusTasks}
-                                index={index}
-                                totalColumns={statuses.length}
-                                onAddTask={() => {
-                                    setAddingToStatusId(status.id)
-                                    setNewTaskTitle('')
-                                }}
-                            >
-                                {(provided, snapshot) => (
-                                    <>
-                                        {statusTasks.map((task, taskIndex) => (
-                                            <KanbanTask
-                                                key={task.id}
-                                                task={task}
-                                                index={taskIndex}
-                                                projectId={projectId}
-                                                statuses={statuses}
-                                                onMoveToNext={handleMoveToNext}
-                                            />
-                                        ))}
-                                        {provided.placeholder}
-
-                                        {/* Quick Add Interface */}
-                                        {isAdding && (
-                                            <div className="mt-2 p-3 bg-white rounded-lg shadow-sm border border-blue-200 animate-in fade-in zoom-in-95 duration-200">
-                                                <Input
-                                                    autoFocus
-                                                    placeholder="What needs to be done?"
-                                                    value={newTaskTitle}
-                                                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') handleCreateTask(status.id)
-                                                        if (e.key === 'Escape') cancelAdd()
-                                                    }}
-                                                    className="mb-2"
+                            <div key={status.id} className="h-full flex flex-col min-h-0">
+                                <KanbanColumn
+                                    status={status.id}
+                                    statusName={status.name}
+                                    statusColor={statusColor}
+                                    tasks={statusTasks}
+                                    index={index}
+                                    totalColumns={displayStatuses.length}
+                                    onAddTask={() => {
+                                        setAddingToStatusId(status.id)
+                                        setNewTaskTitle('')
+                                    }}
+                                >
+                                    {(provided, snapshot) => (
+                                        <>
+                                            {statusTasks.map((task, taskIndex) => (
+                                                <KanbanTask
+                                                    key={task.id}
+                                                    task={task}
+                                                    index={taskIndex}
+                                                    projectId={projectId}
+                                                    statuses={displayStatuses}
+                                                    onMoveToNext={handleMoveToNext}
                                                 />
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() => handleCreateTask(status.id)}
-                                                        disabled={isCreating}
-                                                    >
-                                                        {isCreating && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                                                        Add
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={cancelAdd}
-                                                        disabled={isCreating}
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </Button>
+                                            ))}
+                                            {provided.placeholder}
+
+                                            {/* Quick Add Interface */}
+                                            {isAdding && (
+                                                <div className="mt-2 p-3 bg-white rounded-lg shadow-sm border border-blue-200 animate-in fade-in zoom-in-95 duration-200">
+                                                    <Input
+                                                        autoFocus
+                                                        placeholder="What needs to be done?"
+                                                        value={newTaskTitle}
+                                                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') handleCreateTask(status.id)
+                                                            if (e.key === 'Escape') cancelAdd()
+                                                        }}
+                                                        className="mb-2"
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleCreateTask(status.id)}
+                                                            disabled={isCreating}
+                                                        >
+                                                            {isCreating && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                                                            Add
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={cancelAdd}
+                                                            disabled={isCreating}
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </KanbanColumn>
+                                            )}
+                                        </>
+                                    )}
+                                </KanbanColumn>
+                            </div>
                         )
                     })}
                 </div>

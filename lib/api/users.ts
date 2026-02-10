@@ -15,6 +15,8 @@ export async function getMockUser() {
         username: 'Demo User',
         email: 'demo@example.com',
         role: 'PM',
+        password: 'password', // Add a dummy password
+        name: 'Demo User',    // Add a dummy name
       },
     });
   }

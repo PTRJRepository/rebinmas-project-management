@@ -25,13 +25,13 @@ export function AppShell({ children }: AppShellProps) {
     }, []);
 
     return (
-        <div className="flex min-h-screen bg-gray-50/50">
+        <div className="min-h-screen bg-gray-50/50">
             <Sidebar projects={projects} collapsed={collapsed} onCollapse={setCollapsed} />
             <main
                 id="main-content"
-                className={`flex-1 transition-all duration-300 ease-in-out ${collapsed ? 'ml-16' : 'ml-64'} p-8`}
+                className={`w-full transition-all duration-300 ease-in-out p-6 ${collapsed ? 'pl-20' : 'pl-72'}`}
             >
-                <div className="max-w-7xl mx-auto">
+                <div className="w-full">
                     <Breadcrumbs projects={projects} />
                     <div className="fade-in-up">
                         {children}

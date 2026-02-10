@@ -72,7 +72,7 @@ export function KanbanColumn({
     const isEmpty = tasks.length === 0;
 
     return (
-        <div className="flex-shrink-0 w-80 flex flex-col">
+        <div className="flex-shrink-0 w-72 flex flex-col min-w-0">
             {/* Column Header */}
             <KanbanHeader
                 name={statusName}

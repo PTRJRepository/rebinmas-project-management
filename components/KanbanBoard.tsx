@@ -191,7 +191,7 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
 
             {/* Kanban Board */}
             <DragDropContext onDragEnd={onDragEnd}>
-                <div className="flex-1 gap-6 overflow-x-auto pb-6 p-6">
+                <div className="flex flex-row gap-4 overflow-x-auto overflow-y-hidden pb-4 p-4 items-start">
                     {statuses.map((status, index) => {
                         const statusTasks = getTasksByStatus(status.id)
                         const isAdding = addingToStatusId === status.id

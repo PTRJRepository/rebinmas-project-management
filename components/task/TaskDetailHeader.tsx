@@ -71,12 +71,12 @@ export function TaskDetailHeader({ task, projectId }: TaskDetailHeaderProps) {
     };
 
     return (
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-slate-900 border-b border-slate-700 px-6 py-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
                     {/* Back Button */}
                     <Link href={`/projects/${projectId}/board`}>
-                        <Button variant="outline" size="icon" className="shrink-0">
+                        <Button variant="outline" size="icon" className="shrink-0 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                     </Link>
@@ -90,12 +90,12 @@ export function TaskDetailHeader({ task, projectId }: TaskDetailHeaderProps) {
                                     onChange={(e) => setTitle(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     autoFocus
-                                    className="text-lg font-bold h-9"
+                                    className="text-lg font-bold h-9 bg-slate-800 border-slate-700 text-slate-100 focus:border-sky-500"
                                 />
-                                <Button size="icon" size="sm" onClick={handleSave} className="h-9 w-9 shrink-0 bg-green-600 hover:bg-green-700">
+                                <Button size="icon" onClick={handleSave} className="h-9 w-9 shrink-0 bg-green-600 hover:bg-green-700">
                                     <Check className="h-4 w-4" />
                                 </Button>
-                                <Button size="icon" size="sm" variant="ghost" onClick={handleCancel} className="h-9 w-9 shrink-0">
+                                <Button size="icon" variant="ghost" onClick={handleCancel} className="h-9 w-9 shrink-0 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
                                     <X className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -103,7 +103,7 @@ export function TaskDetailHeader({ task, projectId }: TaskDetailHeaderProps) {
                             <div className="flex items-center gap-3 mb-2 group">
                                 <h1
                                     onClick={() => setIsEditing(true)}
-                                    className="text-2xl font-bold text-gray-900 truncate cursor-pointer hover:underline decoration-dashed underline-offset-4 decoration-gray-400"
+                                    className="text-2xl font-bold text-slate-100 truncate cursor-pointer hover:underline decoration-dashed underline-offset-4 decoration-slate-600"
                                     title="Click to edit title"
                                 >
                                     {title}
@@ -117,24 +117,24 @@ export function TaskDetailHeader({ task, projectId }: TaskDetailHeaderProps) {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-slate-300"
                                     onClick={() => setIsEditing(true)}
                                 >
-                                    <Edit className="h-3 w-3 text-gray-500" />
+                                    <Edit className="h-3 w-3" />
                                 </Button>
                             </div>
                         )}
                         <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs border-slate-700 text-slate-300">
                                 {task.status.name}
                             </Badge>
                         </div>
                     </div>
                 </div>
 
-                {/* Edit Button - redundant now, maybe remove or keep for other actions? 
-                    I'll remove the external onEdit prop handling and keep the UI clean 
-                    since I added inline edit button 
+                {/* Edit Button - redundant now, maybe remove or keep for other actions?
+                    I'll remove the external onEdit prop handling and keep the UI clean
+                    since I added inline edit button
                 */}
             </div>
         </div>

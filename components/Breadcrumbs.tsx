@@ -33,10 +33,10 @@ export function Breadcrumbs({ projects = [] }: BreadcrumbsProps) {
     };
 
     return (
-        <nav aria-label="Breadcrumb" className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+        <nav aria-label="Breadcrumb" className="flex items-center space-x-2 text-sm text-slate-500 mb-6">
             <Link
                 href="/dashboard"
-                className="flex items-center hover:text-blue-600 transition-colors"
+                className="flex items-center hover:text-sky-400 transition-colors"
                 title="Dashboard"
             >
                 <Home className="w-4 h-4" />
@@ -49,15 +49,15 @@ export function Breadcrumbs({ projects = [] }: BreadcrumbsProps) {
 
                 return (
                     <div key={href} className="flex items-center space-x-2">
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-4 h-4 text-slate-600" />
                         {isLast ? (
-                            <span className="font-medium text-gray-900" aria-current="page">
+                            <span className="font-medium text-slate-200" aria-current="page">
                                 {name}
                             </span>
                         ) : (
                             <Link
                                 href={href}
-                                className="hover:text-blue-600 transition-colors"
+                                className="hover:text-sky-400 transition-colors"
                             >
                                 {name}
                             </Link>

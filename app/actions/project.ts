@@ -149,12 +149,12 @@ export async function deleteProject(projectId: string) {
         // Manual cascade delete since schema doesn't have onDelete: Cascade
         // 1. Delete all tasks
         await prisma.task.deleteMany({
-            where: { projectId: id }
+            where: { projectId: projectId }
         })
 
         // 2. Delete all task statuses
         await prisma.taskStatus.deleteMany({
-            where: { projectId: id }
+            where: { projectId: projectId }
         })
 
         // 3. Delete the project

@@ -34,6 +34,7 @@ model Project {
   startDate   DateTime?
   endDate     DateTime?
   priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  bannerImage String?  @default("https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg")
   ownerId     String
   owner       User     @relation(fields: [ownerId], references: [id])
 

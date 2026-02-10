@@ -12,10 +12,10 @@ const ExcalidrawWrapper = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-screen w-screen bg-gray-900 flex items-center justify-center">
+      <div className="h-screen w-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-white animate-spin mx-auto mb-4" />
-          <p className="text-white text-lg">Loading Canvas...</p>
+          <Loader2 className="w-12 h-12 text-sky-400 animate-spin mx-auto mb-4" />
+          <p className="text-slate-200 text-lg">Loading Canvas...</p>
         </div>
       </div>
     ),
@@ -46,10 +46,10 @@ interface CanvasBoardProps {
 export function CanvasBoard({ projectId, projectName, tasks, onSave, initialData }: CanvasBoardProps) {
   return (
     <Suspense fallback={
-      <div className="h-screen w-screen bg-gray-900 flex items-center justify-center">
+      <div className="h-screen w-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-white animate-spin mx-auto mb-4" />
-          <p className="text-white text-lg">Loading Canvas...</p>
+          <Loader2 className="w-12 h-12 text-sky-400 animate-spin mx-auto mb-4" />
+          <p className="text-slate-200 text-lg">Loading Canvas...</p>
         </div>
       </div>
     }>
@@ -75,22 +75,49 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
 
     try {
       const elements = excalidrawAPI.getSceneElements()
-      const files = excalidrawAPI.getFiles()
+      const appState = excalidrawAPI.getAppState()
+
+      // Get canvas as data URL for preview thumbnail
+      const canvasDataUrl = await excalidrawAPI.exportToBlob({
+        mimeType: 'image/png',
+        quality: 0.8,
+      }).then((blob: Blob) => {
+        return URL.createObjectURL(blob)
+      }).catch(() => null)
 
       const content = {
         elements,
-        files,
-        appState: excalidrawAPI.getAppState(),
+        appState: {
+          ...appState,
+          // Store essential state only
+          name: appState.name,
+          viewBackgroundColor: appState.viewBackgroundColor,
+        },
         projectId,
         updatedAt: new Date().toISOString()
       }
 
-      // Save to localStorage
+      // Save to localStorage (without files which are binary)
       localStorage.setItem(`canvas-${projectId}`, JSON.stringify(content))
 
-      // Call onSave callback if provided
-      if (onSave) {
-        onSave(content)
+      // Save to database via API
+      const res = await fetch(`/api/projects/${projectId}/canvas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(content),
+      })
+
+      if (!res.ok) {
+        console.error('Failed to save canvas to server')
+      }
+
+      // Show success feedback
+      const saveBtn = document.querySelector('[data-save-canvas-btn]')
+      if (saveBtn) {
+        saveBtn.textContent = 'Tersimpan!'
+        setTimeout(() => {
+          saveBtn.textContent = 'Save'
+        }, 2000)
       }
     } catch (e) {
       console.error('Error saving canvas:', e)
@@ -305,6 +332,7 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
     if (!excalidrawAPI) return
 
     const loadContent = async () => {
+      // Try localStorage first
       const saved = localStorage.getItem(`canvas-${projectId}`)
       if (saved) {
         try {
@@ -320,6 +348,24 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
         }
       }
 
+      // Try loading from server API
+      try {
+        const res = await fetch(`/api/projects/${projectId}/canvas`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.elements && data.elements.length > 0) {
+            await excalidrawAPI.updateScene({
+              elements: data.elements || [],
+              appState: data.appState || {}
+            })
+            setIsInitialized(true)
+            return
+          }
+        }
+      } catch (e) {
+        console.error('Error loading canvas from server:', e)
+      }
+
       // No saved content, initialize with tasks
       if (tasks.length > 0) {
         setTimeout(() => initializeWithTasks(), 500)
@@ -332,12 +378,12 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
   }, [excalidrawAPI, projectId])
 
   return (
-    <div className="h-screen w-screen bg-white flex flex-col">
+    <div className="h-screen w-screen bg-slate-100 flex flex-col">
       {/* Toolbar */}
-      <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between z-10">
+      <div className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center justify-between z-10">
         <div className="flex items-center gap-2">
-          <span className="text-gray-900 font-semibold">{projectName}</span>
-          <span className="text-gray-500 text-sm">Canvas View</span>
+          <span className="text-slate-900 font-semibold">{projectName}</span>
+          <span className="text-slate-600 text-sm">Canvas View</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -345,7 +391,7 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
             size="sm"
             variant="outline"
             onClick={initializeWithTasks}
-            className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+            className="bg-slate-200 border-slate-400 text-slate-800 hover:bg-slate-300"
             disabled={!excalidrawAPI}
           >
             <Grid3x3 className="w-4 h-4 mr-2" />
@@ -356,7 +402,7 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
             size="sm"
             variant="outline"
             onClick={handleSave}
-            className="bg-blue-600 border-blue-500 text-white hover:bg-blue-700"
+            className="bg-sky-600 border-sky-500 text-white hover:bg-sky-700"
             disabled={!excalidrawAPI}
           >
             <Save className="w-4 h-4 mr-2" />
@@ -368,9 +414,6 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
       {/* Canvas Container */}
       <div className="flex-1 relative" ref={canvasRef}>
         <ExcalidrawWrapper
-          onReady={(api) => {
-            setExcalidrawAPI(api)
-          }}
           onChange={() => {
             // Auto-save handled by interval
           }}
@@ -378,9 +421,9 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
       </div>
 
       {/* Floating Help */}
-      <div className="absolute bottom-4 left-4 bg-white border border-gray-200 p-3 rounded-lg shadow-lg max-w-xs">
+      <div className="absolute bottom-4 left-4 bg-slate-100 border border-slate-300 p-3 rounded-lg shadow-lg max-w-xs">
         <p className="text-sm font-semibold mb-1">Tips:</p>
-        <ul className="text-xs text-gray-600 space-y-1">
+        <ul className="text-xs text-slate-700 space-y-1">
           <li>• Drag tasks to reposition</li>
           <li>• Add images/notes from toolbar</li>
           <li>• Draw arrows to connect tasks</li>

@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
       description: body.description,
       startDate: body.startDate ? new Date(body.startDate) : undefined,
       endDate: body.endDate ? new Date(body.endDate) : undefined,
+      bannerImage: body.bannerImage,
+      priority: body.priority || 'MEDIUM',
       ownerId: session.id,
     });
 

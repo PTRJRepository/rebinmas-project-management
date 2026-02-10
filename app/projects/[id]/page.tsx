@@ -43,7 +43,7 @@ export default async function ProjectDashboard({ params }: { params: Promise<{ i
         <ProjectBoardClient
             project={project}
             tasks={tasks || []}
-            stats={stats}
+            stats={stats || null}
             urgentTasks={urgentTasks}
             overdueTasks={overdueTasks}
             dueTodayTasks={dueTodayTasks}

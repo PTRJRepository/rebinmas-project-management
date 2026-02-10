@@ -37,11 +37,19 @@ export async function createProject(data: {
   description?: string;
   startDate?: Date;
   endDate?: Date;
+  bannerImage?: string;
+  priority?: string;
   ownerId: string;
 }) {
   const project = await prisma.project.create({
     data: {
-      ...data,
+      name: data.name,
+      description: data.description,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      bannerImage: data.bannerImage,
+      priority: data.priority || 'MEDIUM',
+      ownerId: data.ownerId,
       statuses: {
         create: [
           { name: 'Backlog', order: 0 },

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw'
 
 interface ExcalidrawWrapperProps {
@@ -9,25 +9,15 @@ interface ExcalidrawWrapperProps {
 }
 
 export default function ExcalidrawWrapper({ onReady, onChange }: ExcalidrawWrapperProps) {
-  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null)
-  const wrapperRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (excalidrawAPI && onReady) {
-      onReady(excalidrawAPI)
-    }
-  }, [excalidrawAPI, onReady])
-
-  const handleChange = (elements: any[], appState: any) => {
+  const handleChange = (elements: readonly any[] | any, appState: any, files: any) => {
     if (onChange) {
-      onChange(elements, appState)
+      onChange(elements as any[], appState)
     }
   }
 
   return (
-    <div className="w-full h-full" ref={wrapperRef}>
+    <div style={{ width: '100%', height: '100%' }}>
       <Excalidraw
-        ref={(api) => setExcalidrawAPI(api)}
         onChange={handleChange}
       />
     </div>

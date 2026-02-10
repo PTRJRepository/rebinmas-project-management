@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { UserMenu } from '@/components/auth/user-menu';
 
 interface SidebarProps {
@@ -70,7 +69,7 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
     return (
         <aside
             className={cn(
-                'fixed left-0 top-0 h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out z-30 shadow-sm',
+                'fixed left-0 top-0 h-screen bg-slate-900 border-r border-slate-700/50 transition-all duration-300 ease-in-out z-30 shadow-sm',
                 collapsed ? 'w-16' : 'w-64'
             )}
             aria-label="Main navigation sidebar"
@@ -78,19 +77,19 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
             <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className={cn(
-                    "h-16 flex items-center border-b border-gray-100 transition-all duration-300",
+                    "h-16 flex items-center border-b border-slate-700/50 transition-all duration-300",
                     collapsed ? "justify-center px-0" : "justify-between px-4"
                 )}>
                     {!collapsed && (
                         <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="h-8 w-8 rounded-lg flex items-center justify-center shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0052CC 0%, #0747A6 100%)' }}>
+                            <div className="h-8 w-8 rounded-lg flex items-center justify-center shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)' }}>
                                 <Briefcase className="w-4 h-4 text-white" />
                             </div>
-                            <span className="font-bold text-gray-800 tracking-tight text-lg truncate">Rebinmas</span>
+                            <span className="font-bold text-slate-100 tracking-tight text-lg truncate">Rebinmas</span>
                         </div>
                     )}
                     {collapsed && (
-                        <div className="h-8 w-8 rounded-lg flex items-center justify-center shadow-md" style={{ background: 'linear-gradient(135deg, #0052CC 0%, #0747A6 100%)' }}>
+                        <div className="h-8 w-8 rounded-lg flex items-center justify-center shadow-md" style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)' }}>
                             <Briefcase className="w-4 h-4 text-white" />
                         </div>
                     )}
@@ -98,19 +97,16 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
 
 
                     {!collapsed && (
-                        <div className="flex items-center gap-1">
-                            <ThemeToggle />
-                            <button
-                                onClick={handleToggle}
-                                className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
-                                style={{ backgroundColor: 'transparent' }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                aria-label="Collapse sidebar"
-                            >
-                                <PanelLeftClose className="w-4 h-4" />
-                            </button>
-                        </div>
+                        <button
+                            onClick={handleToggle}
+                            className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 transition-colors"
+                            style={{ backgroundColor: 'transparent' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--bg-hover))'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            aria-label="Collapse sidebar"
+                        >
+                            <PanelLeftClose className="w-4 h-4" />
+                        </button>
                     )}
                 </div>
 
@@ -124,7 +120,7 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                     {/* Main Menu */}
                     <div>
                         <div className={cn(
-                            "text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3",
+                            "text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3",
                             collapsed && "text-center"
                         )}>
                             {collapsed ? 'Menu' : 'Main Menu'}
@@ -140,15 +136,15 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                                             'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group',
                                             collapsed && 'justify-center px-0',
                                             active
-                                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-200'
+                                                ? 'bg-sky-500/20 text-sky-400'
+                                                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                                         )}
                                         title={collapsed ? item.name : undefined}
                                     >
                                         <item.icon className={cn(
                                             "flex-shrink-0 transition-colors",
                                             collapsed ? "w-5 h-5" : "w-5 h-5",
-                                            active ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                                            active ? "text-sky-400" : "text-slate-500 group-hover:text-slate-300"
                                         )} />
                                         {!collapsed && (
                                             <span className="font-medium text-sm">{item.name}</span>
@@ -160,13 +156,13 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                     </div>
 
                     {/* Divider */}
-                    {!collapsed && <div className="border-t border-gray-100 dark:border-white/10 mx-2" />}
+                    {!collapsed && <div className="border-t border-slate-700/50 mx-2" />}
 
                     {/* Projects Section */}
                     {!collapsed && projects.length > 0 && (
                         <div className="animate-in fade-in duration-300">
                             <div className="px-3 py-2 flex items-center justify-between group cursor-pointer">
-                                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider group-hover:text-slate-400 transition-colors">
                                     Recent Projects
                                 </span>
                             </div>
@@ -178,16 +174,16 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                                         className={cn(
                                             'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm group',
                                             isActive(`/projects/${project.id}`)
-                                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                                                ? 'bg-sky-500/20 text-sky-400'
+                                                : 'text-slate-400 hover:bg-slate-800'
                                         )}
                                         title={project.name}
                                     >
                                         <div className={cn(
                                             "w-2 h-2 rounded-full flex-shrink-0 transition-colors",
                                             isActive(`/projects/${project.id}`)
-                                                ? "bg-blue-600 dark:bg-blue-400"
-                                                : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500"
+                                                ? "bg-sky-400"
+                                                : "bg-slate-600 group-hover:bg-slate-500"
                                         )} aria-hidden="true" />
                                         <span className="truncate">{project.name}</span>
                                     </Link>
@@ -200,7 +196,7 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                 {collapsed && (
                     <button
                         onClick={handleToggle}
-                        className="w-full p-4 flex justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-t border-gray-100 dark:border-white/10"
+                        className="w-full p-4 flex justify-center text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors border-t border-slate-700/50"
                     >
                         <PanelLeftOpen className="w-5 h-5" />
                     </button>

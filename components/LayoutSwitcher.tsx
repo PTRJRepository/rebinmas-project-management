@@ -21,8 +21,8 @@ const layouts: {
     icon: <LayoutList className="w-4 h-4" />,
   },
   {
-    value: 'compact',
-    label: 'Compact View',
+    value: 'focus',
+    label: 'Focus View',
     icon: <LayoutTemplate className="w-4 h-4" />,
   },
 ];

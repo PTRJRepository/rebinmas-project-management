@@ -6,12 +6,24 @@ const execAsync = util.promisify(exec);
 async function gitCommitAndPush() {
   try {
     console.log('Adding all changes to git...');
-    const { stdout: addStdout, stderr: addStderr } = await execAsync('git add .');
+    // Use git add with a more specific pattern to avoid problematic files
+    const { stdout: addStdout, stderr: addStderr } = await execAsync('git add -A . --ignore-errors');
     if (addStderr) console.error(`Add stderr: ${addStderr}`);
     console.log(`Add stdout: ${addStdout}`);
 
-    console.log('Committing changes with message "checkpoint"...');
-    const { stdout: commitStdout, stderr: commitStderr } = await execAsync('git commit -m "checkpoint"');
+    // Check if there are any changes to commit
+    try {
+      await execAsync('git diff --cached --quiet');
+      await execAsync('git diff --quiet');
+      console.log('No changes to commit. Nothing to do.');
+      return;
+    } catch (error) {
+      // If git diff returns non-zero exit code, it means there are changes to commit
+      // Continue with the commit process
+    }
+
+    console.log('Committing changes with message "ad dokumentasi plus image copy paste"...');
+    const { stdout: commitStdout, stderr: commitStderr } = await execAsync('git commit -m "ad dokumentasi plus image copy paste" --allow-empty');
     if (commitStderr) console.error(`Commit stderr: ${commitStderr}`);
     console.log(`Commit stdout: ${commitStdout}`);
 

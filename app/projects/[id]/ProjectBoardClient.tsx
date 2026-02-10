@@ -22,6 +22,7 @@ interface Project {
   description: string | null
   startDate: Date | null
   endDate: Date | null
+  bannerImage: string | null
   createdAt: Date
   owner: {
     id: string
@@ -43,6 +44,7 @@ interface Task {
   assignee?: {
     id: string
     username: string
+    name: string
     avatarUrl?: string | null
   } | null
 }
@@ -82,7 +84,8 @@ export default function ProjectBoardClient({
     description: project.description || '',
     startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
     endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
-    priority: project.priority || 'MEDIUM'
+    priority: project.priority || 'MEDIUM',
+    bannerImage: project.bannerImage || ''
   })
   const [isSaving, setIsSaving] = useState(false)
 
@@ -291,6 +294,25 @@ export default function ProjectBoardClient({
             </Button>
             <CreateTaskDialog projectId={project.id} statuses={project.statuses} />
           </div>
+        </div>
+      </div>
+
+      {/* Project Banner Image */}
+      <div className="relative h-48 overflow-hidden bg-gray-100">
+        <img
+          src={project.bannerImage || 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg'}
+          alt={project.name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+        <div className="absolute bottom-4 left-6">
+          <h2 className="text-2xl font-bold text-white">{project.name}</h2>
+          {project.description && (
+            <p className="text-white/90 text-sm mt-1 max-w-2xl">{project.description}</p>
+          )}
         </div>
       </div>
 
@@ -799,7 +821,8 @@ export default function ProjectBoardClient({
             description: project.description || '',
             startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
             endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
-            priority: project.priority || 'MEDIUM'
+            priority: project.priority || 'MEDIUM',
+            bannerImage: project.bannerImage || ''
           })
         }
       }}>
@@ -860,6 +883,28 @@ export default function ProjectBoardClient({
                 <option value="HIGH">High</option>
                 <option value="CRITICAL">Critical</option>
               </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bannerImage">Banner Image URL</Label>
+              <Input
+                id="bannerImage"
+                type="url"
+                value={editForm.bannerImage}
+                onChange={(e) => setEditForm({ ...editForm, bannerImage: e.target.value })}
+                placeholder="https://example.com/banner.jpg"
+              />
+              {editForm.bannerImage && (
+                <div className="mt-2 rounded-lg overflow-hidden border border-gray-200">
+                  <img
+                    src={editForm.bannerImage}
+                    alt="Banner preview"
+                    className="w-full h-24 object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button

@@ -39,7 +39,23 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const project = await updateProject(id, body);
+    // Convert date strings to Date objects
+    const updateData: any = {
+      name: body.name,
+      description: body.description,
+      bannerImage: body.bannerImage,
+      priority: body.priority || 'MEDIUM',
+    };
+
+    if (body.startDate) {
+      updateData.startDate = new Date(body.startDate);
+    }
+
+    if (body.endDate) {
+      updateData.endDate = new Date(body.endDate);
+    }
+
+    const project = await updateProject(id, updateData);
     return NextResponse.json(project);
   } catch (error) {
     console.error('Error updating project:', error);

@@ -30,6 +30,8 @@ interface Project {
   description: string | null;
   startDate: Date | null;
   endDate: Date | null;
+  bannerImage: string | null;
+  priority: string | null;
   createdAt: Date;
   owner: {
     id: string;
@@ -67,6 +69,7 @@ export default function DashboardPage() {
     description: '',
     startDate: '',
     endDate: '',
+    bannerImage: '',
   });
 
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
@@ -119,7 +122,7 @@ export default function DashboardPage() {
         toast({ title: "Success", description: "Project saved successfully" });
         setDialogOpen(false);
         setEditingProject(null);
-        setFormData({ name: '', description: '', startDate: '', endDate: '' });
+        setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '' });
         fetchData();
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -178,6 +181,7 @@ export default function DashboardPage() {
       description: project.description || '',
       startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
       endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
+      bannerImage: project.bannerImage || '',
     });
     setDialogOpen(true);
   };
@@ -186,7 +190,7 @@ export default function DashboardPage() {
     setDialogOpen(open);
     if (!open) {
       setEditingProject(null);
-      setFormData({ name: '', description: '', startDate: '', endDate: '' });
+      setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '' });
     }
   };
 
@@ -259,6 +263,7 @@ export default function DashboardPage() {
       }
     });
 
+    // Return in new order: Sekarang, Rencana, Selesai
     return { rencana, sekarang, selesai };
   };
 
@@ -313,7 +318,7 @@ export default function DashboardPage() {
             <Button
               onClick={() => {
                 setEditingProject(null);
-                setFormData({ name: '', description: '', startDate: '', endDate: '' });
+                setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '' });
                 setDialogOpen(true);
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -343,21 +348,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-blue-200 shadow-sm bg-blue-50">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-700">Rencana</p>
-                  <h3 className="text-2xl font-semibold text-blue-900 mt-1">{stats.rencanaCount}</h3>
-                  <p className="text-xs text-blue-600">Akan datang</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           <Card className="border border-amber-200 shadow-sm bg-amber-50">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
@@ -368,6 +358,21 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
                   <Clock className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-blue-200 shadow-sm bg-blue-50">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-700">Rencana</p>
+                  <h3 className="text-2xl font-semibold text-blue-900 mt-1">{stats.rencanaCount}</h3>
+                  <p className="text-xs text-blue-600">Akan datang</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -409,98 +414,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ) : (
-          /* Three Row Layout - Horizontal Cards */
+          /* Three Row Layout - Horizontal Cards - Order: SEKARANG, RENCANA, SELESAI */
           <div className="space-y-6">
-
-            {/* RENCANA - Proyek yang akan datang */}
-            <div className="bg-white rounded-xl border border-blue-200 shadow-sm overflow-hidden">
-              <div className="bg-blue-50 border-b border-blue-200 px-5 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <div>
-                      <h2 className="text-base font-semibold text-blue-900">Rencana</h2>
-                      <p className="text-xs text-blue-700">Proyek yang akan datang</p>
-                    </div>
-                  </div>
-                  <span className="text-xl font-bold text-blue-700">{rencana.length}</span>
-                </div>
-              </div>
-              <div className="p-4">
-                {rencana.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-8">Tidak ada proyek terencana</p>
-                ) : (
-                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
-                    {rencana.map((project) => {
-                      const deadlineInfo = getDeadlineInfo(project.endDate);
-                      return (
-                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-72">
-                          <Card className={cn(
-                            "h-full border hover:shadow-md transition-all cursor-pointer",
-                            deadlineInfo?.color === 'red' ? "border-red-200" :
-                              deadlineInfo?.color === 'amber' ? "border-amber-200" :
-                                "border-gray-200",
-                            starredProjects.has(project.id) && "ring-2 ring-blue-100"
-                          )}>
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                  <FolderKanban className="w-5 h-5 text-blue-600" />
-                                </div>
-                                {starredProjects.has(project.id) && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />}
-                              </div>
-
-                              <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{project.name}</h3>
-                              <p className="text-xs text-gray-500 line-clamp-2 h-8 mb-3">
-                                {project.description || 'Tidak ada deskripsi'}
-                              </p>
-
-                              {project.startDate && (
-                                <div className="flex items-center gap-1 text-xs text-blue-600 mb-2">
-                                  <Calendar className="w-3 h-3" />
-                                  <span>
-                                    Mulai: {new Date(project.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                                  </span>
-                                </div>
-                              )}
-
-                              {project.endDate && (
-                                <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
-                                  <Clock className="w-3 h-3" />
-                                  <span>
-                                    Deadline: {new Date(project.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                                  </span>
-                                </div>
-                              )}
-
-                              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <div className="flex items-center gap-1">
-                                    <Users className="w-3 h-3" />
-                                    <span>{project.owner.username}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    <span>{project._count.tasks}</span>
-                                  </div>
-                                </div>
-                                <QuickActions
-                                  projectId={project.id}
-                                  isStarred={starredProjects.has(project.id)}
-                                  onStar={() => toggleStar(project.id)}
-                                  onEdit={() => handleEditClick(project)}
-                                  onDelete={() => handleDeleteClick(project)}
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
 
             {/* SEKARANG - Proyek yang sedang berjalan */}
             <div className="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
@@ -523,74 +438,291 @@ export default function DashboardPage() {
                   <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
                     {sekarang.map((project) => {
                       const deadlineInfo = getDeadlineInfo(project.endDate);
+                      const priority = project.priority || 'MEDIUM';
+                      const priorityColors = {
+                        LOW: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+                        MEDIUM: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
+                        HIGH: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+                        CRITICAL: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+                      };
+                      const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
+
                       return (
-                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-72">
+                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
                           <Card className={cn(
-                            "h-full border hover:shadow-md transition-all cursor-pointer",
-                            deadlineInfo?.color === 'red' ? "border-red-200" :
-                              deadlineInfo?.color === 'amber' ? "border-amber-300" :
+                            "h-full border hover:shadow-lg transition-all cursor-pointer overflow-hidden flex flex-col",
+                            deadlineInfo?.color === 'red' ? "border-red-400 shadow-red-100" :
+                              deadlineInfo?.color === 'amber' ? "border-amber-400 shadow-amber-100" :
                                 "border-amber-200",
-                            starredProjects.has(project.id) && "ring-2 ring-amber-100"
+                            starredProjects.has(project.id) && "ring-2 ring-amber-200"
                           )}>
-                            {/* Urgent Banner */}
-                            {deadlineInfo && deadlineInfo.color === 'amber' && (
-                              <div className="bg-red-50 px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-700 rounded-t-lg">
-                                <Clock className="w-3 h-3" />
-                                <span>{deadlineInfo.text}</span>
-                              </div>
-                            )}
+                            {/* Banner Image */}
+                            <div className="relative h-32 overflow-hidden bg-gray-100">
+                              <img
+                                src={project.bannerImage || 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg'}
+                                alt={project.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-3">
-                                <div className={cn(
-                                  "w-10 h-10 rounded-lg flex items-center justify-center",
-                                  deadlineInfo?.color === 'amber' ? "bg-red-100" : "bg-amber-100"
+                              {/* Top badges */}
+                              <div className="absolute top-2 left-2 flex gap-2">
+                                {/* Priority Badge */}
+                                <span className={cn(
+                                  "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide",
+                                  priorityStyle.bg, priorityStyle.text
                                 )}>
-                                  <FolderKanban className={cn(
-                                    "w-5 h-5",
-                                    deadlineInfo?.color === 'amber' ? "text-red-600" : "text-amber-600"
-                                  )} />
-                                </div>
-                                {starredProjects.has(project.id) && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />}
+                                  {priority}
+                                </span>
+                                {/* Urgent Badge */}
+                                {deadlineInfo && deadlineInfo.color === 'amber' && (
+                                  <span className="bg-red-500 text-white px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1 animate-pulse">
+                                    <Clock className="w-3 h-3" />
+                                    {deadlineInfo.days === 0 ? 'HARI INI' : `${deadlineInfo.days} HARI`}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                {starredProjects.has(project.id) && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 drop-shadow-md" />}
                               </div>
 
-                              <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{project.name}</h3>
-                              <p className="text-xs text-gray-500 line-clamp-2 h-8 mb-3">
+                              {/* Project name overlay at bottom */}
+                              <div className="absolute bottom-2 left-3 right-3">
+                                <h3 className="font-bold text-white text-sm line-clamp-1 drop-shadow-lg">{project.name}</h3>
+                              </div>
+                            </div>
+
+                            <CardContent className="p-4 flex-1 flex flex-col">
+                              <p className="text-xs text-gray-500 line-clamp-2 mb-3 h-8">
                                 {project.description || 'Tidak ada deskripsi'}
                               </p>
 
-                              {project.endDate && (
+                              {/* Highlighted Deadline Section */}
+                              {project.endDate && deadlineInfo ? (
                                 <div className={cn(
-                                  "flex items-center gap-1 text-xs mb-3 px-2 py-1.5 rounded",
-                                  deadlineInfo?.color === 'amber' ? "bg-red-50 text-red-600" :
-                                    deadlineInfo?.color === 'blue' ? "bg-blue-50 text-blue-600" :
-                                      "bg-gray-50 text-gray-500"
+                                  "rounded-lg p-3 mb-3 border-2",
+                                  deadlineInfo.color === 'red' ? "bg-red-50 border-red-400" :
+                                    deadlineInfo.color === 'amber' ? "bg-amber-50 border-amber-400" :
+                                      "bg-blue-50 border-blue-300"
                                 )}>
-                                  <Clock className="w-3 h-3" />
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold uppercase text-gray-500">Deadline</span>
+                                    <Clock className={cn(
+                                      "w-4 h-4",
+                                      deadlineInfo.color === 'red' ? "text-red-500 animate-pulse" :
+                                        deadlineInfo.color === 'amber' ? "text-amber-500" : "text-blue-500"
+                                    )} />
+                                  </div>
+                                  <div className="flex items-baseline gap-2">
+                                    <span className={cn(
+                                      "text-2xl font-black",
+                                      deadlineInfo.color === 'red' ? "text-red-600" :
+                                        deadlineInfo.color === 'amber' ? "text-amber-600" : "text-blue-600"
+                                    )}>
+                                      {deadlineInfo.days === 0 ? 'HARI INI' : `${deadlineInfo.days}`}
+                                    </span>
+                                    <span className="text-xs text-gray-600">
+                                      {deadlineInfo.days === 0 ? '' : 'hari lagi'}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1 font-medium">
+                                    {new Date(project.endDate).toLocaleDateString('id-ID', {
+                                    weekday: 'short',
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="rounded-lg p-3 mb-3 bg-gray-50 border border-gray-200">
+                                  <span className="text-xs text-gray-400">Tidak ada deadline</span>
+                                </div>
+                              )}
+
+                              <div className="mt-auto pt-3 border-t border-gray-100">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                                    <div className="flex items-center gap-1">
+                                      <Users className="w-3 h-3" />
+                                      <span>{project.owner.username}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      <span>{project._count.tasks} tugas</span>
+                                    </div>
+                                  </div>
+                                  <QuickActions
+                                    projectId={project.id}
+                                    isStarred={starredProjects.has(project.id)}
+                                    onStar={() => toggleStar(project.id)}
+                                    onEdit={() => handleEditClick(project)}
+                                    onDelete={() => handleDeleteClick(project)}
+                                  />
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* RENCANA - Proyek yang akan datang */}
+            <div className="bg-white rounded-xl border border-blue-200 shadow-sm overflow-hidden">
+              <div className="bg-blue-50 border-b border-blue-200 px-5 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <div>
+                      <h2 className="text-base font-semibold text-blue-900">Rencana</h2>
+                      <p className="text-xs text-blue-700">Proyek yang akan datang</p>
+                    </div>
+                  </div>
+                  <span className="text-xl font-bold text-blue-700">{rencana.length}</span>
+                </div>
+              </div>
+              <div className="p-4">
+                {rencana.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-8">Tidak ada proyek terencana</p>
+                ) : (
+                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+                    {rencana.map((project) => {
+                      const deadlineInfo = getDeadlineInfo(project.endDate);
+                      const priority = project.priority || 'MEDIUM';
+                      const priorityColors = {
+                        LOW: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+                        MEDIUM: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
+                        HIGH: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+                        CRITICAL: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+                      };
+                      const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
+
+                      return (
+                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
+                          <Card className={cn(
+                            "h-full border hover:shadow-lg transition-all cursor-pointer overflow-hidden flex flex-col",
+                            deadlineInfo?.color === 'red' ? "border-red-300" :
+                              deadlineInfo?.color === 'amber' ? "border-amber-300" :
+                                "border-gray-200",
+                            starredProjects.has(project.id) && "ring-2 ring-blue-200"
+                          )}>
+                            {/* Banner Image */}
+                            <div className="relative h-32 overflow-hidden bg-gray-100">
+                              <img
+                                src={project.bannerImage || 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg'}
+                                alt={project.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+
+                              {/* Top badges */}
+                              <div className="absolute top-2 left-2 flex gap-2">
+                                {/* Priority Badge */}
+                                <span className={cn(
+                                  "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide",
+                                  priorityStyle.bg, priorityStyle.text
+                                )}>
+                                  {priority}
+                                </span>
+                              </div>
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                {starredProjects.has(project.id) && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 drop-shadow-md" />}
+                              </div>
+
+                              {/* Project name overlay at bottom */}
+                              <div className="absolute bottom-2 left-3 right-3">
+                                <h3 className="font-bold text-white text-sm line-clamp-1 drop-shadow-lg">{project.name}</h3>
+                              </div>
+                            </div>
+
+                            <CardContent className="p-4 flex-1 flex flex-col">
+                              <p className="text-xs text-gray-500 line-clamp-2 mb-3 h-8">
+                                {project.description || 'Tidak ada deskripsi'}
+                              </p>
+
+                              {/* Highlighted Deadline Section */}
+                              {project.endDate && deadlineInfo ? (
+                                <div className={cn(
+                                  "rounded-lg p-3 mb-3 border-2",
+                                  deadlineInfo.color === 'red' ? "bg-red-50 border-red-300" :
+                                    deadlineInfo.color === 'amber' ? "bg-amber-50 border-amber-300" :
+                                      "bg-blue-50 border-blue-200"
+                                )}>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold uppercase text-gray-500">Deadline</span>
+                                    {deadlineInfo.status !== 'normal' && (
+                                      <Clock className={cn(
+                                        "w-4 h-4",
+                                        deadlineInfo.color === 'red' ? "text-red-500 animate-pulse" :
+                                          deadlineInfo.color === 'amber' ? "text-amber-500" : "text-blue-500"
+                                      )} />
+                                    )}
+                                  </div>
+                                  <div className="flex items-baseline gap-2">
+                                    <span className={cn(
+                                      "text-xl font-bold",
+                                      deadlineInfo.color === 'red' ? "text-red-600" :
+                                        deadlineInfo.color === 'amber' ? "text-amber-600" : "text-blue-600"
+                                    )}>
+                                      {deadlineInfo.days} hari
+                                    </span>
+                                    <span className="text-xs text-gray-600">lagi</span>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {new Date(project.endDate).toLocaleDateString('id-ID', {
+                                    weekday: 'short',
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="rounded-lg p-3 mb-3 bg-gray-50 border border-gray-200">
+                                  <span className="text-xs text-gray-400">Tidak ada deadline</span>
+                                </div>
+                              )}
+
+                              {/* Start Date */}
+                              {project.startDate && (
+                                <div className="flex items-center gap-2 text-xs text-blue-600 mb-3">
+                                  <Calendar className="w-3 h-3" />
                                   <span>
-                                    Deadline: {new Date(project.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                    Mulai: {new Date(project.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                                   </span>
                                 </div>
                               )}
 
-                              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <div className="flex items-center gap-1">
-                                    <Users className="w-3 h-3" />
-                                    <span>{project.owner.username}</span>
+                              <div className="mt-auto pt-3 border-t border-gray-100">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                                    <div className="flex items-center gap-1">
+                                      <Users className="w-3 h-3" />
+                                      <span>{project.owner.username}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      <span>{project._count.tasks} tugas</span>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    <span>{project._count.tasks}</span>
-                                  </div>
+                                  <QuickActions
+                                    projectId={project.id}
+                                    isStarred={starredProjects.has(project.id)}
+                                    onStar={() => toggleStar(project.id)}
+                                    onEdit={() => handleEditClick(project)}
+                                    onDelete={() => handleDeleteClick(project)}
+                                  />
                                 </div>
-                                <QuickActions
-                                  projectId={project.id}
-                                  isStarred={starredProjects.has(project.id)}
-                                  onStar={() => toggleStar(project.id)}
-                                  onEdit={() => handleEditClick(project)}
-                                  onDelete={() => handleDeleteClick(project)}
-                                />
                               </div>
                             </CardContent>
                           </Card>
@@ -622,54 +754,101 @@ export default function DashboardPage() {
                 ) : (
                   <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
                     {selesai.map((project) => {
-                      const deadlineInfo = getDeadlineInfo(project.endDate);
+                      const priority = project.priority || 'MEDIUM';
+                      const priorityColors = {
+                        LOW: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+                        MEDIUM: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
+                        HIGH: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+                        CRITICAL: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+                      };
+                      const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
+
                       return (
-                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-72">
+                        <Link key={project.id} href={`/projects/${project.id}`} className="snap-start shrink-0 w-80">
                           <Card className={cn(
-                            "h-full border hover:shadow-md transition-all cursor-pointer opacity-75 hover:opacity-100",
+                            "h-full border hover:shadow-lg transition-all cursor-pointer opacity-75 hover:opacity-100 overflow-hidden flex flex-col",
                             "border-green-200",
-                            starredProjects.has(project.id) && "ring-2 ring-green-100"
+                            starredProjects.has(project.id) && "ring-2 ring-green-200"
                           )}>
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                </div>
-                                {starredProjects.has(project.id) && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />}
+                            {/* Banner Image */}
+                            <div className="relative h-32 overflow-hidden bg-gray-100">
+                              <img
+                                src={project.bannerImage || 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg'}
+                                alt={project.name}
+                                className="w-full h-full object-cover grayscale"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-green-900/40 via-transparent to-transparent"></div>
+
+                              {/* Top badges */}
+                              <div className="absolute top-2 left-2 flex gap-2">
+                                {/* Priority Badge */}
+                                <span className={cn(
+                                  "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-green-100 text-green-700",
+                                )}>
+                                  {priority}
+                                </span>
+                                {/* Completed Badge */}
+                                <span className="bg-green-600 text-white px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Selesai
+                                </span>
+                              </div>
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                {starredProjects.has(project.id) && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 drop-shadow-md" />}
                               </div>
 
-                              <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1 line-through">{project.name}</h3>
-                              <p className="text-xs text-gray-500 line-clamp-2 h-8 mb-3">
+                              {/* Project name overlay at bottom */}
+                              <div className="absolute bottom-2 left-3 right-3">
+                                <h3 className="font-bold text-white text-sm line-clamp-1 drop-shadow-lg line-through">{project.name}</h3>
+                              </div>
+                            </div>
+
+                            <CardContent className="p-4 flex-1 flex flex-col">
+                              <p className="text-xs text-gray-500 line-clamp-2 mb-3 h-8">
                                 {project.description || 'Tidak ada deskripsi'}
                               </p>
 
+                              {/* Completed Date Section */}
                               {project.endDate && (
-                                <div className="flex items-center gap-1 text-xs text-green-600 mb-3">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>
-                                    Selesai: {new Date(project.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                  </span>
+                                <div className="rounded-lg p-3 mb-3 bg-green-50 border-2 border-green-300">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold uppercase text-green-600">Selesai Tanggal</span>
+                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                  </div>
+                                  <div className="text-sm font-bold text-green-700">
+                                    {new Date(project.endDate).toLocaleDateString('id-ID', {
+                                    weekday: 'short',
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                  </div>
                                 </div>
                               )}
 
-                              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <div className="flex items-center gap-1">
-                                    <Users className="w-3 h-3" />
-                                    <span>{project.owner.username}</span>
+                              <div className="mt-auto pt-3 border-t border-gray-100">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                                    <div className="flex items-center gap-1">
+                                      <Users className="w-3 h-3" />
+                                      <span>{project.owner.username}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      <span>{project._count.tasks} tugas</span>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    <span>{project._count.tasks}</span>
-                                  </div>
+                                  <QuickActions
+                                    projectId={project.id}
+                                    isStarred={starredProjects.has(project.id)}
+                                    onStar={() => toggleStar(project.id)}
+                                    onEdit={() => handleEditClick(project)}
+                                    onDelete={() => handleDeleteClick(project)}
+                                  />
                                 </div>
-                                <QuickActions
-                                  projectId={project.id}
-                                  isStarred={starredProjects.has(project.id)}
-                                  onStar={() => toggleStar(project.id)}
-                                  onEdit={() => handleEditClick(project)}
-                                  onDelete={() => handleDeleteClick(project)}
-                                />
                               </div>
                             </CardContent>
                           </Card>
@@ -695,15 +874,15 @@ export default function DashboardPage() {
           </div>
 
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-3">Rencana ({rencana.length})</h2>
-            {rencana.map(p => (
+            <h2 className="text-lg font-semibold mb-3">Sekarang ({sekarang.length})</h2>
+            {sekarang.map(p => (
               <div key={p.id} className="py-2 border-b">{p.name}</div>
             ))}
           </div>
 
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-3">Sekarang ({sekarang.length})</h2>
-            {sekarang.map(p => (
+            <h2 className="text-lg font-semibold mb-3">Rencana ({rencana.length})</h2>
+            {rencana.map(p => (
               <div key={p.id} className="py-2 border-b">{p.name}</div>
             ))}
           </div>
@@ -763,6 +942,29 @@ export default function DashboardPage() {
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bannerImage">URL Banner Proyek</Label>
+              <Input
+                id="bannerImage"
+                type="url"
+                value={formData.bannerImage}
+                onChange={(e) => setFormData({ ...formData, bannerImage: e.target.value })}
+                placeholder="https://example.com/banner.jpg"
+              />
+              <p className="text-xs text-gray-500">Masukkan URL gambar banner untuk proyek ini</p>
+              {formData.bannerImage && (
+                <div className="mt-2 rounded-lg overflow-hidden border border-gray-200">
+                  <img
+                    src={formData.bannerImage}
+                    alt="Banner preview"
+                    className="w-full h-32 object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x100?text=Invalid+Image+URL';
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>

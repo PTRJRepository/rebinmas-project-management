@@ -30,13 +30,13 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
     };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900">
+        <div className="bg-slate-900 rounded-lg border border-slate-700">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-100">
                     Description
                 </h2>
                 {!isEditing ? (
-                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="text-slate-400 hover:text-slate-200 hover:bg-slate-800">
                         Edit
                     </Button>
                 ) : (
@@ -44,7 +44,7 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
                         <Button variant="ghost" size="sm" onClick={() => {
                             setIsEditing(false);
                             setDescription(task.description || '');
-                        }}>
+                        }} className="text-slate-400 hover:text-slate-200 hover:bg-slate-800">
                             Cancel
                         </Button>
                         <Button size="sm" onClick={handleSave}>
@@ -65,11 +65,11 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
                 ) : (
                     description ? (
                         <div
-                            className="prose prose-sm max-w-none text-gray-700"
+                            className="prose prose-invert prose-slate max-w-none text-slate-300"
                             dangerouslySetInnerHTML={{ __html: description }}
                         />
                     ) : (
-                        <p className="text-gray-500 italic">No description provided</p>
+                        <p className="text-slate-500 italic">No description provided</p>
                     )
                 )}
             </div>

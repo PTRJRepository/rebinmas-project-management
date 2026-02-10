@@ -121,17 +121,17 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
     return (
         <div className="space-y-6">
             {/* Task Information Card */}
-            <Card>
+            <Card className="bg-slate-900 border-slate-700">
                 <CardHeader>
-                    <CardTitle className="text-lg">Task Information</CardTitle>
+                    <CardTitle className="text-lg text-slate-100">Task Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {/* Project (Read-only) */}
                     <div className="flex items-center gap-3">
-                        <FolderOpen className="h-5 w-5 text-gray-500 shrink-0" />
+                        <FolderOpen className="h-5 w-5 text-slate-500 shrink-0" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-600">Project</p>
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                            <p className="text-sm text-slate-500">Project</p>
+                            <p className="text-sm font-medium text-slate-200 truncate">
                                 {task.project.name}
                             </p>
                         </div>
@@ -141,14 +141,14 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                     <div className="flex items-center gap-3">
                         <div className="h-5 w-5 shrink-0" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-600">Priority</p>
+                            <p className="text-sm text-slate-500">Priority</p>
                             <select
                                 value={priority}
                                 onChange={handlePriorityChange}
                                 className={cn(
                                     "text-xs font-semibold px-2 py-1 border mt-1 rounded cursor-pointer",
                                     getPriorityColor(priority),
-                                    "bg-white text-gray-900 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                    "bg-slate-800 text-slate-100 border-slate-600 focus:ring-2 focus:ring-sky-500"
                                 )}
                             >
                                 <option value="LOW">LOW</option>
@@ -162,17 +162,17 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                     {/* Assignee (Read-only for now - requires user list) */}
                     {task.assignee && (
                         <div className="flex items-center gap-3">
-                            <User className="h-5 w-5 text-gray-500 shrink-0" />
+                            <User className="h-5 w-5 text-slate-500 shrink-0" />
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-600">Assignee</p>
+                                <p className="text-sm text-slate-500">Assignee</p>
                                 <div className="flex items-center gap-2 mt-1">
                                     <Avatar className="h-6 w-6">
-                                        <AvatarImage src={task.assignee.avatarUrl || undefined} />
-                                        <AvatarFallback className="text-xs bg-indigo-500 text-white">
+                                        <AvatarImage src={task.assignee.avatarUrl || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4868.jpg"} />
+                                        <AvatarFallback className="text-xs bg-sky-500 text-white">
                                             {task.assignee.username.substring(0, 2).toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                    <p className="text-sm font-medium text-slate-200 truncate">
                                         {task.assignee.username}
                                     </p>
                                 </div>
@@ -182,16 +182,17 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
 
                     {/* Due Date (Editable) */}
                     <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-gray-500 shrink-0" />
+                        <Calendar className="h-5 w-5 text-slate-500 shrink-0" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-600">Due Date</p>
+                            <p className="text-sm text-slate-500">Due Date</p>
                             <input
                                 type="date"
                                 value={dueDate}
                                 onChange={handleDueDateChange}
                                 className={cn(
-                                    "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 mt-1",
-                                    getDeadlineClasses(deadlineInfo) // Note: this uses task.dueDate (prop), not state. This is fine as it updates after server response.
+                                    "flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors mt-1",
+                                    "bg-slate-800 border-slate-700 text-slate-200",
+                                    "focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                                 )}
                             />
                         </div>
@@ -199,16 +200,16 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
 
                     {/* Estimated Hours (Editable) */}
                     <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-gray-500 shrink-0" />
+                        <Clock className="h-5 w-5 text-slate-500 shrink-0" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-600">Estimated Time (Hours)</p>
+                            <p className="text-sm text-slate-500">Estimated Time (Hours)</p>
                             <input
                                 type="number"
                                 step="0.5"
                                 value={estimatedHours}
                                 onChange={(e) => setEstimatedHours(e.target.value)}
                                 onBlur={handleHoursBlur}
-                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                                className="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors mt-1 bg-slate-800 border-slate-700 text-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                                 placeholder="0.0"
                             />
                         </div>
@@ -218,15 +219,15 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
 
             {/* Progress Card */}
             {(task.progress !== undefined && task.progress !== null) && (
-                <Card>
+                <Card className="bg-slate-900 border-slate-700">
                     <CardHeader>
-                        <CardTitle className="text-lg">Progress</CardTitle>
+                        <CardTitle className="text-lg text-slate-100">Progress</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600">Completion</span>
-                                <span className="font-medium">{task.progress}%</span>
+                                <span className="text-slate-500">Completion</span>
+                                <span className="font-medium text-slate-200">{task.progress}%</span>
                             </div>
                             <Progress value={task.progress} className="h-2" />
                         </div>
@@ -235,9 +236,9 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
             )}
 
             {/* Documentation Card */}
-            <Card>
+            <Card className="bg-slate-900 border-slate-700">
                 <CardHeader>
-                    <CardTitle className="text-lg">Documentation</CardTitle>
+                    <CardTitle className="text-lg text-slate-100">Documentation</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <NovelEditor

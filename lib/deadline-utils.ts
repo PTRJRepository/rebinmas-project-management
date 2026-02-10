@@ -1,4 +1,4 @@
-// Deadline utility functions for Schedule Tracker 2.0
+// Deadline utility functions for Rebinmas Project Management
 import {
   differenceInDays,
   differenceInHours,

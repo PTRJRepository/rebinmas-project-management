@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Schedule Tracker - Project Management",
-  description: "Modern project management tool with Kanban boards",
+  title: "Rebinmas Project Management",
+  description: "Modern project management tool with Kanban boards for Rebinmas",
 };
 
 export default function RootLayout({

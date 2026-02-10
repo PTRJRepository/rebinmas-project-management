@@ -85,7 +85,7 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                             <div className="h-8 w-8 rounded-lg flex items-center justify-center shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0052CC 0%, #0747A6 100%)' }}>
                                 <Briefcase className="w-4 h-4 text-white" />
                             </div>
-                            <span className="font-bold text-gray-800 tracking-tight text-lg truncate">TaskFlow</span>
+                            <span className="font-bold text-gray-800 tracking-tight text-lg truncate">Rebinmas</span>
                         </div>
                     )}
                     {collapsed && (

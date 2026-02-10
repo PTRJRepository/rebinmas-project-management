@@ -1,2 +1,2 @@
-// Editor utility functions for Schedule Tracker 2.0
+// Editor utility functions for Rebinmas Project Management
 // TODO: Add editor-related utility functions

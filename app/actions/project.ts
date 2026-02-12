@@ -15,6 +15,7 @@ import {
   getProjects as apiGetProjects,
   createProject as apiCreateProject,
   getProjectById,
+  getProjectWithTasks,
   deleteProject as apiDeleteProject,
   getProjectDashboardStats,
   updateProject,
@@ -141,7 +142,8 @@ export async function getProjectStats(projectId: string) {
 
 export async function getProject(projectId: string) {
     try {
-        const project = await getProjectById(projectId)
+        // Use getProjectWithTasks to include statuses and tasks
+        const project = await getProjectWithTasks(projectId)
         if (!project) {
             return { success: false, error: 'Project not found' }
         }

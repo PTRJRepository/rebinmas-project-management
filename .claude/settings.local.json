@@ -4,7 +4,9 @@
       "Bash(bun run:*)",
       "Bash(curl:*)",
       "Bash(timeout:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(taskkill:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

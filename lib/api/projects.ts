@@ -309,13 +309,16 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
   // Get tasks with status and assignee
   const tasksResult = await sqlGateway.query(`
     SELECT
-      t.*,
-      ts.id as status_id,
+      t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
+      t.documentation, t.progress, t.last_alert_sent, t.project_id, t.status_id, t.assignee_id,
+      t.created_at, t.updated_at,
+      ts.id as status_id_ref,
       ts.name as status_name,
-      ts.order as status_order,
-      u.id as assignee_id,
+      ts.[order] as status_order,
+      u.id as assignee_id_ref,
       u.username as assignee_username,
-      u.name as assignee_name
+      u.name as assignee_name,
+      u.email as assignee_email
     FROM pm_tasks t
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
     LEFT JOIN pm_users u ON t.assignee_id = u.id
@@ -323,10 +326,50 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
     ORDER BY t.created_at DESC
   `, { projectId: id });
 
+  // Map tasks with proper structure
+  const tasks = tasksResult.recordset.map((row: any) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    priority: row.priority,
+    dueDate: row.due_date,
+    estimatedHours: row.estimated_hours,
+    actualHours: row.actual_hours,
+    documentation: row.documentation,
+    progress: row.progress,
+    lastAlertSent: row.last_alert_sent,
+    projectId: row.project_id,
+    statusId: row.status_id,
+    assigneeId: row.assignee_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    status: {
+      id: row.status_id_ref,
+      name: row.status_name,
+      order: row.status_order,
+    },
+    assignee: row.assignee_id_ref ? {
+      id: row.assignee_id_ref,
+      username: row.assignee_username,
+      name: row.assignee_name,
+      email: row.assignee_email,
+    } : null,
+  }));
+
+  // Convert statuses from snake_case to camelCase
+  const statuses = statusesResult.recordset.map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    order: row.order,
+    projectId: row.project_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+
   return {
     ...project,
-    statuses: toCamelCase<TaskStatus[]>(statusesResult.recordset),
-    tasks: toCamelCase<Task[]>(tasksResult.recordset),
+    statuses,
+    tasks,
   };
 }
 

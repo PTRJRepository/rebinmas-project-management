@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProjectById, updateProject, deleteProject } from '@/lib/api/projects';
+import { getProjectById, getProjectWithTasks, updateProject, deleteProject } from '@/lib/api/projects';
 import { getCurrentUser } from '@/app/actions/auth';
 
 export async function GET(
@@ -13,7 +13,8 @@ export async function GET(
     }
 
     const { id } = await params;
-    const project = await getProjectById(id);
+    // Use getProjectWithTasks to include statuses and tasks
+    const project = await getProjectWithTasks(id);
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });

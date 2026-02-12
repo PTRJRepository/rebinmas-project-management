@@ -41,8 +41,8 @@ export default async function ReportPage({
     description: project.description,
     priority: (project as any).priority,
     bannerImage: (project as any).bannerImage,
-    owner: project.owner,
-    statuses: project.statuses,
+    owner: project.owner || { username: 'Unknown' },
+    statuses: (project as any).statuses,
     startDate: project.startDate ? project.startDate.toISOString() : null,
     endDate: project.endDate ? project.endDate.toISOString() : null,
     tasks: formattedTasks
@@ -50,7 +50,7 @@ export default async function ReportPage({
 
   return (
     <ProjectReportPage
-      project={formattedProject}
+      project={formattedProject as any}
       generatedAt={generatedAt}
     />
   )

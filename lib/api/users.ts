@@ -1,15 +1,15 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 // Mock user for MVP - replace with real auth later
 export const MOCK_USER_ID = 'mock-user-1';
 
 export async function getMockUser() {
-  let user = await prisma.user.findUnique({
+  let user = await db.user.findUnique({
     where: { id: MOCK_USER_ID },
   });
 
   if (!user) {
-    user = await prisma.user.create({
+    user = await db.user.create({
       data: {
         id: MOCK_USER_ID,
         username: 'Demo User',
@@ -25,7 +25,7 @@ export async function getMockUser() {
 }
 
 export async function getAllUsers() {
-  return prisma.user.findMany({
+  return db.user.findMany({
     orderBy: { username: 'asc' },
   });
 }

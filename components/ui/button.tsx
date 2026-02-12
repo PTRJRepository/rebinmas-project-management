@@ -8,7 +8,7 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'default', size = 'default', ...props }, ref) => {
+  ({ className, variant = 'default', size = 'default', suppressHydrationWarning = true, ...props }, ref) => {
     const variants = {
       default: 'bg-blue-600 text-white hover:bg-blue-700',
       outline: 'border border-gray-300 bg-transparent hover:bg-gray-100',
@@ -32,6 +32,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           className
         )}
         ref={ref}
+        suppressHydrationWarning={suppressHydrationWarning}
         {...props}
       />
     );

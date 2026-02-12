@@ -19,8 +19,8 @@ export default async function BoardPage({ params }: { params: Promise<{ id: stri
     return (
         <BoardPageClient
             projectId={id}
-            project={project}
-            tasks={tasks || []}
+            project={project as any}
+            tasks={(tasks || []) as any}
         />
     )
 }

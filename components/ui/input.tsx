@@ -8,9 +8,12 @@ export interface InputProps
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
+    // Use 'text' as default type when type is undefined to prevent hydration error
+    const inputType = type || 'text';
+
     return (
       <input
-        type={type}
+        type={inputType}
         className={cn(
           'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm',
           'placeholder:text-gray-400',

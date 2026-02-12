@@ -107,6 +107,7 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                             onClick={handleToggle}
                             className="p-1.5 rounded-md text-sky-400 hover:text-cyan-400 transition-all duration-200 hover:shadow-[0_0_10px_rgba(34,211,238,0.3)]"
                             aria-label="Collapse sidebar"
+                            suppressHydrationWarning
                         >
                             <PanelLeftClose className="w-4 h-4" />
                         </button>
@@ -200,6 +201,7 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
                     <button
                         onClick={handleToggle}
                         className="w-full p-4 flex justify-center text-sky-400/70 hover:text-cyan-400 hover:bg-sky-500/10 hover:shadow-[0_0_10px_rgba(34,211,238,0.15)] transition-all duration-200 border-t border-cyan-500/10"
+                        suppressHydrationWarning
                     >
                         <PanelLeftOpen className="w-5 h-5" />
                     </button>

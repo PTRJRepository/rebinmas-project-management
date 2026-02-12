@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate": "tsx scripts/migrate-sqlite-to-sqlserver.ts"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
@@ -52,10 +53,12 @@
   "devDependencies": {
     "@prisma/client": "5.10.2",
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^20.19.33",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "better-sqlite3": "^12.6.2",
     "dotenv": "^17.2.4",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",

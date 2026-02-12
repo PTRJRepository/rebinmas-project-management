@@ -94,18 +94,54 @@ export default function DashboardPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [projectsRes, tasksRes] = await Promise.all([
+      console.log('Fetching projects and tasks...');
+      const results = await Promise.allSettled([
         fetch('/api/projects'),
         fetch('/api/tasks')
       ]);
 
-      const projectsData = await projectsRes.json();
-      const tasksData = await tasksRes.json();
+      const projectsResult = results[0];
+      const tasksResult = results[1];
 
-      setProjects(projectsData);
-      setAllTasks(tasksData);
+      // Handle Projects
+      if (projectsResult.status === 'fulfilled') {
+        const res = projectsResult.value;
+        console.log('Projects Res Status:', res.status);
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Projects Data:', data);
+          setProjects(Array.isArray(data) ? data : []);
+        } else {
+          console.error('Projects API failed:', res.statusText);
+          setProjects([]);
+        }
+      } else {
+        console.error('Projects Fetch failed:', projectsResult.reason);
+        setProjects([]);
+      }
+
+      // Handle Tasks
+      if (tasksResult.status === 'fulfilled') {
+        const res = tasksResult.value;
+        console.log('Tasks Res Status:', res.status);
+        if (res.ok) {
+          const data = await res.json();
+          setAllTasks(Array.isArray(data) ? data : []);
+        } else {
+          // Task API might fail if unauthorized, which is expected for public view
+          console.warn('Tasks API failed (expected if not logged in):', res.status);
+          setAllTasks([]);
+        }
+      } else {
+        console.error('Tasks Fetch failed:', tasksResult.reason);
+        setAllTasks([]);
+      }
+
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Critical Error in fetchData:', error);
+      // Ensure states are cleared on critical error
+      setProjects([]);
+      setAllTasks([]);
     } finally {
       setLoading(false);
     }
@@ -349,20 +385,37 @@ export default function DashboardPage() {
       }
     });
 
+    // Sort each category: Start Date (asc) -> End Date (asc) -> Name (asc)
+    const sortProjects = (a: Project, b: Project) => {
+      const startA = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const startB = b.startDate ? new Date(b.startDate).getTime() : 0;
+      if (startA !== startB) return startA - startB;
+
+      const endA = a.endDate ? new Date(a.endDate).getTime() : 0;
+      const endB = b.endDate ? new Date(b.endDate).getTime() : 0;
+      if (endA !== endB) return endA - endB;
+
+      return a.name.localeCompare(b.name);
+    };
+
+    rencana.sort(sortProjects);
+    sekarang.sort(sortProjects);
+    selesai.sort(sortProjects);
+
     // Return in new order: Sekarang, Rencana, Selesai
     return { rencana, sekarang, selesai };
   };
 
   // Filter and categorize
-  const filteredProjects = projects.filter(project =>
+  const filteredProjects = (projects || []).filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const { rencana, sekarang, selesai } = categorizeProjects(filteredProjects);
 
   const stats = {
-    totalProjects: projects.length,
-    totalTasks: allTasks.length,
+    totalProjects: (projects || []).length,
+    totalTasks: (allTasks || []).length,
     rencanaCount: rencana.length,
     sekarangCount: sekarang.length,
     selesaiCount: selesai.length,
@@ -569,7 +622,7 @@ export default function DashboardPage() {
                                   (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
                                 }}
                               />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent"></div>
 
                               {/* Top badges */}
                               <div className="absolute top-2 left-2 flex gap-2">
@@ -594,7 +647,9 @@ export default function DashboardPage() {
 
                               {/* Project name overlay at bottom */}
                               <div className="absolute bottom-2 left-3 right-3">
-                                <h3 className="font-bold text-white text-sm drop-shadow-lg whitespace-normal break-words">{project.name}</h3>
+                                <div className="bg-slate-950/60 backdrop-blur-md px-3 py-2 rounded-lg border border-white/5 shadow-lg">
+                                  <h3 className="font-bold text-white text-sm whitespace-normal break-words leading-tight">{project.name}</h3>
+                                </div>
                               </div>
                             </div>
 
@@ -633,11 +688,11 @@ export default function DashboardPage() {
                                   </div>
                                   <div className="text-xs text-gray-500 mt-1 font-medium">
                                     {new Date(project.endDate).toLocaleDateString('id-ID', {
-                                    weekday: 'short',
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })}
+                                      weekday: 'short',
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })}
                                   </div>
                                 </div>
                               ) : (
@@ -800,11 +855,11 @@ export default function DashboardPage() {
                                   </div>
                                   <div className="text-xs text-gray-500 mt-1">
                                     {new Date(project.endDate).toLocaleDateString('id-ID', {
-                                    weekday: 'short',
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })}
+                                      weekday: 'short',
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })}
                                   </div>
                                 </div>
                               ) : (
@@ -957,11 +1012,11 @@ export default function DashboardPage() {
                                   </div>
                                   <div className="text-sm font-bold text-green-700">
                                     {new Date(project.endDate).toLocaleDateString('id-ID', {
-                                    weekday: 'short',
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })}
+                                      weekday: 'short',
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })}
                                   </div>
                                 </div>
                               )}

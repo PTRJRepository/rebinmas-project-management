@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
 export async function getStatuses(projectId?: string) {
-  return prisma.taskStatus.findMany({
+  return db.taskStatus.findMany({
     where: projectId ? { projectId } : undefined,
     include: {
       _count: {
@@ -14,7 +14,7 @@ export async function getStatuses(projectId?: string) {
 }
 
 export async function getStatusById(id: string) {
-  return prisma.taskStatus.findUnique({
+  return db.taskStatus.findUnique({
     where: { id },
     include: {
       tasks: {
@@ -31,20 +31,20 @@ export async function createStatus(data: {
   order: number;
   projectId: string;
 }) {
-  return prisma.taskStatus.create({
+  return db.taskStatus.create({
     data,
   });
 }
 
 export async function updateStatus(id: string, data: Prisma.TaskStatusUpdateInput) {
-  return prisma.taskStatus.update({
+  return db.taskStatus.update({
     where: { id },
     data,
   });
 }
 
 export async function deleteStatus(id: string) {
-  return prisma.taskStatus.delete({
+  return db.taskStatus.delete({
     where: { id },
   });
 }

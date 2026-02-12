@@ -20,7 +20,7 @@ export default async function TaskDetailPage({
         <div className="h-screen flex flex-col bg-slate-950">
             {/* Header */}
             <TaskDetailHeader
-                task={task}
+                task={task as any}
                 projectId={id}
             />
 
@@ -102,7 +102,7 @@ export default async function TaskDetailPage({
 
                         {/* Sidebar (1/3) */}
                         <div className="space-y-6">
-                            <TaskMetadata task={task} projectId={id} />
+                            <TaskMetadata task={task as any} projectId={id} />
                         </div>
                     </div>
                 </div>

@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
@@ -15,7 +15,7 @@ export interface UserResult {
  */
 export async function getUsers() {
     try {
-        const users = await prisma.user.findMany({
+        const users = await db.user.findMany({
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
@@ -54,7 +54,7 @@ export async function createUser(formData: FormData): Promise<UserResult> {
 
     try {
         // Check if user already exists
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await db.user.findUnique({
             where: { email }
         });
 
@@ -66,7 +66,7 @@ export async function createUser(formData: FormData): Promise<UserResult> {
         const passwordHash = await hashPassword(password);
         const username = email.split('@')[0];
 
-        const user = await prisma.user.create({
+        const user = await db.user.create({
             data: {
                 name,
                 email,
@@ -93,7 +93,7 @@ export async function deleteUser(userId: string): Promise<UserResult> {
     }
 
     try {
-        await prisma.user.delete({
+        await db.user.delete({
             where: { id: userId }
         });
 

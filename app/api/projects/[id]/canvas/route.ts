@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 // GET canvas data
 export async function GET(
@@ -15,7 +15,7 @@ export async function GET(
 
     const { id } = await params;
 
-    const project = await prisma.project.findUnique({
+    const project = await db.project.findUnique({
       where: { id },
       select: { id: true, ownerId: true }
     });
@@ -61,7 +61,7 @@ export async function POST(
     const body = await request.json();
 
     // Verify project ownership
-    const project = await prisma.project.findUnique({
+    const project = await db.project.findUnique({
       where: { id }
     });
 
@@ -71,7 +71,7 @@ export async function POST(
 
     // Store canvas data in the description as a JSON metadata
     // or create a separate canvas data table
-    const updatedProject = await prisma.project.update({
+    const updatedProject = await db.project.update({
       where: { id },
       data: {
         // Store canvas metadata in description (append if exists)

@@ -6,10 +6,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:../dev.db"
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
 }
 
+// Map Prisma models to SQL Server tables with pm_ prefix
 model User {
   id        String    @id @default(cuid())
   username  String
@@ -25,6 +26,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("pm_users")
 }
 
 model Project {
@@ -44,6 +47,8 @@ model Project {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("pm_projects")
 }
 
 model TaskStatus {
@@ -52,13 +57,14 @@ model TaskStatus {
   order     Int      @default(0)
   projectId String
   project   Project  @relation(fields: [projectId], references: [id])
-  
+
   tasks     Task[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([projectId, name])
+  @@map("pm_task_statuses")
 }
 
 model Task {
@@ -88,6 +94,8 @@ model Task {
 
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+
+  @@map("pm_tasks")
 }
 
 model Comment {
@@ -103,6 +111,7 @@ model Comment {
 
   @@index([taskId])
   @@index([userId])
+  @@map("pm_comments")
 }
 
 model Attachment {
@@ -117,4 +126,5 @@ model Attachment {
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@map("pm_attachments")
 }

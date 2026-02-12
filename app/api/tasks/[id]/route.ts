@@ -20,7 +20,7 @@ export async function GET(
     }
 
     // Security check: user can only access tasks from their own projects
-    if (task.project.ownerId !== session.id) {
+    if (!task.project || (task.project as any).ownerId !== session.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -49,7 +49,7 @@ export async function PATCH(
     if (!existingTask) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
-    if (existingTask.project.ownerId !== session.id) {
+    if (!existingTask.project || (existingTask.project as any).ownerId !== session.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -84,7 +84,7 @@ export async function DELETE(
     if (!existingTask) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
-    if (existingTask.project.ownerId !== session.id) {
+    if (!existingTask.project || (existingTask.project as any).ownerId !== session.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -1,6 +1,15 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+/**
+ * Authentication Actions - Using SQL Server via SQL Gateway API
+ *
+ * All user operations now use the SQL Server database (extend_db_ptrj)
+ * via the SQL Gateway API instead of local SQLite.
+ *
+ * SECURITY: Only SERVER_PROFILE_1 and extend_db_ptrj are used for write operations.
+ */
+
+import { getUserByEmail, getUserWithEmailForAuth, getUserById, createUser, type User } from '@/lib/api/projects';
 import { hashPassword, verifyPassword, setSession, clearSession, getSession } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
@@ -44,9 +53,7 @@ export async function register(formData: FormData): Promise<AuthResult> {
 
   try {
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
       return { success: false, error: 'Email already registered' };
@@ -55,13 +62,11 @@ export async function register(formData: FormData): Promise<AuthResult> {
     // Hash password and create user
     const passwordHash = await hashPassword(password);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        username: email.split('@')[0], // Use email prefix as username
-        password: passwordHash
-      }
+    const user = await createUser({
+      name,
+      email,
+      username: email.split('@')[0], // Use email prefix as username
+      password: passwordHash
     });
 
     // Set session
@@ -102,10 +107,8 @@ export async function login(formData: FormData): Promise<AuthResult> {
   }
 
   try {
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    // Find user with password for authentication
+    const user = await getUserWithEmailForAuth(email);
 
     if (!user) {
       return { success: false, error: 'Invalid email or password' };
@@ -118,7 +121,7 @@ export async function login(formData: FormData): Promise<AuthResult> {
       return { success: false, error: 'Invalid email or password' };
     }
 
-    // Set session
+    // Set session (without password!)
     await setSession({
       userId: user.id,
       email: user.email,
@@ -168,16 +171,7 @@ export async function getCurrentUser() {
       return null;
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatarUrl: true
-      }
-    });
+    const user = await getUserById(session.userId);
 
     return user;
   } catch (error) {

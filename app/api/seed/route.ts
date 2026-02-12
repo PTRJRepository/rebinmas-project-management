@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 
 export async function GET() {
@@ -7,7 +7,7 @@ export async function GET() {
         console.log('Starting seed...');
         // 1. Create a default User
         const passwordHash = await hashPassword('demo123456');
-        const user = await prisma.user.upsert({
+        const user = await db.user.upsert({
             where: { email: 'demo@example.com' },
             update: {},
             create: {
@@ -21,7 +21,7 @@ export async function GET() {
         });
 
         // 2. Create a default Project
-        const project = await prisma.project.create({
+        const project = await db.project.create({
             data: {
                 name: 'Jira Clone Development',
                 description: 'Building a Jira-like tool with Next.js and Prisma',
@@ -34,7 +34,7 @@ export async function GET() {
         // 3. Create Task Statuses for the Project
         const statuses = ['To Do', 'In Progress', 'Done'];
         for (let i = 0; i < statuses.length; i++) {
-            await prisma.taskStatus.create({
+            await db.taskStatus.create({
                 data: {
                     name: statuses[i],
                     order: i,
@@ -44,12 +44,12 @@ export async function GET() {
         }
 
         // 4. Create a sample Task
-        const todoStatus = await prisma.taskStatus.findFirst({
+        const todoStatus = await db.taskStatus.findFirst({
             where: { projectId: project.id, name: 'To Do' },
         });
 
         if (todoStatus) {
-            await prisma.task.create({
+            await db.task.create({
                 data: {
                     title: 'Setup Database',
                     description: 'Configure Prisma and SQLite',

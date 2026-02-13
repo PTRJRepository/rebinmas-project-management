@@ -7,18 +7,29 @@ export async function GET() {
         console.log('Starting seed...');
         // 1. Create a default User
         const passwordHash = await hashPassword('demo123456');
-        const user = await db.user.upsert({
-            where: { email: 'demo@example.com' },
-            update: {},
-            create: {
-                email: 'demo@example.com',
-                username: 'demo',
-                name: 'Demo User',
-                password: passwordHash,
-                role: 'PM',
-                avatarUrl: 'https://github.com/shadcn.png',
-            },
+
+        // Check if user exists first (SQL Gateway client doesn't support upsert)
+        const existingUser = await db.user.findUnique({
+            where: { email: 'demo@example.com' }
         });
+
+        let user;
+        if (existingUser) {
+            user = existingUser;
+            console.log('Use existing demo user');
+        } else {
+            user = await db.user.create({
+                data: {
+                    email: 'demo@example.com',
+                    username: 'demo',
+                    name: 'Demo User',
+                    password: passwordHash,
+                    role: 'PM',
+                    avatarUrl: 'https://github.com/shadcn.png',
+                }
+            });
+            console.log('Created new demo user');
+        }
 
         // 2. Create a default Project
         const project = await db.project.create({
@@ -44,9 +55,10 @@ export async function GET() {
         }
 
         // 4. Create a sample Task
-        const todoStatus = await db.taskStatus.findFirst({
-            where: { projectId: project.id, name: 'To Do' },
+        const allStatuses = await db.taskStatus.findMany({
+            where: { projectId: project.id },
         });
+        const todoStatus = allStatuses.find((s: any) => s.name === 'To Do');
 
         if (todoStatus) {
             await db.task.create({

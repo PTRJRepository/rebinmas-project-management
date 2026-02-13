@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { syncData, pushToServer, pullFromServer } from '@/lib/sync/sql-sync';
+import { syncData, pullFromServer, pushToServer, fullSync } from '@/lib/sync/sql-sync';
 import { sqlGateway } from '@/lib/api/sql-gateway';
 
 export async function GET(request: NextRequest) {
@@ -53,6 +53,26 @@ export async function GET(request: NextRequest) {
           'ONLY extend_db_ptrj database is allowed for write operations',
           'Other databases (db_ptrj, etc.) are READ-ONLY',
         ],
+        syncDirections: {
+          pull: 'SQL Server -> SQLite (download data from server)',
+          push: 'SQLite -> SQL Server (upload local changes)',
+          both: 'Bidirectional sync',
+        },
+        usage: {
+          endpoint: 'POST /api/sync',
+          options: {
+            direction: 'Sync direction: pull (default), push, or both',
+            tables: 'Array of tables to sync: users, projects, tasks, statuses, comments, attachments',
+            dryRun: 'Set to true to preview changes without applying them',
+          },
+          examples: [
+            { description: 'Pull all data from SQL Server', body: {} },
+            { description: 'Push local changes to SQL Server', body: { direction: 'push' } },
+            { description: 'Bidirectional sync', body: { direction: 'both' } },
+            { description: 'Pull only projects', body: { tables: ['projects'] } },
+            { description: 'Dry run (preview)', body: { dryRun: true } },
+          ],
+        },
       },
     });
   } catch (error: any) {
@@ -69,7 +89,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { direction = 'both', tables = ['users', 'projects', 'tasks', 'statuses', 'comments'] } = body;
+    const {
+      direction = 'pull',
+      tables = ['users', 'projects', 'tasks', 'statuses', 'comments', 'attachments'],
+      dryRun = false
+    } = body;
 
     // Validate direction
     if (!['push', 'pull', 'both'].includes(direction)) {
@@ -83,31 +107,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate tables
-    const validTables = ['users', 'projects', 'tasks', 'statuses', 'comments'];
+    const validTables = ['users', 'projects', 'tasks', 'statuses', 'comments', 'attachments'];
     const invalidTables = tables.filter((t: string) => !validTables.includes(t));
     if (invalidTables.length > 0) {
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid tables: ${invalidTables.join(', ')}`,
+          error: `Invalid tables: ${invalidTables.join(', ')}. Valid tables are: ${validTables.join(', ')}`,
         },
         { status: 400 }
       );
     }
 
     // Perform sync
-    let result;
-    switch (direction) {
-      case 'push':
-        result = await pushToServer();
-        break;
-      case 'pull':
-        result = await pullFromServer();
-        break;
-      case 'both':
-        result = await syncData({ direction: 'both', tables });
-        break;
-    }
+    const result = await syncData({ direction, tables, dryRun });
 
     if (!result) {
       return NextResponse.json({
@@ -116,11 +129,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Format response for better readability
+    const summary = {
+      totalInserted: result.tables.reduce((sum, t) => sum + t.inserted, 0),
+      totalUpdated: result.tables.reduce((sum, t) => sum + t.updated, 0),
+      totalSkipped: result.tables.reduce((sum, t) => sum + t.skipped, 0),
+      totalErrors: result.tables.reduce((sum, t) => sum + t.errors, 0),
+    };
+
     return NextResponse.json({
       success: result.success,
-      data: result,
+      direction: result.direction,
+      dryRun,
+      timestamp: result.timestamp,
+      summary,
+      details: result.tables,
+      errors: result.errors.length > 0 ? result.errors : undefined,
     });
   } catch (error: any) {
+    console.error('Sync error:', error);
     return NextResponse.json(
       {
         success: false,

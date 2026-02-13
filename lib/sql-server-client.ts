@@ -45,8 +45,11 @@ interface SqlServerClient {
   };
   // TaskStatus operations
   taskStatus: {
+    findUnique: (args: { where: { id: string } }) => Promise<any>;
     findMany: (args?: { where?: { projectId?: string } }) => Promise<any[]>;
     create: (args: { data: any }) => Promise<any>;
+    update: (args: { where: { id: string }; data: any }) => Promise<any>;
+    delete: (args: { where: { id: string } }) => Promise<void>;
   };
   // Comment operations
   comment: {
@@ -173,7 +176,7 @@ const userOperations = {
     }
 
     const result = await executeQuery(sql, params);
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     return null;
@@ -190,7 +193,7 @@ const userOperations = {
 
     const result = await executeQuery(sql, params);
     if (result.success) {
-      return result.data?.recordset.map(fromDbColumns) || [];
+      return result.data?.recordset?.map(fromDbColumns) || [];
     }
     return [];
   },
@@ -203,7 +206,7 @@ const userOperations = {
     const sql = `INSERT INTO pm_users (${columns}) OUTPUT INSERTED.* VALUES (${values})`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to create user');
@@ -217,7 +220,7 @@ const userOperations = {
     const sql = `UPDATE pm_users SET ${setClause} OUTPUT INSERTED.* WHERE [id] = @id`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to update user');
@@ -235,7 +238,7 @@ const projectOperations = {
     const sql = 'SELECT TOP 1 * FROM pm_projects WHERE [id] = @id';
     const result = await executeQuery(sql, { id: args.where.id });
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     return null;
@@ -261,7 +264,7 @@ const projectOperations = {
 
     const result = await executeQuery(sql, params);
     if (result.success) {
-      return result.data?.recordset.map(fromDbColumns) || [];
+      return result.data?.recordset?.map(fromDbColumns) || [];
     }
     return [];
   },
@@ -274,7 +277,7 @@ const projectOperations = {
     const sql = `INSERT INTO pm_projects (${columns}) OUTPUT INSERTED.* VALUES (${values})`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to create project');
@@ -288,7 +291,7 @@ const projectOperations = {
     const sql = `UPDATE pm_projects SET ${setClause} OUTPUT INSERTED.* WHERE [id] = @id`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to update project');
@@ -306,7 +309,7 @@ const taskOperations = {
     const sql = 'SELECT TOP 1 * FROM pm_tasks WHERE [id] = @id';
     const result = await executeQuery(sql, { id: args.where.id });
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     return null;
@@ -338,7 +341,7 @@ const taskOperations = {
 
     const result = await executeQuery(sql, params);
     if (result.success) {
-      return result.data?.recordset.map(fromDbColumns) || [];
+      return result.data?.recordset?.map(fromDbColumns) || [];
     }
     return [];
   },
@@ -351,7 +354,7 @@ const taskOperations = {
     const sql = `INSERT INTO pm_tasks (${columns}) OUTPUT INSERTED.* VALUES (${values})`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to create task');
@@ -365,7 +368,7 @@ const taskOperations = {
     const sql = `UPDATE pm_tasks SET ${setClause} OUTPUT INSERTED.* WHERE [id] = @id`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to update task');
@@ -379,6 +382,16 @@ const taskOperations = {
 
 // TaskStatus operations
 const taskStatusOperations = {
+  async findUnique(args: { where: { id: string } }) {
+    const sql = 'SELECT TOP 1 * FROM pm_task_statuses WHERE [id] = @id';
+    const result = await executeQuery(sql, { id: args.where.id });
+
+    if (result.success && result.data?.recordset?.length) {
+      return fromDbColumns(result.data.recordset[0]);
+    }
+    return null;
+  },
+
   async findMany(args?: { where?: { projectId?: string } }) {
     let sql = 'SELECT * FROM pm_task_statuses';
     const params: any = {};
@@ -391,7 +404,7 @@ const taskStatusOperations = {
 
     const result = await executeQuery(sql, params);
     if (result.success) {
-      return result.data?.recordset.map(fromDbColumns) || [];
+      return result.data?.recordset?.map(fromDbColumns) || [];
     }
     return [];
   },
@@ -404,10 +417,29 @@ const taskStatusOperations = {
     const sql = `INSERT INTO pm_task_statuses (${columns}) OUTPUT INSERTED.* VALUES (${values})`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to create task status');
+  },
+
+  async update(args: { where: { id: string }; data: any }) {
+    const data = toDbColumns(args.data);
+    const setClause = Object.keys(data).map(k => `[${k}] = @${k}`).join(', ');
+    data.id = args.where.id;
+
+    const sql = `UPDATE pm_task_statuses SET ${setClause} OUTPUT INSERTED.* WHERE [id] = @id`;
+    const result = await executeQuery(sql, data);
+
+    if (result.success && result.data?.recordset?.length) {
+      return fromDbColumns(result.data.recordset[0]);
+    }
+    throw new Error('Failed to update task status');
+  },
+
+  async delete(args: { where: { id: string } }) {
+    const sql = 'DELETE FROM pm_task_statuses WHERE [id] = @id';
+    await executeQuery(sql, { id: args.where.id });
   },
 };
 
@@ -425,7 +457,7 @@ const commentOperations = {
 
     const result = await executeQuery(sql, params);
     if (result.success) {
-      return result.data?.recordset.map(fromDbColumns) || [];
+      return result.data?.recordset?.map(fromDbColumns) || [];
     }
     return [];
   },
@@ -438,7 +470,7 @@ const commentOperations = {
     const sql = `INSERT INTO pm_comments (${columns}) OUTPUT INSERTED.* VALUES (${values})`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to create comment');
@@ -458,7 +490,7 @@ const attachmentOperations = {
 
     const result = await executeQuery(sql, params);
     if (result.success) {
-      return result.data?.recordset.map(fromDbColumns) || [];
+      return result.data?.recordset?.map(fromDbColumns) || [];
     }
     return [];
   },
@@ -471,7 +503,7 @@ const attachmentOperations = {
     const sql = `INSERT INTO pm_attachments (${columns}) OUTPUT INSERTED.* VALUES (${values})`;
     const result = await executeQuery(sql, data);
 
-    if (result.success && result.data?.recordset.length > 0) {
+    if (result.success && result.data?.recordset?.length) {
       return fromDbColumns(result.data.recordset[0]);
     }
     throw new Error('Failed to create attachment');
@@ -482,7 +514,7 @@ const attachmentOperations = {
 async function queryRaw(query: string, params?: any[]): Promise<any[]> {
   const result = await executeQuery(query, {});
   if (result.success) {
-    return result.data?.recordset.map(fromDbColumns) || [];
+    return result.data?.recordset?.map(fromDbColumns) || [];
   }
   return [];
 }

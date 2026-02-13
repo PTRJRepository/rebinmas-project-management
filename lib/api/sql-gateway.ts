@@ -53,8 +53,8 @@ interface BatchQueryResult {
 // =================================================-
 
 const CONFIG = {
-  API_URL: process.env.SQL_GATEWAY_URL || 'http://10.0.0.110:8001',
-  API_TOKEN: process.env.SQL_GATEWAY_TOKEN || '2a993486e7a448474de66bfaea4adba7a99784defbcaba420e7f906176b94df6',
+  API_URL: process.env.SQL_GATEWAY_URL || process.env.API_QUERY_URL || 'http://10.0.0.110:8001',
+  API_TOKEN: process.env.SQL_GATEWAY_TOKEN || process.env.API_TOKEN || '2a993486e7a448474de66bfaea4adba7a99784defbcaba420e7f906176b94df6',
   DEFAULT_SERVER: process.env.SQL_GATEWAY_SERVER || 'SERVER_PROFILE_1',
   DEFAULT_DATABASE: process.env.SQL_GATEWAY_DATABASE || 'extend_db_ptrj',
 };

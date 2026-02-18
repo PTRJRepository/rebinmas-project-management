@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProjectById, getProjectWithTasks, updateProject, deleteProject } from '@/lib/api/projects';
 import { getCurrentUser } from '@/app/actions/auth';
+import { checkProjectAccess } from '@/lib/api/project-members';
 
 export async function GET(
   request: NextRequest,
@@ -13,16 +14,18 @@ export async function GET(
     }
 
     const { id } = await params;
+
+    // Check project access using ownership-based access control
+    const access = await checkProjectAccess(id, session.id);
+    if (!access.hasAccess) {
+      return NextResponse.json({ error: 'Forbidden', reason: access.reason }, { status: 403 });
+    }
+
     // Use getProjectWithTasks to include statuses and tasks
     const project = await getProjectWithTasks(id);
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    // Security check: user can only access their own projects
-    if (project.ownerId !== session.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     return NextResponse.json(project);
@@ -45,13 +48,15 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    // First, check if user owns this project
+    // Check project access - require OWNER role to edit
+    const access = await checkProjectAccess(id, session.id, 'OWNER');
+    if (!access.hasAccess) {
+      return NextResponse.json({ error: 'Forbidden', reason: access.reason }, { status: 403 });
+    }
+
     const existingProject = await getProjectById(id);
     if (!existingProject) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-    if (existingProject.ownerId !== session.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Convert date strings to Date objects
@@ -95,13 +100,15 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // First, check if user owns this project
+    // Check project access - require OWNER role to delete
+    const access = await checkProjectAccess(id, session.id, 'OWNER');
+    if (!access.hasAccess) {
+      return NextResponse.json({ error: 'Forbidden', reason: access.reason }, { status: 403 });
+    }
+
     const existingProject = await getProjectById(id);
     if (!existingProject) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-    if (existingProject.ownerId !== session.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     await deleteProject(id);

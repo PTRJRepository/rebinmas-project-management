@@ -15,8 +15,12 @@ import { getCurrentUser } from '@/app/actions/auth';
 
 export async function GET() {
   try {
-    // Bypass authentication - return all projects publicly (NO LOGIN required)
-    const projects = await getProjects();
+    // Get current user for ownership-based filtering
+    const session = await getCurrentUser();
+
+    // Pass userId and userRole for ownership-based access control
+    // If not authenticated, returns empty array
+    const projects = await getProjects(session?.id, session?.role);
     return NextResponse.json(projects);
   } catch (error) {
     console.error('Error fetching projects:', error);

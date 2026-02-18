@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import KanbanBoard from '@/components/KanbanBoard'
 import { CanvasBoard } from '@/components/CanvasBoard'
 import { CreateTaskDialog } from '@/components/CreateTaskDialog'
+import { ProjectMembersDialog } from '@/components/project/ProjectMembersDialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -64,6 +65,8 @@ interface ProjectBoardClientProps {
   overdueTasks: Task[]
   dueTodayTasks: Task[]
   dueThisWeekTasks: Task[]
+  currentUserId: string
+  currentUserRole?: string
 }
 
 export default function ProjectBoardClient({
@@ -73,7 +76,9 @@ export default function ProjectBoardClient({
   urgentTasks,
   overdueTasks,
   dueTodayTasks,
-  dueThisWeekTasks
+  dueThisWeekTasks,
+  currentUserId,
+  currentUserRole
 }: ProjectBoardClientProps) {
   const [viewState, setViewState] = useState<ViewState>('overview')
   const [filteredTaskIds, setFilteredTaskIds] = useState<string[]>([])
@@ -293,6 +298,12 @@ export default function ProjectBoardClient({
                 Print Report
               </Button>
             </Link>
+            <ProjectMembersDialog
+              projectId={project.id}
+              projectName={project.name}
+              currentUserId={currentUserId}
+              currentUserRole={currentUserRole}
+            />
             <CreateTaskDialog projectId={project.id} statuses={project.statuses} />
           </div>
         </div>

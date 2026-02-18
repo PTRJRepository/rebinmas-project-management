@@ -48,12 +48,18 @@ export async function setSession(sessionData: SessionData): Promise<void> {
     ...sessionData
   });
 
+  // Cookie configuration for production
+  const isProduction = process.env.NODE_ENV === 'production';
+  const maxAge = parseInt(process.env.SESSION_MAX_AGE || '7', 10) * 60 * 60 * 24;
+
   cookieStore.set('session', sessionValue, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction, // HTTPS only in production
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: '/'
+    maxAge,
+    path: '/',
+    // Optional: Set domain if using custom domain (e.g., .yourdomain.com)
+    // domain: isProduction ? '.yourdomain.com' : undefined,
   });
 }
 

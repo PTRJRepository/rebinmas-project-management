@@ -7,11 +7,21 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Users, Flame, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import ProjectBoardClient from './ProjectBoardClient'
+import { redirect } from 'next/navigation'
+import { getCurrentUser } from '@/app/actions/auth'
 
 export default async function ProjectDashboard({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const { success, data: stats } = await getProjectStats(id)
-    const { data: project } = await getProject(id)
+    const projectResult = await getProject(id)
+    const { data: project, code, userRole } = projectResult
+    const currentUser = await getCurrentUser()
+
+    // Handle access denied
+    if (code === 'FORBIDDEN') {
+        redirect('/forbidden')
+    }
+    
     const { data: tasks } = await getTasks(id)
 
     if (!success) return <div>Error loading stats</div>
@@ -48,6 +58,8 @@ export default async function ProjectDashboard({ params }: { params: Promise<{ i
             overdueTasks={overdueTasks as any}
             dueTodayTasks={dueTodayTasks as any}
             dueThisWeekTasks={dueThisWeekTasks as any}
+            currentUserId={currentUser?.id || ''}
+            currentUserRole={userRole as string}
         />
     )
 }

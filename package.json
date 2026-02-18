@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "lint": "eslint",
-    "migrate": "tsx scripts/migrate-sqlite-to-sqlserver.ts"
+    "migrate": "tsx scripts/migrate-sqlite-to-sqlserver.ts",
+    "test:prod": "node scripts/test-production-connection.js",
+    "test:connection": "node scripts/test-production-connection.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",

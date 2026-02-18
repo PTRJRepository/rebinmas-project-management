@@ -21,9 +21,10 @@ model User {
   role      String    @default("MEMBER") // ADMIN, PM, MEMBER
   avatarUrl String?
 
-  projectsOwned Project[]
-  tasksAssigned Task[]
-  comments      Comment[]
+  projectsOwned  Project[]
+  projectMembers ProjectMember[]
+  tasksAssigned  Task[]
+  comments       Comment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -40,12 +41,31 @@ model Project {
   status      String?  // Manual category: SEKARANG, RENCANA, SELESAI, or null (auto by date)
   ownerId     String
   owner       User     @relation(fields: [ownerId], references: [id])
+  createdBy   String?  // Track who created the project (for audit)
 
   tasks       Task[]
   statuses    TaskStatus[]
+  members     ProjectMember[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Project membership for ownership-based access control
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("MEMBER") // OWNER, PM, MEMBER
+  joinedAt  DateTime @default(now())
+  addedBy   String?  // Who added this member
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId]) // One user can only have one role per project
+  @@index([projectId])
+  @@index([userId])
 }
 
 model TaskStatus {

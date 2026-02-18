@@ -109,6 +109,7 @@ export interface Project {
   ownerId: string;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt?: Date | null;
   // Computed fields
   owner?: {
     id: string;
@@ -208,7 +209,15 @@ export interface UserWithPassword extends User {
 // GET FUNCTIONS
 // ==================================================
 
-export async function getProjects(userId?: string): Promise<Project[]> {
+export async function getProjects(userId?: string, userRole?: string): Promise<Project[]> {
+  // If userId is provided, filter by access
+  if (userId) {
+    // Import the access control function
+    const { getAccessibleProjects } = await import('./project-members');
+    return getAccessibleProjects(userId, userRole as any);
+  }
+
+  // No userId provided - return all projects (for admin/internal use only)
   let sql = `
     SELECT
       p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at,
@@ -220,6 +229,7 @@ export async function getProjects(userId?: string): Promise<Project[]> {
     FROM pm_projects p
     LEFT JOIN pm_users u ON p.owner_id = u.id
     LEFT JOIN pm_tasks t ON p.id = t.project_id
+    WHERE p.deleted_at IS NULL
   `;
 
   sql += `
@@ -249,6 +259,7 @@ export async function getProjects(userId?: string): Promise<Project[]> {
       ownerId: row.owner_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      deletedAt: row.deleted_at,
       owner,
       _count: { tasks: row.task_count },
     };
@@ -257,10 +268,99 @@ export async function getProjects(userId?: string): Promise<Project[]> {
   return projects as Project[];
 }
 
+export async function getDeletedProjects(userId?: string): Promise<Project[]> {
+  let sql = `
+    SELECT
+      p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at, p.deleted_at,
+      u.id as user_id,
+      u.username as owner_username,
+      u.email as owner_email,
+      u.name as owner_name,
+      COUNT(t.id) as task_count
+    FROM pm_projects p
+    LEFT JOIN pm_users u ON p.owner_id = u.id
+    LEFT JOIN pm_tasks t ON p.id = t.project_id
+    WHERE p.deleted_at IS NOT NULL
+  `;
+
+  const params: any = {};
+  if (userId) {
+    sql += ` AND (p.owner_id = @userId OR EXISTS (SELECT 1 FROM pm_project_members WHERE project_id = p.id AND user_id = @userId))`;
+    params.userId = userId;
+  }
+
+  sql += `
+    GROUP BY p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at, p.deleted_at, u.id, u.username, u.email, u.name
+    ORDER BY p.deleted_at DESC
+  `;
+
+  const finalResult = await sqlGateway.query(sql, params);
+
+  return finalResult.recordset.map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    priority: row.priority,
+    bannerImage: row.banner_image,
+    status: row.status,
+    ownerId: row.owner_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
+    owner: {
+      id: row.user_id,
+      username: row.owner_username,
+      email: row.owner_email,
+      name: row.owner_name,
+    },
+    _count: { tasks: row.task_count },
+  })) as Project[];
+}
+
 export async function getProjectById(id: string): Promise<Project | null> {
   const sql = `
     SELECT
       p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at,
+      u.id as user_id,
+      u.username as owner_username,
+      u.email as owner_email,
+      u.name as owner_name
+    FROM pm_projects p
+    LEFT JOIN pm_users u ON p.owner_id = u.id
+    WHERE p.id = @id AND p.deleted_at IS NULL
+  `;
+
+  const result = await sqlGateway.query(sql, { id });
+  if (result.recordset.length === 0) return null;
+
+  const row = result.recordset[0];
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    priority: row.priority,
+    bannerImage: row.banner_image,
+    status: row.status,
+    ownerId: row.owner_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    owner: {
+      id: row.user_id,
+      username: row.owner_username,
+      email: row.owner_email,
+      name: row.owner_name,
+    },
+  } as Project;
+}
+
+export async function getProjectByIdIncludeDeleted(id: string): Promise<Project | null> {
+  const sql = `
+    SELECT
+      p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at, p.deleted_at,
       u.id as user_id,
       u.username as owner_username,
       u.email as owner_email,
@@ -286,6 +386,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
     ownerId: row.owner_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
     owner: {
       id: row.user_id,
       username: row.owner_username,
@@ -431,6 +532,18 @@ export async function createProject(data: {
     });
   }
 
+  // Add the project creator as OWNER in pm_project_members table
+  const memberId = generateId('member');
+  await sqlGateway.query(`
+    INSERT INTO pm_project_members (id, project_id, user_id, role, joined_at)
+    VALUES (@id, @projectId, @userId, 'OWNER', @joinedAt)
+  `, {
+    id: memberId,
+    projectId: id,
+    userId: data.ownerId,
+    joinedAt: now,
+  });
+
   return (await getProjectById(id))!;
 }
 
@@ -490,11 +603,30 @@ export async function updateProject(id: string, data: Partial<Project>): Promise
 // ==================================================
 
 export async function deleteProject(id: string): Promise<void> {
+  // Soft delete: Update deleted_at timestamp
+  await sqlGateway.query(
+    'UPDATE pm_projects SET deleted_at = GETDATE() WHERE id = @id',
+    { id }
+  );
+}
+
+export async function restoreProject(id: string): Promise<void> {
+  // Restore: Clear deleted_at timestamp
+  await sqlGateway.query(
+    'UPDATE pm_projects SET deleted_at = NULL WHERE id = @id',
+    { id }
+  );
+}
+
+export async function permanentDeleteProject(id: string): Promise<void> {
   // Delete all tasks (cascades to comments and attachments)
   await sqlGateway.query('DELETE FROM pm_tasks WHERE project_id = @id', { id });
 
   // Delete all task statuses
   await sqlGateway.query('DELETE FROM pm_task_statuses WHERE project_id = @id', { id });
+
+  // Delete project members
+  await sqlGateway.query('DELETE FROM pm_project_members WHERE project_id = @id', { id });
 
   // Delete the project
   await sqlGateway.query('DELETE FROM pm_projects WHERE id = @id', { id });

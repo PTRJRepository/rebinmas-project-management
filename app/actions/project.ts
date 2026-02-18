@@ -7,21 +7,36 @@
  * via the SQL Gateway API instead of local SQLite.
  *
  * SECURITY: Only SERVER_PROFILE_1 and extend_db_ptrj are used for write operations.
+ * OWNERSHIP: Projects are filtered based on user ownership and membership.
  */
 
 import { revalidatePath } from 'next/cache'
 import { getCurrentUser } from '@/app/actions/auth'
 import {
-  getProjects as apiGetProjects,
-  createProject as apiCreateProject,
-  getProjectById,
-  getProjectWithTasks,
-  deleteProject as apiDeleteProject,
-  getProjectDashboardStats,
-  updateProject,
-  type Project,
-  type Task
+    createProject as apiCreateProject,
+    getProjectById,
+    getProjectWithTasks,
+    deleteProject,
+    getProjectDashboardStats,
+    updateProject,
+    restoreProject,
+    permanentDeleteProject,
+    getDeletedProjects,
+    getProjectByIdIncludeDeleted,
+    type Project,
+    type Task
 } from '@/lib/api/projects'
+import {
+    checkProjectAccess,
+    getAccessibleProjects,
+    getProjectMembers,
+    addProjectMember,
+    removeProjectMember,
+    updateMemberRole,
+    transferOwnership,
+    canPerformAction,
+    type ProjectMember,
+} from '@/lib/api/project-members'
 
 export async function getProjects() {
     try {
@@ -30,7 +45,8 @@ export async function getProjects() {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const projects = await apiGetProjects(session.id)
+        // Use access-controlled query
+        const projects = await getAccessibleProjects(session.id, session.role)
         return { success: true, data: projects }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -39,7 +55,7 @@ export async function getProjects() {
 
 export async function getAllProjects() {
     try {
-        const projects = await apiGetProjects()
+        const projects = await getProjects()
         return { success: true, data: projects }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -104,14 +120,10 @@ export async function updateProjectAction(formData: FormData) {
     }
 
     try {
-        // Verify ownership
-        const existing = await getProjectById(id)
-        if (!existing) {
-            return { success: false, error: 'Project not found' }
-        }
-
-        if (existing.ownerId !== session.id) {
-            return { success: false, error: 'Unauthorized: You can only edit your own projects' }
+        // Check if user can edit project (OWNER or ADMIN only)
+        const canEdit = await canPerformAction('edit_project', id, session.id)
+        if (!canEdit) {
+            return { success: false, error: 'Unauthorized: Only project owner or admin can edit' }
         }
 
         const project = await updateProject(id, {
@@ -142,38 +154,256 @@ export async function getProjectStats(projectId: string) {
 
 export async function getProject(projectId: string) {
     try {
+        const session = await getCurrentUser()
+        if (!session) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        // Check access
+        const access = await checkProjectAccess(projectId, session.id)
+        if (!access.hasAccess) {
+            return { success: false, error: 'Access denied', code: 'FORBIDDEN' }
+        }
+
         // Use getProjectWithTasks to include statuses and tasks
         const project = await getProjectWithTasks(projectId)
         if (!project) {
             return { success: false, error: 'Project not found' }
         }
-        return { success: true, data: project }
+        return { success: true, data: project, userRole: access.role }
     } catch (error: any) {
         return { success: false, error: error.message }
     }
 }
 
-export async function deleteProject(projectId: string) {
+export async function deleteProjectAction(id: string) {
+    try {
+        const session = await getCurrentUser();
+        if (!session) {
+            return { success: false, error: 'Unauthorized' };
+        }
+
+        // Check ownership
+        const project = await getProjectById(id);
+        if (!project) {
+            return { success: false, error: 'Project not found' };
+        }
+
+        if (project.ownerId !== session.id && session.role !== 'ADMIN') {
+            return { success: false, error: 'Not authorized to delete this project' };
+        }
+
+        await deleteProject(id); // Now performs soft delete
+        revalidatePath('/projects');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error deleting project:', error);
+        return { success: false, error: 'Failed to delete project' };
+    }
+}
+
+export async function restoreProjectAction(id: string) {
+    try {
+        const session = await getCurrentUser();
+        if (!session) {
+            return { success: false, error: 'Unauthorized' };
+        }
+
+        // Check ownership (need to include deleted projects)
+        const project = await getProjectByIdIncludeDeleted(id);
+        if (!project) {
+            return { success: false, error: 'Project not found' };
+        }
+
+        if (project.ownerId !== session.id && session.role !== 'ADMIN') {
+            return { success: false, error: 'Not authorized to restore this project' };
+        }
+
+        await restoreProject(id);
+        revalidatePath('/projects');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error restoring project:', error);
+        return { success: false, error: 'Failed to restore project' };
+    }
+}
+
+export async function permanentDeleteProjectAction(id: string) {
+    try {
+        const session = await getCurrentUser();
+        if (!session) {
+            return { success: false, error: 'Unauthorized' };
+        }
+
+        // Check ownership
+        const project = await getProjectByIdIncludeDeleted(id);
+        if (!project) {
+            return { success: false, error: 'Project not found' };
+        }
+
+        if (project.ownerId !== session.id && session.role !== 'ADMIN') {
+            return { success: false, error: 'Not authorized to permanently delete this project' };
+        }
+
+        await permanentDeleteProject(id);
+        revalidatePath('/projects');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error permanently deleting project:', error);
+        return { success: false, error: 'Failed to permanently delete project' };
+    }
+}
+
+export async function getDeletedProjectsAction() {
+    try {
+        const session = await getCurrentUser();
+        if (!session) {
+            return { success: false, error: 'Unauthorized' };
+        }
+
+        const projects = await getDeletedProjects(session.id);
+        return { success: true, data: projects };
+    } catch (error: any) {
+        console.error('Error getting deleted projects:', error);
+        return { success: false, error: 'Failed to get deleted projects' };
+    }
+}
+
+// ==================================================
+// MEMBER MANAGEMENT ACTIONS
+// ==================================================
+
+export async function getProjectMembersAction(projectId: string) {
     const session = await getCurrentUser()
     if (!session) {
         return { success: false, error: 'Unauthorized' }
     }
 
     try {
-        // Verify ownership
-        const existing = await getProjectById(projectId)
+        // Check access
+        const access = await checkProjectAccess(projectId, session.id)
+        if (!access.hasAccess) {
+            return { success: false, error: 'Access denied' }
+        }
 
-        if (!existing) {
+        const members = await getProjectMembers(projectId)
+        return { success: true, data: members }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function addProjectMemberAction(formData: FormData) {
+    const session = await getCurrentUser()
+    if (!session) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    const projectId = formData.get('projectId') as string
+    const userId = formData.get('userId') as string
+    const role = formData.get('role') as string
+
+    if (!projectId || !userId || !role) {
+        return { success: false, error: 'Missing required fields' }
+    }
+
+    try {
+        // Check if user can manage members (OWNER or ADMIN only)
+        const canManage = await canPerformAction('manage_members', projectId, session.id)
+        if (!canManage) {
+            return { success: false, error: 'Unauthorized: Only project owner or admin can add members' }
+        }
+
+        // Prevent assigning OWNER role through this action
+        if (role === 'OWNER') {
+            return { success: false, error: 'Cannot assign ownership through this action. Use transfer ownership instead.' }
+        }
+
+        // Validate role
+        if (role !== 'PM' && role !== 'MEMBER') {
+            return { success: false, error: 'Invalid role. Must be PM or MEMBER.' }
+        }
+
+        const member = await addProjectMember({
+            projectId,
+            userId,
+            role,
+            addedBy: session.id,
+        })
+
+        revalidatePath(`/projects/${projectId}`)
+        return { success: true, data: member }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function removeProjectMemberAction(projectId: string, userId: string) {
+    const session = await getCurrentUser()
+    if (!session) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    try {
+        // Check if user can manage members (OWNER or ADMIN only)
+        const canManage = await canPerformAction('manage_members', projectId, session.id)
+        if (!canManage) {
+            return { success: false, error: 'Unauthorized: Only project owner or admin can remove members' }
+        }
+
+        await removeProjectMember(projectId, userId)
+
+        revalidatePath(`/projects/${projectId}`)
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateMemberRoleAction(projectId: string, userId: string, newRole: string) {
+    const session = await getCurrentUser()
+    if (!session) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    try {
+        // Check if user can manage members (OWNER or ADMIN only)
+        const canManage = await canPerformAction('manage_members', projectId, session.id)
+        if (!canManage) {
+            return { success: false, error: 'Unauthorized: Only project owner or admin can update member roles' }
+        }
+
+        await updateMemberRole(projectId, userId, newRole as any)
+
+        revalidatePath(`/projects/${projectId}`)
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function transferOwnershipAction(projectId: string, newOwnerId: string) {
+    const session = await getCurrentUser()
+    if (!session) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    try {
+        // Check if current user is the owner or admin
+        const access = await checkProjectAccess(projectId, session.id, 'OWNER')
+        if (!access.hasAccess && session.role !== 'ADMIN') {
+            return { success: false, error: 'Unauthorized: Only project owner or admin can transfer ownership' }
+        }
+
+        // Get current owner
+        const project = await getProjectById(projectId)
+        if (!project) {
             return { success: false, error: 'Project not found' }
         }
 
-        if (existing.ownerId !== session.id) {
-            return { success: false, error: 'Unauthorized: You can only delete your own projects' }
-        }
+        await transferOwnership(projectId, newOwnerId, project.ownerId)
 
-        await apiDeleteProject(projectId)
-
-        revalidatePath('/projects')
+        revalidatePath(`/projects/${projectId}`)
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }

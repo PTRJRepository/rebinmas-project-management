@@ -43,6 +43,49 @@ import {
     type ProjectMember,
 } from '@/lib/api/project-members'
 
+// ==================================================
+// PROJECT DOCUMENTATION ACTIONS
+// ==================================================
+
+export async function getProjectDocsAction(projectId: string) {
+    try {
+        const docs = await getProjectDocs(projectId)
+        return { success: true, data: docs }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function createProjectDocAction(projectId: string, title: string, content: string) {
+    try {
+        const doc = await createProjectDoc({ projectId, title, content })
+        revalidatePath(`/projects/${projectId}`)
+        return { success: true, data: doc }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateProjectDocAction(docId: string, projectId: string, data: { title?: string; content?: string }) {
+    try {
+        const doc = await updateProjectDoc(docId, data)
+        revalidatePath(`/projects/${projectId}`)
+        return { success: true, data: doc }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function deleteProjectDocAction(docId: string, projectId: string) {
+    try {
+        await deleteProjectDoc(docId)
+        revalidatePath(`/projects/${projectId}`)
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
 export async function getProjects() {
     try {
         const session = await getCurrentUser()

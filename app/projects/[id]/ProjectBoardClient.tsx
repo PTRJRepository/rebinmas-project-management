@@ -11,6 +11,7 @@ import { CanvasBoard } from '@/components/CanvasBoard'
 import { CreateTaskDialog } from '@/components/CreateTaskDialog'
 import { ProjectMembersDialog } from '@/components/project/ProjectMembersDialog'
 import { ProjectAttachments } from '@/components/project/ProjectAttachments'
+import { ProjectDocs } from '@/components/project/ProjectDocs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -855,6 +856,11 @@ export default function ProjectBoardClient({
             </CardContent>
           </Card>
         )}
+
+        {/* Project Documentation Cards */}
+        <div className="mb-8">
+          <ProjectDocs projectId={project.id} />
+        </div>
 
         {/* Project Assets & Attachments */}
         <div className="mb-6">

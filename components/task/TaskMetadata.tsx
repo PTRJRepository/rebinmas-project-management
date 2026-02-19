@@ -372,10 +372,10 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                             <FileText className="h-10 w-10 text-slate-700 mb-2" />
                             <p className="text-slate-500 text-sm italic">No documentation yet</p>
                             <Button 
-                                variant="link" 
+                                variant="ghost" 
                                 size="sm" 
                                 onClick={handleOpenAddDoc}
-                                className="mt-2 text-sky-500 hover:text-sky-400 p-0 h-auto"
+                                className="mt-2 text-sky-500 hover:text-sky-400 p-0 h-auto hover:bg-transparent"
                             >
                                 Add your first document
                             </Button>

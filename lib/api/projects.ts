@@ -229,7 +229,6 @@ export async function getProjects(userId?: string, userRole?: string): Promise<P
     FROM pm_projects p
     LEFT JOIN pm_users u ON p.owner_id = u.id
     LEFT JOIN pm_tasks t ON p.id = t.project_id
-    WHERE p.deleted_at IS NULL
   `;
 
   sql += `
@@ -259,7 +258,6 @@ export async function getProjects(userId?: string, userRole?: string): Promise<P
       ownerId: row.owner_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      deletedAt: row.deleted_at,
       owner,
       _count: { tasks: row.task_count },
     };
@@ -329,7 +327,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
       u.name as owner_name
     FROM pm_projects p
     LEFT JOIN pm_users u ON p.owner_id = u.id
-    WHERE p.id = @id AND p.deleted_at IS NULL
+    WHERE p.id = @id
   `;
 
   const result = await sqlGateway.query(sql, { id });
@@ -603,19 +601,13 @@ export async function updateProject(id: string, data: Partial<Project>): Promise
 // ==================================================
 
 export async function deleteProject(id: string): Promise<void> {
-  // Soft delete: Update deleted_at timestamp
-  await sqlGateway.query(
-    'UPDATE pm_projects SET deleted_at = GETDATE() WHERE id = @id',
-    { id }
-  );
+  // Hard delete for SQL Server (no soft delete support)
+  await permanentDeleteProject(id);
 }
 
 export async function restoreProject(id: string): Promise<void> {
-  // Restore: Clear deleted_at timestamp
-  await sqlGateway.query(
-    'UPDATE pm_projects SET deleted_at = NULL WHERE id = @id',
-    { id }
-  );
+  // Not supported for SQL Server (hard delete only)
+  throw new Error('Restore not supported for SQL Server. Use permanent delete.');
 }
 
 export async function permanentDeleteProject(id: string): Promise<void> {

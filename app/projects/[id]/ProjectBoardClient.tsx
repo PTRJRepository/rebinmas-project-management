@@ -106,7 +106,8 @@ export default function ProjectBoardClient({
     window.print()
   }
 
-  const handleSaveProject = async () => {
+  const handleSaveProject = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setIsSaving(true)
     try {
       const res = await fetch(`/api/projects/${project.id}`, {
@@ -381,7 +382,7 @@ export default function ProjectBoardClient({
                 "shadow-sm",
                 deadlineInfo.color === 'red' ? "bg-red-600 hover:bg-red-700 text-white" :
                   deadlineInfo.color === 'amber' ? "bg-amber-600 hover:bg-amber-700 text-white" :
-                  "bg-white border-gray-300 hover:bg-gray-50"
+                    "bg-white border-gray-300 hover:bg-gray-50"
               )}
             >
               <Edit className="w-4 h-4 mr-2" />
@@ -620,8 +621,8 @@ export default function ProjectBoardClient({
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'Backlog' || statusName === 'To Do'
                     }).length === 0 && (
-                      <p className="text-sm text-gray-400 text-center py-4">Tidak ada tugas terencana</p>
-                    )}
+                        <p className="text-sm text-gray-400 text-center py-4">Tidak ada tugas terencana</p>
+                      )}
                   </div>
                 </div>
 
@@ -685,8 +686,8 @@ export default function ProjectBoardClient({
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'In Progress' || statusName === 'Review'
                     }).length === 0 && (
-                      <p className="text-sm text-gray-400 text-center py-4">Tidak ada tugas aktif</p>
-                    )}
+                        <p className="text-sm text-gray-400 text-center py-4">Tidak ada tugas aktif</p>
+                      )}
                   </div>
                 </div>
 
@@ -738,8 +739,8 @@ export default function ProjectBoardClient({
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'Done'
                     }).length === 0 && (
-                      <p className="text-sm text-gray-400 text-center py-4">Belum ada tugas selesai</p>
-                    )}
+                        <p className="text-sm text-gray-400 text-center py-4">Belum ada tugas selesai</p>
+                      )}
                   </div>
                 </div>
               </div>

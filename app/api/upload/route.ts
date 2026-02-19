@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -21,8 +21,9 @@ export async function POST(request: NextRequest) {
         const extension = originalName.split('.').pop() || 'jpg';
         const filename = `image-${uniqueSuffix}.${extension}`;
 
-        // Save to public/uploads
+        // Save to public/uploads (ensure directory exists)
         const uploadDir = join(process.cwd(), 'public', 'uploads');
+        await mkdir(uploadDir, { recursive: true });
         const filepath = join(uploadDir, filename);
 
         await writeFile(filepath, buffer);

@@ -97,8 +97,12 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
         updatedAt: new Date().toISOString()
       }
 
-      // Save to localStorage (without files which are binary)
-      localStorage.setItem(`canvas-${projectId}`, JSON.stringify(content))
+      // Save to localStorage as backup (without files which are binary)
+      try {
+        localStorage.setItem(`canvas-${projectId}`, JSON.stringify(content))
+      } catch (e) {
+        console.warn('Failed to save canvas to localStorage:', e)
+      }
 
       // Save to database via API
       const res = await fetch(`/api/projects/${projectId}/canvas`, {
@@ -332,23 +336,7 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
     if (!excalidrawAPI) return
 
     const loadContent = async () => {
-      // Try localStorage first
-      const saved = localStorage.getItem(`canvas-${projectId}`)
-      if (saved) {
-        try {
-          const content = JSON.parse(saved)
-          await excalidrawAPI.updateScene({
-            elements: content.elements || [],
-            appState: content.appState
-          })
-          setIsInitialized(true)
-          return
-        } catch (e) {
-          console.error('Error loading canvas:', e)
-        }
-      }
-
-      // Try loading from server API
+      // Try loading from server API first (persistent storage)
       try {
         const res = await fetch(`/api/projects/${projectId}/canvas`)
         if (res.ok) {
@@ -364,6 +352,24 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
         }
       } catch (e) {
         console.error('Error loading canvas from server:', e)
+      }
+
+      // Fall back to localStorage
+      const saved = localStorage.getItem(`canvas-${projectId}`)
+      if (saved) {
+        try {
+          const content = JSON.parse(saved)
+          if (content.elements && content.elements.length > 0) {
+            await excalidrawAPI.updateScene({
+              elements: content.elements || [],
+              appState: content.appState
+            })
+            setIsInitialized(true)
+            return
+          }
+        } catch (e) {
+          console.error('Error loading canvas from localStorage:', e)
+        }
       }
 
       // No saved content, initialize with tasks
@@ -414,6 +420,7 @@ function CanvasBoardInner({ projectId, projectName, tasks, onSave, initialData }
       {/* Canvas Container */}
       <div className="flex-1 relative" ref={canvasRef}>
         <ExcalidrawWrapper
+          onReady={(api: any) => setExcalidrawAPI(api)}
           onChange={() => {
             // Auto-save handled by interval
           }}

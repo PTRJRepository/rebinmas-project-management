@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw'
 
 interface ExcalidrawWrapperProps {
@@ -19,6 +18,11 @@ export default function ExcalidrawWrapper({ onReady, onChange }: ExcalidrawWrapp
     <div style={{ width: '100%', height: '100%' }}>
       <Excalidraw
         onChange={handleChange}
+        excalidrawAPI={(api: any) => {
+          if (onReady) {
+            onReady(api)
+          }
+        }}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -75,12 +75,22 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
         setEstimatedHours(task.estimatedHours?.toString() || '');
     }, [task]);
 
-    const handleDocumentationChange = async (content: string, jsonContent?: object) => {
-        const result = await updateTask(task.id, { documentation: JSON.stringify(jsonContent) }, projectId);
-        if (!result.success) {
-            toast({ variant: "destructive", description: "Failed to save documentation" });
+    // Debounce timer for auto-saving documentation
+    const docSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleDocumentationChange = useCallback((content: string, jsonContent?: object) => {
+        // Clear existing timer
+        if (docSaveTimerRef.current) {
+            clearTimeout(docSaveTimerRef.current);
         }
-    };
+        // Debounce: save after 1 second of no changes
+        docSaveTimerRef.current = setTimeout(async () => {
+            const result = await updateTask(task.id, { documentation: content }, projectId);
+            if (!result.success) {
+                toast({ variant: "destructive", description: "Failed to save documentation" });
+            }
+        }, 1000);
+    }, [task.id, projectId, toast]);
 
     const handlePriorityChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newPriority = e.target.value;

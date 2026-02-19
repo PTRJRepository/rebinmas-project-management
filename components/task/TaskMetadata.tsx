@@ -6,11 +6,35 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { NovelEditor } from '@/components/editor/NovelEditor';
-import { Calendar, Clock, User, FolderOpen } from 'lucide-react';
+import { Calendar, Clock, User, FolderOpen, Plus, FileText, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDeadlineInfo, getDeadlineClasses, formatDeadline } from '@/lib/deadline-utils';
-import { updateTask } from '@/app/actions/task';
+import { 
+    updateTask, 
+    createTaskDocAction, 
+    updateTaskDocAction, 
+    deleteTaskDocAction 
+} from '@/app/actions/task';
 import { useToast } from "@/components/ui/use-toast";
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogFooter 
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+
+export interface TaskDoc {
+    id: string;
+    taskId: string;
+    title: string;
+    content: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
 
 interface Task {
     id: string;
@@ -26,10 +50,11 @@ interface Task {
         username: string;
         avatarUrl?: string | null;
     } | null;
-    project: {
+    project?: {
         id: string;
         name: string;
     };
+    docs?: TaskDoc[];
 }
 
 interface TaskMetadataProps {
@@ -68,6 +93,13 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
     const [dueDate, setDueDate] = useState(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
     const [estimatedHours, setEstimatedHours] = useState(task.estimatedHours?.toString() || '');
 
+    // Documentation state
+    const [docDialogOpen, setDocDialogOpen] = useState(false);
+    const [editingDoc, setEditingDoc] = useState<TaskDoc | null>(null);
+    const [docTitle, setDocTitle] = useState('');
+    const [docContent, setDocContent] = useState('');
+    const [isSavingDoc, setIsSavingDoc] = useState(false);
+
     // Sync state with props when task data changes
     useEffect(() => {
         setPriority(task.priority);
@@ -75,22 +107,56 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
         setEstimatedHours(task.estimatedHours?.toString() || '');
     }, [task]);
 
-    // Debounce timer for auto-saving documentation
-    const docSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const handleOpenAddDoc = () => {
+        setEditingDoc(null);
+        setDocTitle('');
+        setDocContent('');
+        setDocDialogOpen(true);
+    };
 
-    const handleDocumentationChange = useCallback((content: string, jsonContent?: object) => {
-        // Clear existing timer
-        if (docSaveTimerRef.current) {
-            clearTimeout(docSaveTimerRef.current);
+    const handleOpenEditDoc = (doc: TaskDoc) => {
+        setEditingDoc(doc);
+        setDocTitle(doc.title);
+        setDocContent(doc.content || '');
+        setDocDialogOpen(true);
+    };
+
+    const handleSaveDoc = async () => {
+        if (!docTitle.trim()) {
+            toast({ variant: "destructive", description: "Title is required" });
+            return;
         }
-        // Debounce: save after 1 second of no changes
-        docSaveTimerRef.current = setTimeout(async () => {
-            const result = await updateTask(task.id, { documentation: content }, projectId);
-            if (!result.success) {
-                toast({ variant: "destructive", description: "Failed to save documentation" });
+
+        setIsSavingDoc(true);
+        try {
+            let result;
+            if (editingDoc) {
+                result = await updateTaskDocAction(editingDoc.id, task.id, { title: docTitle, content: docContent }, projectId);
+            } else {
+                result = await createTaskDocAction(task.id, docTitle, docContent, projectId);
             }
-        }, 1000);
-    }, [task.id, projectId, toast]);
+
+            if (result.success) {
+                toast({ description: editingDoc ? "Documentation updated" : "Documentation added" });
+                setDocDialogOpen(false);
+            } else {
+                toast({ variant: "destructive", description: result.error || "Failed to save documentation" });
+            }
+        } finally {
+            setIsSavingDoc(false);
+        }
+    };
+
+    const handleDeleteDoc = async (docId: string) => {
+        if (!confirm('Are you sure you want to delete this documentation card?')) return;
+
+        const result = await deleteTaskDocAction(docId, task.id, projectId);
+        if (result.success) {
+            toast({ description: "Documentation deleted" });
+        } else {
+            toast({ variant: "destructive", description: result.error || "Failed to delete documentation" });
+        }
+    };
 
     const handlePriorityChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newPriority = e.target.value;
@@ -142,7 +208,7 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                         <div className="flex-1 min-w-0">
                             <p className="text-sm text-slate-500">Project</p>
                             <p className="text-sm font-medium text-slate-200 truncate">
-                                {task.project.name}
+                                {task.project?.name || 'N/A'}
                             </p>
                         </div>
                     </div>
@@ -245,21 +311,139 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                 </Card>
             )}
 
-            {/* Documentation Card */}
-            <Card className="bg-slate-900 border-slate-700">
-                <CardHeader>
-                    <CardTitle className="text-lg text-slate-100">Documentation</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <NovelEditor
-                        content={task.documentation || ''}
-                        onChange={handleDocumentationChange}
-                        placeholder="Add task documentation, notes, or requirements..."
-                        showMenuBar={true}
-                        className="min-h-[300px]"
-                    />
-                </CardContent>
-            </Card>
+            {/* Documentation Cards Section */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-sky-500" />
+                        Documentation
+                    </h3>
+                    <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleOpenAddDoc}
+                        className="h-8 bg-slate-800 border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-700"
+                    >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Doc
+                    </Button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                    {task.docs && task.docs.length > 0 ? (
+                        task.docs.map((doc) => (
+                            <Card key={doc.id} className="bg-slate-900 border-slate-700 group">
+                                <CardHeader className="p-4 pb-2 border-b border-slate-800 flex flex-row items-center justify-between space-y-0">
+                                    <CardTitle className="text-sm font-semibold text-slate-200">
+                                        {doc.title}
+                                    </CardTitle>
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button 
+                                            size="icon" 
+                                            variant="ghost" 
+                                            className="h-7 w-7 text-slate-400 hover:text-sky-400 hover:bg-slate-800"
+                                            onClick={() => handleOpenEditDoc(doc)}
+                                        >
+                                            <Edit2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button 
+                                            size="icon" 
+                                            variant="ghost" 
+                                            className="h-7 w-7 text-slate-400 hover:text-red-400 hover:bg-slate-800"
+                                            onClick={() => handleDeleteDoc(doc.id)}
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-3">
+                                    {/* Preview content - simple text summary */}
+                                    <div className="text-sm text-slate-400 line-clamp-3 prose prose-invert prose-sm max-w-none">
+                                        <div dangerouslySetInnerHTML={{ __html: doc.content || 'No content' }} />
+                                    </div>
+                                    <p className="text-[10px] text-slate-600 mt-2">
+                                        Last updated: {new Date(doc.updatedAt).toLocaleDateString()}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-10 px-6 rounded-lg border-2 border-dashed border-slate-800 bg-slate-900/50 text-center">
+                            <FileText className="h-10 w-10 text-slate-700 mb-2" />
+                            <p className="text-slate-500 text-sm italic">No documentation yet</p>
+                            <Button 
+                                variant="link" 
+                                size="sm" 
+                                onClick={handleOpenAddDoc}
+                                className="mt-2 text-sky-500 hover:text-sky-400 p-0 h-auto"
+                            >
+                                Add your first document
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Documentation Dialog */}
+            <Dialog open={docDialogOpen} onOpenChange={setDocDialogOpen}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-slate-100 shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-500 bg-clip-text text-transparent">
+                            {editingDoc ? 'Edit Documentation' : 'Add Documentation'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    
+                    <div className="space-y-6 mt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="docTitle" className="text-slate-300 font-semibold">Title</Label>
+                            <Input 
+                                id="docTitle"
+                                value={docTitle}
+                                onChange={(e) => setDocTitle(e.target.value)}
+                                placeholder="Documentation title (e.g., API Requirements, Design Specs)"
+                                className="bg-slate-900 border-slate-700 text-slate-100 focus:border-sky-500"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-slate-300 font-semibold">Content</Label>
+                            <div className="min-h-[400px] rounded-lg border border-slate-800 overflow-hidden bg-slate-900">
+                                <NovelEditor
+                                    content={docContent}
+                                    onChange={(content) => setDocContent(content)}
+                                    placeholder="Write your documentation here..."
+                                    showMenuBar={true}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="mt-8 pt-6 border-t border-slate-800 gap-3">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setDocDialogOpen(false)}
+                            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                            disabled={isSavingDoc}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleSaveDoc}
+                            className="bg-sky-600 hover:bg-sky-700 text-white min-w-[120px] shadow-lg shadow-sky-900/20"
+                            disabled={isSavingDoc}
+                        >
+                            {isSavingDoc ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                editingDoc ? 'Update Card' : 'Add Card'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

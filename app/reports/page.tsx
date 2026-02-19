@@ -18,13 +18,13 @@ export default async function ReportsPage() {
   const projectsResult = await sqlGateway.query(`
     SELECT 
       p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at,
-      u.id as owner_id, u.username as owner_username, u.name as owner_name,
-      ts.id as status_id, ts.name as status_name, ts.[order] as status_order,
+      u.id as owner_id_ref, u.username as owner_username, u.name as owner_name,
+      ts.id as status_id_ref, ts.name as status_name, ts.[order] as status_order,
       t.id as task_id, t.title as task_title, t.description as task_description, t.priority as task_priority, 
       t.due_date as task_due_date, t.estimated_hours as task_estimated_hours, t.actual_hours as task_actual_hours,
       t.progress as task_progress, t.created_at as task_created_at, t.updated_at as task_updated_at,
       t.status_id as task_status_id, t.assignee_id as task_assignee_id,
-      au.id as assignee_id, au.username as assignee_username, au.name as assignee_name,
+      au.id as assignee_id_ref, au.username as assignee_username, au.name as assignee_name,
       c.id as comment_id, c.content as comment_content, c.created_at as comment_created_at, c.user_id as comment_user_id,
       att.id as attachment_id, att.file_name as attachment_file_name, att.file_url as attachment_file_url, 
       att.file_type as attachment_file_type, att.file_size as attachment_file_size
@@ -56,7 +56,7 @@ export default async function ReportsPage() {
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         owner: {
-          id: row.owner_id,
+          id: row.owner_id_ref,
           username: row.owner_username,
           name: row.owner_name
         },
@@ -69,9 +69,9 @@ export default async function ReportsPage() {
     const project = projectsMap.get(row.id)
 
     // Add status if not exists
-    if (row.status_id && !project.statuses.find((s: any) => s.id === row.status_id)) {
+    if (row.status_id_ref && !project.statuses.find((s: any) => s.id === row.status_id_ref)) {
       project.statuses.push({
-        id: row.status_id,
+        id: row.status_id_ref,
         name: row.status_name,
         order: row.status_order
       })
@@ -93,8 +93,8 @@ export default async function ReportsPage() {
         statusId: row.task_status_id,
         assigneeId: row.task_assignee_id,
         status: project.statuses.find((s: any) => s.id === row.task_status_id) || null,
-        assignee: row.assignee_id ? {
-          id: row.assignee_id,
+        assignee: row.assignee_id_ref ? {
+          id: row.assignee_id_ref,
           username: row.assignee_username,
           name: row.assignee_name
         } : null,

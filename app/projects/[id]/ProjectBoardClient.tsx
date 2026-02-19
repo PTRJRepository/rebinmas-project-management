@@ -55,6 +55,15 @@ interface Stats {
   completedTasks: number
   overdueTasks: number
   progress: number
+  totalHoursSpent?: number
+  recentActivities?: Array<{
+    id: string
+    type: string
+    content: string
+    date: Date
+    userName: string
+    statusName?: string
+  }>
 }
 
 interface ProjectBoardClientProps {
@@ -409,7 +418,22 @@ export default function ProjectBoardClient({
 
       <main className="px-6 py-6">
         {/* Stats Cards - Always Visible */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          {/* Total Completed */}
+          <Card className="border border-gray-200 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Completed</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats?.completedTasks || 0}</p>
+                </div>
+                <div className="h-10 w-10 rounded bg-green-50 flex items-center justify-center">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Overdue Tasks */}
           <Card className={cn(
             "border-2 shadow-sm",
@@ -464,16 +488,16 @@ export default function ProjectBoardClient({
             </CardContent>
           </Card>
 
-          {/* Due This Week */}
+          {/* Total Hours Spent */}
           <Card className="border border-gray-200 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Due This Week</p>
-                  <p className="text-2xl font-semibold text-gray-900">{dueThisWeekTasks.length}</p>
+                  <p className="text-sm text-gray-600 mb-1">Total Hours</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats?.totalHoursSpent || 0}h</p>
                 </div>
-                <div className="h-10 w-10 rounded bg-blue-50 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-blue-600" />
+                <div className="h-10 w-10 rounded bg-indigo-50 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-indigo-600" />
                 </div>
               </div>
             </CardContent>
@@ -778,6 +802,49 @@ export default function ProjectBoardClient({
               />
             </div>
           </div>
+        )}
+
+        {/* Recent Activity Section */}
+        {stats?.recentActivities && stats.recentActivities.length > 0 && (
+          <Card className="border border-gray-200 shadow-sm mb-6">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-indigo-500" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-4">
+                {stats.recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                    <div className="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                      <Users className="h-4 w-4 text-indigo-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activity.userName} updated <span className="font-semibold">"{activity.content}"</span>
+                        </p>
+                        <span className="text-xs text-gray-500">
+                          {new Date(activity.date).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Status: <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                          {activity.statusName || 'Updated'}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Project Details */}

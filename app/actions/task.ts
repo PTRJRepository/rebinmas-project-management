@@ -21,8 +21,13 @@ import {
   createComment as apiCreateComment,
   deleteComment as apiDeleteComment,
   getTaskStatuses,
+  getTaskDocs,
+  createTaskDoc as apiCreateTaskDoc,
+  updateTaskDoc as apiUpdateTaskDoc,
+  deleteTaskDoc as apiDeleteTaskDoc,
   type Task,
-  type Comment
+  type Comment,
+  type TaskDoc
 } from '@/lib/api/projects'
 
 export async function getTasks(projectId: string) {
@@ -183,6 +188,40 @@ export async function deleteCommentAction(commentId: string, taskId: string, pro
     try {
         await apiDeleteComment(commentId)
 
+        revalidatePath(`/projects/${projectId}/board/${taskId}`)
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+// ==================================================
+// TASK DOCUMENTATION ACTIONS
+// ==================================================
+
+export async function createTaskDocAction(taskId: string, title: string, content: string, projectId: string) {
+    try {
+        const doc = await apiCreateTaskDoc({ taskId, title, content })
+        revalidatePath(`/projects/${projectId}/board/${taskId}`)
+        return { success: true, data: doc }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateTaskDocAction(docId: string, taskId: string, data: { title?: string; content?: string }, projectId: string) {
+    try {
+        const doc = await apiUpdateTaskDoc(docId, data)
+        revalidatePath(`/projects/${projectId}/board/${taskId}`)
+        return { success: true, data: doc }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function deleteTaskDocAction(docId: string, taskId: string, projectId: string) {
+    try {
+        await apiDeleteTaskDoc(docId)
         revalidatePath(`/projects/${projectId}/board/${taskId}`)
         return { success: true }
     } catch (error: any) {

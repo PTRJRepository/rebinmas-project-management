@@ -154,6 +154,16 @@ export interface Task {
   } | null;
   comments?: Comment[];
   attachments?: Attachment[];
+  docs?: TaskDoc[];
+}
+
+export interface TaskDoc {
+  id: string;
+  taskId: string;
+  title: string;
+  content: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface TaskStatus {
@@ -634,11 +644,19 @@ export async function getTasks(projectId: string): Promise<Task[]> {
       t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
       t.documentation, t.progress, t.last_alert_sent, t.project_id, t.status_id, t.assignee_id,
       t.created_at, t.updated_at,
-      ts.id as status_id,
+      p.id as proj_id,
+      p.name as project_name,
+      ts.id as status_id_ref,
       ts.name as status_name,
-      ts.[order] as status_order
+      ts.[order] as status_order,
+      u.id as assignee_id_ref,
+      u.username as assignee_username,
+      u.name as assignee_name,
+      u.email as assignee_email
     FROM pm_tasks t
+    LEFT JOIN pm_projects p ON t.project_id = p.id
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
+    LEFT JOIN pm_users u ON t.assignee_id = u.id
     WHERE t.project_id = @projectId
     ORDER BY t.created_at DESC
   `, { projectId });
@@ -659,12 +677,21 @@ export async function getTasks(projectId: string): Promise<Task[]> {
     assigneeId: row.assignee_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    project: {
+      id: row.proj_id,
+      name: row.project_name,
+    },
     status: {
-      id: row.status_id,
+      id: row.status_id_ref,
       name: row.status_name,
       order: row.status_order,
     },
-    assignee: null,
+    assignee: row.assignee_id_ref ? {
+      id: row.assignee_id_ref,
+      username: row.assignee_username,
+      name: row.assignee_name,
+      email: row.assignee_email,
+    } : null,
   })) as Task[];
 }
 
@@ -674,11 +701,19 @@ export async function getTaskById(id: string): Promise<Task | null> {
       t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
       t.documentation, t.progress, t.last_alert_sent, t.project_id, t.status_id, t.assignee_id,
       t.created_at, t.updated_at,
-      ts.id as status_id,
+      p.id as proj_id,
+      p.name as project_name,
+      ts.id as status_id_ref,
       ts.name as status_name,
-      ts.[order] as status_order
+      ts.[order] as status_order,
+      u.id as assignee_id_ref,
+      u.username as assignee_username,
+      u.name as assignee_name,
+      u.email as assignee_email
     FROM pm_tasks t
+    LEFT JOIN pm_projects p ON t.project_id = p.id
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
+    LEFT JOIN pm_users u ON t.assignee_id = u.id
     WHERE t.id = @id
   `, { id });
 
@@ -703,12 +738,22 @@ export async function getTaskById(id: string): Promise<Task | null> {
     assigneeId: row.assignee_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    project: {
+      id: row.proj_id,
+      name: row.project_name,
+    },
     status: {
-      id: row.status_id,
+      id: row.status_id_ref,
       name: row.status_name,
       order: row.status_order,
     },
-    assignee: null,
+    assignee: row.assignee_id_ref ? {
+      id: row.assignee_id_ref,
+      username: row.assignee_username,
+      name: row.assignee_name,
+      email: row.assignee_email,
+    } : null,
+    docs: await getTaskDocs(id),
   } as Task;
 }
 
@@ -965,7 +1010,8 @@ export async function getProjectDashboardStats(projectId: string) {
     SELECT
       COUNT(*) as total_tasks,
       SUM(CASE WHEN ts.name = 'Done' THEN 1 ELSE 0 END) as completed_tasks,
-      SUM(CASE WHEN t.due_date < GETDATE() AND ts.name != 'Done' THEN 1 ELSE 0 END) as overdue_tasks
+      SUM(CASE WHEN t.due_date < GETDATE() AND ts.name != 'Done' THEN 1 ELSE 0 END) as overdue_tasks,
+      SUM(ISNULL(t.actual_hours, 0)) as total_hours_spent
     FROM pm_tasks t
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
     WHERE t.project_id = @projectId
@@ -975,6 +1021,7 @@ export async function getProjectDashboardStats(projectId: string) {
   const totalTasks = row.total_tasks || 0;
   const completedTasks = row.completed_tasks || 0;
   const overdueTasks = row.overdue_tasks || 0;
+  const totalHoursSpent = row.total_hours_spent || 0;
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // Get tasks by status
@@ -991,12 +1038,109 @@ export async function getProjectDashboardStats(projectId: string) {
     count: r.count,
   }));
 
+  // Fetch recent activities (Recent tasks or updates)
+  const activitiesResult = await sqlGateway.query(`
+    SELECT TOP 10
+      'task' as type,
+      t.id,
+      t.title as content,
+      t.updated_at as date,
+      u.username as user_name,
+      ts.name as status_name
+    FROM pm_tasks t
+    LEFT JOIN pm_users u ON t.assignee_id = u.id
+    LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
+    WHERE t.project_id = @projectId
+    ORDER BY t.updated_at DESC
+  `, { projectId });
+
+  const recentActivities = activitiesResult.recordset.map((r: any) => ({
+    id: r.id,
+    type: r.type,
+    content: r.content,
+    date: r.date,
+    userName: r.user_name || 'System',
+    statusName: r.status_name,
+  }));
+
   return {
     totalTasks,
     completedTasks,
     progressPercentage,
     overdueTasks,
-    dueSoonTasks: 0, // Could implement
+    totalHoursSpent,
+    dueSoonTasks: 0,
     tasksByStatus,
+    recentActivities,
   };
+}
+
+// ==================================================
+// TASK DOCUMENTATION OPERATIONS
+// ==================================================
+
+export async function getTaskDocs(taskId: string): Promise<TaskDoc[]> {
+  const result = await sqlGateway.query(`
+    SELECT * FROM pm_task_docs
+    WHERE task_id = @taskId
+    ORDER BY created_at DESC
+  `, { taskId });
+  return toCamelCase<TaskDoc[]>(result.recordset);
+}
+
+export async function createTaskDoc(data: {
+  taskId: string;
+  title: string;
+  content: string;
+}): Promise<TaskDoc> {
+  const id = generateId('doc');
+  const now = new Date();
+
+  await sqlGateway.query(`
+    INSERT INTO pm_task_docs (id, task_id, title, content, created_at, updated_at)
+    VALUES (@id, @taskId, @title, @content, @createdAt, @updatedAt)
+  `, {
+    id,
+    taskId: data.taskId,
+    title: data.title,
+    content: data.content,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const result = await sqlGateway.query('SELECT * FROM pm_task_docs WHERE id = @id', { id });
+  return toCamelCase<TaskDoc>(result.recordset[0]);
+}
+
+export async function updateTaskDoc(id: string, data: {
+  title?: string;
+  content?: string;
+}): Promise<TaskDoc> {
+  const updates: string[] = [];
+  const params: any = { id };
+
+  if (data.title !== undefined) {
+    updates.push('title = @title');
+    params.title = data.title;
+  }
+  if (data.content !== undefined) {
+    updates.push('content = @content');
+    params.content = data.content;
+  }
+
+  updates.push('updated_at = @updatedAt');
+  params.updatedAt = new Date();
+
+  await sqlGateway.query(`
+    UPDATE pm_task_docs
+    SET ${updates.join(', ')}
+    WHERE id = @id
+  `, params);
+
+  const result = await sqlGateway.query('SELECT * FROM pm_task_docs WHERE id = @id', { id });
+  return toCamelCase<TaskDoc>(result.recordset[0]);
+}
+
+export async function deleteTaskDoc(id: string): Promise<void> {
+  await sqlGateway.query('DELETE FROM pm_task_docs WHERE id = @id', { id });
 }

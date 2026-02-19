@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { updateTaskStatus } from '@/app/actions/task'
 import { Calendar, Circle, Plus, X, Filter } from 'lucide-react'
@@ -46,6 +46,12 @@ interface KanbanBoardProps {
 export default function KanbanBoard({ initialTasks, statuses, projectId }: KanbanBoardProps) {
     const [tasks, setTasks] = useState(initialTasks)
     const [addingToStatusId, setAddingToStatusId] = useState<string | null>(null)
+
+    // Sync state when props change
+    useEffect(() => {
+        setTasks(initialTasks)
+    }, [initialTasks])
+
     const [newTaskTitle, setNewTaskTitle] = useState('')
     const [isCreating, setIsCreating] = useState(false)
     const [filteredTaskIds, setFilteredTaskIds] = useState<string[]>([])
@@ -159,8 +165,12 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
 
     const isFilterActive = filteredTaskIds.length > 0
 
-    // Filter statuses to only include the required ones
-    const displayStatuses = statuses.filter(s => ['To Do', 'In Progress', 'Done'].includes(s.name));
+    // Filter statuses to only include the required ones: Planning (To Do), On Progress, Selesai (Done)
+    const displayStatuses = [
+        { id: statuses.find(s => s.name === 'To Do' || s.name === 'Backlog' || s.name === 'Planning')?.id || 'todo', name: 'Planning' },
+        { id: statuses.find(s => s.name === 'In Progress' || s.name === 'On Progress')?.id || 'inprogress', name: 'On Progress' },
+        { id: statuses.find(s => s.name === 'Done' || s.name === 'Selesai')?.id || 'done', name: 'Selesai' }
+    ].filter(s => s.id !== undefined);
 
     return (
         <div className="flex flex-col h-full overflow-hidden">

@@ -23,14 +23,24 @@ interface CreateTaskDialogProps {
 
 export function CreateTaskDialog({ projectId, statuses }: CreateTaskDialogProps) {
     const [open, setOpen] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const router = useRouter()
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setIsSubmitting(true)
         const formData = new FormData(e.currentTarget)
-        await createTask(formData)
-        setOpen(false)
-        router.refresh()
+        const result = await createTask(formData)
+        setIsSubmitting(false)
+        
+        if (result.success) {
+            console.log('[CreateTaskDialog] Task created successfully:', result.data)
+            setOpen(false)
+            router.refresh()
+        } else {
+            console.error('[CreateTaskDialog] Failed to create task:', result.error)
+            alert('Failed to create task: ' + result.error)
+        }
     }
 
     return (

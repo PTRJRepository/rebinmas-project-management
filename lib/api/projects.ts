@@ -688,6 +688,8 @@ export async function createTask(data: {
   const id = generateId('task');
   const now = new Date();
 
+  console.log('[createTask API] Creating task:', { id, ...data });
+
   await sqlGateway.query(`
     INSERT INTO pm_tasks (id, title, description, priority, due_date, estimated_hours, project_id, status_id, assignee_id, progress, created_at, updated_at)
     VALUES (@id, @title, @description, @priority, @dueDate, @estimatedHours, @projectId, @statusId, @assigneeId, @progress, @createdAt, @updatedAt)
@@ -706,7 +708,11 @@ export async function createTask(data: {
     updatedAt: now,
   });
 
-  return (await getTaskById(id))!;
+  console.log('[createTask API] Fetching created task...');
+  const task = await getTaskById(id);
+  console.log('[createTask API] Task created:', task);
+
+  return task!;
 }
 
 export async function updateTask(id: string, data: Partial<Task>): Promise<Task> {

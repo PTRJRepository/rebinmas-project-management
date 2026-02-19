@@ -194,23 +194,37 @@ export async function getAccessibleProjects(
       }));
     }
 
-    // Non-ADMIN users see only projects they have access to
+    // Non-ADMIN users see only projects they own or are members of
+    // Use UNION to combine owned projects and member projects without duplicates
     const result = await sqlGateway.query(
-      `SELECT DISTINCT
-        p.id, p.name, p.description, p.start_date, p.end_date, 
-        p.priority, p.banner_image, p.status, p.owner_id, 
+      `SELECT
+        p.id, p.name, p.description, p.start_date, p.end_date,
+        p.priority, p.banner_image, p.status, p.owner_id,
         p.created_at, p.updated_at,
         u.id as user_id, u.username as owner_username,
         u.email as owner_email, u.name as owner_name,
         (SELECT COUNT(*) FROM pm_tasks t WHERE t.project_id = p.id) as task_count,
-        COALESCE(pm.role, 'OWNER') as member_role
+        'OWNER' as member_role
       FROM pm_projects p
-      LEFT JOIN pm_users u ON p.owner_id = u.id
-      LEFT JOIN pm_project_members pm ON p.id = pm.project_id AND pm.user_id = @userId
-      WHERE 
-        pm.user_id = @userId           -- User is a member
-        OR p.owner_id = @userId        -- User is the owner
-      ORDER BY p.created_at DESC`,
+      INNER JOIN pm_users u ON p.owner_id = u.id
+      WHERE p.owner_id = @userId
+      
+      UNION
+      
+      SELECT
+        p.id, p.name, p.description, p.start_date, p.end_date,
+        p.priority, p.banner_image, p.status, p.owner_id,
+        p.created_at, p.updated_at,
+        u.id as user_id, u.username as owner_username,
+        u.email as owner_email, u.name as owner_name,
+        (SELECT COUNT(*) FROM pm_tasks t WHERE t.project_id = p.id) as task_count,
+        pm.role as member_role
+      FROM pm_projects p
+      INNER JOIN pm_users u ON p.owner_id = u.id
+      INNER JOIN pm_project_members pm ON p.id = pm.project_id
+      WHERE pm.user_id = @userId AND p.owner_id <> @userId
+      
+      ORDER BY created_at DESC`,
       { userId }
     );
 

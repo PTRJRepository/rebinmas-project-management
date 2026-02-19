@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/auth';
-import { db } from '@/lib/prisma';
+import { sqlGateway } from '@/lib/api/sql-gateway';
 
 // GET canvas data
 export async function GET(
@@ -15,30 +15,29 @@ export async function GET(
 
     const { id } = await params;
 
-    const project = await db.project.findUnique({
-      where: { id },
-      select: { id: true, ownerId: true }
-    });
+    const projectResult = await sqlGateway.query(
+      'SELECT id, owner_id FROM pm_projects WHERE id = @id',
+      { id }
+    );
 
-    if (!project) {
+    if (projectResult.recordset.length === 0) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Security check: user can only access their own projects
-    if (project.ownerId !== session.id) {
+    const project = projectResult.recordset[0];
+
+    // Security check: user can only access their own projects or if they're a member
+    const memberResult = await sqlGateway.query(
+      'SELECT role FROM pm_project_members WHERE project_id = @projectId AND user_id = @userId',
+      { projectId: id, userId: session.id }
+    );
+
+    if (project.owner_id !== session.id && memberResult.recordset.length === 0) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Check localStorage first
-    const localStorageKey = `canvas-${id}`;
-    const localData = typeof window !== 'undefined'
-      ? localStorage.getItem(localStorageKey)
-      : null;
-
-    if (localData) {
-      return NextResponse.json(JSON.parse(localData));
-    }
-
+    // Canvas data is stored in localStorage on client side
+    // This endpoint just verifies access
     return NextResponse.json({ elements: [], appState: {} });
   } catch (error) {
     console.error('Error fetching canvas:', error);
@@ -61,34 +60,23 @@ export async function POST(
     const body = await request.json();
 
     // Verify project ownership
-    const project = await db.project.findUnique({
-      where: { id }
-    });
+    const projectResult = await sqlGateway.query(
+      'SELECT owner_id FROM pm_projects WHERE id = @id',
+      { id }
+    );
 
-    if (!project || project.ownerId !== session.id) {
+    if (projectResult.recordset.length === 0) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    const project = projectResult.recordset[0];
+
+    if (project.owner_id !== session.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Store canvas data in the description as a JSON metadata
-    // or create a separate canvas data table
-    const updatedProject = await db.project.update({
-      where: { id },
-      data: {
-        // Store canvas metadata in description (append if exists)
-        description: project.description
-          ? project.description + '\n\n[CANVAS_DATA:' + JSON.stringify({
-              elements: body.elements,
-              appState: body.appState,
-              updatedAt: body.updatedAt
-            }) + ']'
-          : '[CANVAS_DATA:' + JSON.stringify({
-              elements: body.elements,
-              appState: body.appState,
-              updatedAt: body.updatedAt
-            }) + ']'
-      }
-    });
-
+    // Canvas data is stored in localStorage on client side
+    // This endpoint just verifies access and acknowledges save
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving canvas:', error);

@@ -93,9 +93,20 @@ export default function ProjectBoardClient({
     bannerImage: project.bannerImage || ''
   })
   const [isSaving, setIsSaving] = useState(false)
+  const [taskList, setTaskList] = useState<Task[]>(tasks)
+
+  // Update taskList when tasks prop changes
+  useEffect(() => {
+    setTaskList(tasks)
+  }, [tasks])
 
   const handleFilterTasks = (taskIds: string[]) => {
     setFilteredTaskIds(taskIds)
+  }
+
+  const handleTaskCreated = (newTask: Task) => {
+    console.log('[ProjectBoardClient] Task created, adding to list:', newTask)
+    setTaskList(prev => [newTask, ...prev])
   }
 
   const clearFilter = () => {
@@ -305,7 +316,11 @@ export default function ProjectBoardClient({
               currentUserId={currentUserId}
               currentUserRole={currentUserRole}
             />
-            <CreateTaskDialog projectId={project.id} statuses={project.statuses} />
+            <CreateTaskDialog 
+              projectId={project.id} 
+              statuses={project.statuses}
+              onTaskCreated={handleTaskCreated}
+            />
           </div>
         </div>
       </div>
@@ -757,7 +772,7 @@ export default function ProjectBoardClient({
             </div>
             <div className="p-6">
               <KanbanBoard
-                initialTasks={displayTasks}
+                initialTasks={taskList}
                 statuses={project.statuses || []}
                 projectId={project.id}
               />

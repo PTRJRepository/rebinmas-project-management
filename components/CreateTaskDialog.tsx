@@ -19,9 +19,10 @@ import { Plus, Sparkles } from 'lucide-react'
 interface CreateTaskDialogProps {
     projectId: string
     statuses: Array<{ id: string; name: string }>
+    onTaskCreated?: (task: any) => void
 }
 
-export function CreateTaskDialog({ projectId, statuses }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateTaskDialogProps) {
     const [open, setOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const router = useRouter()
@@ -29,14 +30,28 @@ export function CreateTaskDialog({ projectId, statuses }: CreateTaskDialogProps)
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsSubmitting(true)
+        
         const formData = new FormData(e.currentTarget)
+        console.log('[CreateTaskDialog] Submitting form:', Object.fromEntries(formData))
+        
         const result = await createTask(formData)
         setIsSubmitting(false)
+        
+        console.log('[CreateTaskDialog] Create task result:', result)
         
         if (result.success) {
             console.log('[CreateTaskDialog] Task created successfully:', result.data)
             setOpen(false)
-            router.refresh()
+            
+            // Notify parent component to update task list
+            if (onTaskCreated && result.data) {
+                onTaskCreated(result.data)
+            }
+            
+            // Force refresh after a short delay
+            setTimeout(() => {
+                router.refresh()
+            }, 100)
         } else {
             console.error('[CreateTaskDialog] Failed to create task:', result.error)
             alert('Failed to create task: ' + result.error)

@@ -110,6 +110,7 @@ export interface Project {
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date | null;
+  attachments?: Attachment[];
   // Computed fields
   owner?: {
     id: string;
@@ -729,7 +730,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
   if (result.recordset.length === 0) return null;
 
   const row = result.recordset[0];
-  
+
   // Explicitly map fields to avoid array duplication
   return {
     id: row.id,
@@ -1142,12 +1143,12 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
     WHERE task_id = @taskId AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
     ORDER BY created_at DESC
   `, { taskId: projectAssetsTaskId });
-  
+
   return result.recordset.map((row: any) => {
     try {
       const content = row.content || '';
       if (!content.startsWith('[FILE]')) return null;
-      
+
       const jsonStr = content.substring(6); // Remove [FILE] prefix
       const meta = JSON.parse(jsonStr);
       return {
@@ -1160,7 +1161,7 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
         fileSize: meta.size,
         createdAt: row.created_at
       };
-    } catch (e) {
+    } catch (e: any) {
       console.error('[getAttachmentsByProject] Parse error:', e.message);
       return null;
     }
@@ -1173,7 +1174,7 @@ export async function getAttachmentsByTask(taskId: string): Promise<Attachment[]
     WHERE task_id = @taskId AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
     ORDER BY created_at DESC
   `, { taskId });
-  
+
   return result.recordset.map((row: any) => {
     try {
       const content = row.content || '';
@@ -1191,7 +1192,7 @@ export async function getAttachmentsByTask(taskId: string): Promise<Attachment[]
         fileSize: meta.size,
         createdAt: row.created_at
       };
-    } catch (e) {
+    } catch (e: any) {
       console.error('[getAttachmentsByTask] Parse error:', e.message);
       return null;
     }
@@ -1208,15 +1209,15 @@ export async function createAttachment(data: {
 }): Promise<Attachment> {
   const id = generateId('att');
   const now = new Date();
-  
+
   // Use pa_ prefix if only projectId is provided
   let taskId = data.taskId || `pa_${data.projectId}`;
-  
+
   // Safety check for NVARCHAR(50)
   if (taskId.length > 50) {
     taskId = taskId.substring(0, 50);
   }
-  
+
   console.log('[createAttachment API] Creating attachment:', { id, taskId, fileName: data.fileName });
 
   const content = `[FILE]${JSON.stringify({

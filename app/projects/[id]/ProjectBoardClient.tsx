@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Users, Flame, Printer, Settings, KanbanSquare, PenTool, Edit, X, ListTodo } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -91,6 +92,7 @@ export default function ProjectBoardClient({
   currentUserId,
   currentUserRole
 }: ProjectBoardClientProps) {
+  const router = useRouter()
   const [viewState, setViewState] = useState<ViewState>('overview')
   const [filteredTaskIds, setFilteredTaskIds] = useState<string[]>([])
   const [isCanvasFullscreen, setIsCanvasFullscreen] = useState(false)
@@ -334,8 +336,8 @@ export default function ProjectBoardClient({
               currentUserId={currentUserId}
               currentUserRole={currentUserRole}
             />
-            <CreateTaskDialog 
-              projectId={project.id} 
+            <CreateTaskDialog
+              projectId={project.id}
               statuses={project.statuses}
               onTaskCreated={handleTaskCreated}
             />

@@ -3,26 +3,23 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { 
-    FileIcon, 
-    ImageIcon, 
-    Trash2, 
-    Download, 
-    Upload, 
-    Loader2, 
+import {
+    FileIcon,
+    ImageIcon,
+    Trash2,
+    Download,
+    Upload,
+    Loader2,
     Paperclip,
 } from 'lucide-react'
+import {
+    getProjectAttachments,
+    createAttachmentAction,
+    deleteAttachmentAction
+} from '@/app/actions/attachment'
+import { Attachment } from '@/lib/api/projects'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
-
-interface Attachment {
-    id: string
-    fileName: string
-    fileUrl: string
-    fileType: string
-    fileSize: number
-    createdAt: Date
-}
 
 interface TaskAttachmentsProps {
     taskId: string
@@ -52,8 +49,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
 
             const { url } = await res.json()
 
-            // Call create attachment action (need to import it)
-            const { createAttachmentAction } = await import('@/app/actions/attachment')
+            // Call create attachment action
             const attachmentResult = await createAttachmentAction({
                 projectId,
                 taskId,
@@ -61,19 +57,20 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                 fileUrl: url,
                 fileType: file.type.startsWith('image/') ? 'image' : 'document',
                 fileSize: file.size,
-            } as any)
+            })
 
-            if (attachmentResult.success) {
+            if (attachmentResult.success && attachmentResult.data) {
                 toast({ title: 'Success', description: 'File uploaded successfully' })
-                setAttachments(prev => [attachmentResult.data, ...prev])
+                const newAttachment = attachmentResult.data
+                setAttachments(prev => [newAttachment, ...prev])
             } else {
                 throw new Error(attachmentResult.error)
             }
         } catch (error: any) {
-            toast({ 
-                variant: 'destructive', 
-                title: 'Upload failed', 
-                description: error.message 
+            toast({
+                variant: 'destructive',
+                title: 'Upload failed',
+                description: error.message
             })
         } finally {
             setIsUploading(false)
@@ -88,16 +85,15 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this attachment?')) return
 
-        const { deleteAttachmentAction } = await import('@/app/actions/attachment')
         const result = await deleteAttachmentAction(id, projectId)
         if (result.success) {
             toast({ title: 'Success', description: 'Attachment deleted' })
             setAttachments(prev => prev.filter(a => a.id !== id))
         } else {
-            toast({ 
-                variant: 'destructive', 
-                title: 'Delete failed', 
-                description: result.error 
+            toast({
+                variant: 'destructive',
+                title: 'Delete failed',
+                description: result.error
             })
         }
     }
@@ -156,15 +152,15 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                     Attachments
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                    <input 
-                        type="file" 
-                        className="hidden" 
+                    <input
+                        type="file"
+                        className="hidden"
                         ref={fileInputRef}
                         onChange={handleFileChange}
                     />
-                    <Button 
-                        size="sm" 
-                        variant="outline" 
+                    <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
                         className="h-7 text-xs bg-slate-800 border-slate-700 text-slate-300 hover:text-white"
@@ -176,7 +172,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
             </CardHeader>
             <CardContent className="p-0">
                 {/* Drop Zone */}
-                <div 
+                <div
                     onDragOver={onDragOver}
                     onDragLeave={onDragLeave}
                     onDrop={onDrop}
@@ -211,15 +207,15 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <a 
-                                        href={att.fileUrl} 
-                                        target="_blank" 
+                                    <a
+                                        href={att.fileUrl}
+                                        target="_blank"
                                         rel="noopener noreferrer"
                                         className="p-1.5 text-slate-400 hover:text-sky-400 transition-colors rounded hover:bg-slate-700"
                                     >
                                         <Download className="h-3.5 w-3.5" />
                                     </a>
-                                    <button 
+                                    <button
                                         onClick={() => handleDelete(att.id)}
                                         className="p-1.5 text-slate-400 hover:text-red-400 transition-colors rounded hover:bg-slate-700"
                                     >

@@ -35,6 +35,7 @@ interface Task {
 interface Status {
     id: string
     name: string
+    order: number
 }
 
 interface KanbanBoardProps {
@@ -122,7 +123,13 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, onMoveT
 
             if (result.success) {
                 // Re-sync with server data to ensure consistency
-                console.log('[KanbanBoard] Task moved successfully, re-syncing...');
+                console.log('[KanbanBoard] Task moved successfully, triggering refresh...');
+
+                // Call parent handler to refresh router
+                if (onMoveToNext) {
+                    await onMoveToNext(taskId);
+                }
+
                 // Force a re-render by updating state
                 setTasks([...updatedTasks]);
             } else {
@@ -208,26 +215,11 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, onMoveT
 
     const isFilterActive = filteredTaskIds.length > 0
 
-    // Use all statuses from the project, but ensure we have the 3 main ones
-    // Filter to show only: Planning/To Do/Backlog, In Progress/On Progress, Done/Selesai
-    const findStatus = (names: string[]) => {
-        for (const name of names) {
-            const status = statuses.find(s => s.name.toLowerCase().includes(name.toLowerCase()));
-            if (status) return status;
-        }
-        return null;
-    };
+    // Use all statuses from the project, sorted by order
+    const displayStatuses = statuses.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    const todoStatus = findStatus(['To Do', 'Backlog', 'Planning']);
-    const progressStatus = findStatus(['In Progress', 'On Progress', 'Progress']);
-    const doneStatus = findStatus(['Done', 'Selesai', 'Finish']);
-
-    // Only show columns that exist in the project
-    const displayStatuses = [
-        todoStatus,
-        progressStatus,
-        doneStatus
-    ].filter((s): s is Status => s !== null);
+    // Log for debugging
+    console.log('[KanbanBoard] Display statuses:', displayStatuses.map(s => s.name));
 
     console.log('[KanbanBoard] Display statuses:', displayStatuses);
     console.log('[KanbanBoard] All statuses:', statuses);

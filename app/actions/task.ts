@@ -49,8 +49,11 @@ export async function createTask(formData: FormData) {
     const dueDate = formData.get('dueDate') as string
     const estimatedHours = formData.get('estimatedHours') as string
 
+    console.log('[createTask] Input:', { title, projectId, statusId, priority, description, dueDate, estimatedHours })
+
     if (!title || !projectId || !statusId) {
-        return { success: false, error: 'Missing required fields' }
+        console.error('[createTask] Missing required fields:', { title: !!title, projectId: !!projectId, statusId: !!statusId })
+        return { success: false, error: 'Missing required fields: title, projectId, statusId' }
     }
 
     try {
@@ -65,10 +68,12 @@ export async function createTask(formData: FormData) {
             assigneeId: assigneeId || undefined,
         })
 
+        console.log('[createTask] Success:', task)
         revalidatePath(`/projects/${projectId}`)
         return { success: true, data: task }
     } catch (error: any) {
-        return { success: false, error: error.message }
+        console.error('[createTask] Error:', error)
+        return { success: false, error: error.message || 'Failed to create task' }
     }
 }
 

@@ -61,7 +61,7 @@ export function RegisterForm() {
             autoComplete="name"
             required
             className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-            placeholder="John Doe"
+            placeholder="Atha Rizki P"
             disabled={loading}
           />
         </div>
@@ -77,7 +77,7 @@ export function RegisterForm() {
             autoComplete="email"
             required
             className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-            placeholder="you@example.com"
+            placeholder="atha@example.com"
             disabled={loading}
           />
         </div>

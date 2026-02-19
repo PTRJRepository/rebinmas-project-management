@@ -30,8 +30,8 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
     };
 
     const handleImageUpload = async (file: File): Promise<string> => {
-        if (file.size > 5 * 1024 * 1024) {
-            toast({ variant: "destructive", description: "File size too large (max 5MB)" });
+        if (file.size > 10 * 1024 * 1024) {
+            toast({ variant: "destructive", description: "File size too large (max 10MB)" });
             throw new Error("File too large");
         }
 
@@ -44,12 +44,21 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
                 body: formData,
             });
 
-            if (!response.ok) throw new Error('Upload failed');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMsg = errorData.details || errorData.error || 'Upload failed';
+                throw new Error(errorMsg);
+            }
 
             const data = await response.json();
             return data.url;
-        } catch (error) {
-            toast({ variant: "destructive", description: "Failed to upload image" });
+        } catch (error: any) {
+            console.error('[TaskDescriptionEditor] Upload error:', error);
+            toast({ 
+                variant: "destructive", 
+                title: "Upload Failed",
+                description: error.message || "Failed to upload image" 
+            });
             throw error;
         }
     };

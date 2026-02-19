@@ -10,6 +10,7 @@ import KanbanBoard from '@/components/KanbanBoard'
 import { CanvasBoard } from '@/components/CanvasBoard'
 import { CreateTaskDialog } from '@/components/CreateTaskDialog'
 import { ProjectMembersDialog } from '@/components/project/ProjectMembersDialog'
+import { ProjectAttachments } from '@/components/project/ProjectAttachments'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -847,6 +848,11 @@ export default function ProjectBoardClient({
           </Card>
         )}
 
+        {/* Project Assets & Attachments */}
+        <div className="mb-6">
+          <ProjectAttachments projectId={project.id} />
+        </div>
+
         {/* Project Details */}
         <Card className="border border-gray-200 shadow-sm mt-6">
           <CardHeader className="border-b border-gray-100">
@@ -933,7 +939,7 @@ export default function ProjectBoardClient({
                 required
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                placeholder="Project name"
+                placeholder="Membuat Integrasi Verifikasi Absen Muka"
               />
             </div>
             <div className="space-y-2">

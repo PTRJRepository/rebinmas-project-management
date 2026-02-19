@@ -27,6 +27,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
+import { TaskAttachments } from './TaskAttachments';
+
 export interface TaskDoc {
     id: string;
     taskId: string;
@@ -55,6 +57,7 @@ interface Task {
         name: string;
     };
     docs?: TaskDoc[];
+    attachments?: any[];
 }
 
 interface TaskMetadataProps {
@@ -119,6 +122,50 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
         setDocTitle(doc.title);
         setDocContent(doc.content || '');
         setDocDialogOpen(true);
+    };
+
+    const handleEditorImageUpload = async (file: File): Promise<string> => {
+        console.log('[TaskMetadata] Starting image upload:', file.name, file.type, file.size);
+        if (file.size > 10 * 1024 * 1024) { // Increased to 10MB
+            toast({ variant: "destructive", description: "File size too large (max 10MB)" });
+            throw new Error("File too large");
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const errorMsg = errorData.details || errorData.error || 'Upload failed';
+                console.error('[TaskMetadata] Upload failed:', errorMsg);
+                toast({ 
+                    variant: "destructive", 
+                    title: "Upload Failed",
+                    description: errorMsg 
+                });
+                throw new Error(errorMsg);
+            }
+            
+            const data = await res.json();
+            console.log('[TaskMetadata] Upload successful:', data.url);
+            return data.url;
+        } catch (error: any) {
+            console.error('[TaskMetadata] Upload exception:', error);
+            if (!error.message.includes('File too large')) {
+                toast({ 
+                    variant: "destructive", 
+                    title: "Upload Error",
+                    description: error.message || "An unexpected error occurred during upload" 
+                });
+            }
+            throw error;
+        }
     };
 
     const handleSaveDoc = async () => {
@@ -384,6 +431,15 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                 </div>
             </div>
 
+            {/* Task Attachments Section */}
+            <div className="pt-2">
+                <TaskAttachments 
+                    taskId={task.id} 
+                    projectId={projectId} 
+                    initialAttachments={task.attachments || []} 
+                />
+            </div>
+
             {/* Documentation Dialog */}
             <Dialog open={docDialogOpen} onOpenChange={setDocDialogOpen}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-slate-100 shadow-2xl">
@@ -413,6 +469,7 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
                                     onChange={(content) => setDocContent(content)}
                                     placeholder="Write your documentation here..."
                                     showMenuBar={true}
+                                    onImageUpload={handleEditorImageUpload}
                                 />
                             </div>
                         </div>

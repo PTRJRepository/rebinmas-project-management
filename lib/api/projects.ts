@@ -192,10 +192,11 @@ export interface Comment {
 
 export interface Attachment {
   id: string;
-  taskId: string;
+  taskId?: string | null;
+  projectId?: string | null;
   fileName: string;
   fileUrl: string;
-  fileType: 'image' | 'document';
+  fileType: string; // 'image', 'document'
   fileSize: number;
   createdAt: Date;
 }
@@ -764,6 +765,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
       email: row.assignee_email,
     } : null,
     docs: await getTaskDocs(id),
+    attachments: await getAttachmentsByTask(id),
   } as Task;
 }
 
@@ -1128,13 +1130,136 @@ export async function getGlobalRecentActivities(limit: number = 10) {
 }
 
 // ==================================================
+// ATTACHMENT OPERATIONS (Using pm_task_docs as storage)
+// ==================================================
+
+export async function getAttachmentsByProject(projectId: string): Promise<Attachment[]> {
+  // Use a special taskId naming convention for project-level assets
+  // Use pa_ prefix (short for project assets) to stay under 50 chars
+  const projectAssetsTaskId = `pa_${projectId}`;
+  const result = await sqlGateway.query(`
+    SELECT * FROM pm_task_docs
+    WHERE task_id = @taskId AND content LIKE '[FILE]%'
+    ORDER BY created_at DESC
+  `, { taskId: projectAssetsTaskId });
+  
+  return result.recordset.map((row: any) => {
+    try {
+      const jsonStr = row.content.substring(6); // Remove [FILE] prefix
+      const meta = JSON.parse(jsonStr);
+      return {
+        id: row.id,
+        taskId: null,
+        projectId: projectId,
+        fileName: row.title,
+        fileUrl: meta.url,
+        fileType: meta.type,
+        fileSize: meta.size,
+        createdAt: row.created_at
+      };
+    } catch (e) {
+      return null;
+    }
+  }).filter(Boolean) as Attachment[];
+}
+
+export async function getAttachmentsByTask(taskId: string): Promise<Attachment[]> {
+  const result = await sqlGateway.query(`
+    SELECT * FROM pm_task_docs
+    WHERE task_id = @taskId AND content LIKE '[FILE]%'
+    ORDER BY created_at DESC
+  `, { taskId });
+  
+  return result.recordset.map((row: any) => {
+    try {
+      const jsonStr = row.content.substring(6); // Remove [FILE] prefix
+      const meta = JSON.parse(jsonStr);
+      return {
+        id: row.id,
+        taskId: taskId,
+        projectId: null,
+        fileName: row.title,
+        fileUrl: meta.url,
+        fileType: meta.type,
+        fileSize: meta.size,
+        createdAt: row.created_at
+      };
+    } catch (e) {
+      return null;
+    }
+  }).filter(Boolean) as Attachment[];
+}
+
+export async function createAttachment(data: {
+  taskId?: string;
+  projectId?: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+}): Promise<Attachment> {
+  const id = generateId('att');
+  const now = new Date();
+  
+  // Use pa_ prefix if only projectId is provided
+  let taskId = data.taskId || `pa_${data.projectId}`;
+  
+  // Safety check for NVARCHAR(50)
+  if (taskId.length > 50) {
+    taskId = taskId.substring(0, 50);
+  }
+  
+  console.log('[createAttachment API] Creating attachment:', { id, taskId, fileName: data.fileName });
+
+  const content = `[FILE]${JSON.stringify({
+    url: data.fileUrl,
+    type: data.fileType,
+    size: data.fileSize
+  })}`;
+
+  try {
+    await sqlGateway.query(`
+      INSERT INTO pm_task_docs (id, task_id, title, content, created_at, updated_at)
+      VALUES (@id, @taskId, @title, @content, @createdAt, @updatedAt)
+    `, {
+      id,
+      taskId,
+      title: data.fileName,
+      content,
+      createdAt: now,
+      updatedAt: now,
+    });
+    console.log('[createAttachment API] SQL Insert successful');
+  } catch (err: any) {
+    console.error('[createAttachment API] SQL Error:', err.message);
+    throw err;
+  }
+
+  return {
+    id,
+    taskId: data.taskId || null,
+    projectId: data.projectId || null,
+    fileName: data.fileName,
+    fileUrl: data.fileUrl,
+    fileType: data.fileType,
+    fileSize: data.fileSize,
+    createdAt: now
+  };
+}
+
+export async function deleteAttachment(id: string): Promise<void> {
+  // Since we're using pm_task_docs, we just delete from there
+  await sqlGateway.query('DELETE FROM pm_task_docs WHERE id = @id', { id });
+}
+
+// ==================================================
 // TASK DOCUMENTATION OPERATIONS
 // ==================================================
 
 export async function getTaskDocs(taskId: string): Promise<TaskDoc[]> {
   const result = await sqlGateway.query(`
     SELECT * FROM pm_task_docs
-    WHERE task_id = @taskId
+    WHERE task_id = @taskId AND (content IS NULL OR content NOT LIKE '[FILE]%')
     ORDER BY created_at DESC
   `, { taskId });
   return toCamelCase<TaskDoc[]>(result.recordset);

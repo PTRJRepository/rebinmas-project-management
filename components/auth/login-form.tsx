@@ -61,7 +61,7 @@ export function LoginForm() {
               autoComplete="email"
               required
               className="block w-full pl-10 pr-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all duration-300 sm:text-sm hover:border-slate-600/50"
-              placeholder="you@example.com"
+              placeholder="atha@example.com"
               disabled={loading}
             />
           </div>

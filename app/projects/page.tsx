@@ -1422,7 +1422,7 @@ export default function DashboardPage() {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Contoh: Kampanye Marketing Q1"
+                placeholder="Contoh: Membuat Integrasi Verifikasi Absen Muka"
               />
             </div>
             <div className="space-y-2">

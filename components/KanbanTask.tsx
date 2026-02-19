@@ -122,8 +122,10 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
             return;
         }
 
+        console.log('[KanbanTask] Saving title:', title);
         setIsEditing(false);
         await updateTask(task.id, { title }, projectId);
+        console.log('[KanbanTask] Title saved successfully');
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -135,8 +137,20 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
         }
     };
 
-    const handleMoveToNext = async () => {
+    const handleMoveToNext = async (e?: React.MouseEvent) => {
+        // Prevent card click event
+        if (e) {
+            e.stopPropagation();
+        }
+        
         if (!canMoveToNext || isMoving) return;
+
+        console.log('[KanbanTask] Moving task to next status:', {
+            taskId: task.id,
+            currentStatusId: task.statusId,
+            nextStatusId: nextStatus?.id,
+            nextStatusName: nextStatus?.name
+        });
 
         setIsMoving(true);
         try {
@@ -146,6 +160,9 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                 // Default implementation: update status
                 await updateTaskStatus(task.id, nextStatus!.id, projectId);
             }
+            console.log('[KanbanTask] Task moved successfully');
+        } catch (error) {
+            console.error('[KanbanTask] Error moving task:', error);
         } finally {
             setIsMoving(false);
         }
@@ -153,14 +170,18 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
 
     const handleCardClick = (e: React.MouseEvent) => {
         // Don't navigate if clicking on interactive elements
+        const target = e.target as HTMLElement;
         if (
-            e.target instanceof HTMLButtonElement ||
-            e.target instanceof HTMLInputElement ||
-            (e.target as HTMLElement).closest('button') ||
-            (e.target as HTMLElement).closest('input')
+            target instanceof HTMLButtonElement ||
+            target instanceof HTMLInputElement ||
+            target.closest('button') ||
+            target.closest('input') ||
+            target.closest('[role="button"]')
         ) {
+            console.log('[KanbanTask] Click prevented - interactive element');
             return;
         }
+        console.log('[KanbanTask] Navigating to task detail:', task.id);
         router.push(`/projects/${projectId}/board/${task.id}`);
     };
 
@@ -223,7 +244,11 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <button
-                                                        onClick={handleMoveToNext}
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleMoveToNext(e);
+                                                        }}
                                                         disabled={isMoving}
                                                         className={cn(
                                                             "shrink-0 p-1 rounded-md transition-all duration-200",
@@ -268,11 +293,21 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                 )}
                             </div>
 
-                            {/* Description Preview */}
-                            {task.description && (
-                                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed print:text-gray-800">
-                                    {task.description}
-                                </p>
+                            {/* Description Preview / Summary */}
+                            {(task.description || (task.docCount !== undefined && task.docCount > 0)) && (
+                                <div className="space-y-1.5">
+                                    {task.description && (
+                                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed italic">
+                                            "{task.description}"
+                                        </p>
+                                    )}
+                                    {task.docCount !== undefined && task.docCount > 0 && (
+                                        <div className="flex items-center gap-1.5 text-[10px] text-sky-400/80 font-medium">
+                                            <FileText className="w-3 h-3" />
+                                            <span>Has detailed documentation</span>
+                                        </div>
+                                    )}
+                                </div>
                             )}
 
                             {/* Progress Bar (if progress > 0) */}

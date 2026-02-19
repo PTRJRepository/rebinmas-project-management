@@ -52,15 +52,28 @@ export async function setSession(sessionData: SessionData): Promise<void> {
   const isProduction = process.env.NODE_ENV === 'production';
   const maxAge = parseInt(process.env.SESSION_MAX_AGE || '7', 10) * 60 * 60 * 24;
 
+  // Get domain from environment variable or use default
+  const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+  
+  console.log('[setSession] Configuration:', {
+    isProduction,
+    domain: cookieDomain,
+    secure: isProduction,
+    path: '/',
+    sameSite: 'lax',
+    maxAge: `${maxAge} seconds`
+  });
+
   cookieStore.set('session', sessionValue, {
     httpOnly: true,
     secure: isProduction, // HTTPS only in production
     sameSite: 'lax',
     maxAge,
     path: '/',
-    // Optional: Set domain if using custom domain (e.g., .yourdomain.com)
-    // domain: isProduction ? '.yourdomain.com' : undefined,
+    domain: cookieDomain, // Set domain for cross-server sessions
   });
+
+  console.log('[setSession] Session created successfully for:', sessionData.email);
 }
 
 /**
@@ -71,18 +84,21 @@ export async function getSession(): Promise<SessionData | null> {
   const sessionCookie = cookieStore.get('session');
 
   if (!sessionCookie) {
+    console.log('[getSession] No session cookie found');
     return null;
   }
 
   try {
     const session = JSON.parse(sessionCookie.value);
+    console.log('[getSession] Session found for:', session.email);
     return {
       userId: session.userId,
       email: session.email,
       name: session.name,
       role: session.role
     };
-  } catch {
+  } catch (error) {
+    console.error('[getSession] Failed to parse session:', error);
     return null;
   }
 }

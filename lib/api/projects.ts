@@ -135,6 +135,7 @@ export interface Task {
   documentation?: string | null;
   progress: number;
   lastAlertSent?: Date | null;
+  completedAt?: Date | null;
   projectId: string;
   statusId: string;
   assigneeId?: string | null;
@@ -419,7 +420,7 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
   const tasksResult = await sqlGateway.query(`
     SELECT
       t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
-      t.documentation, t.progress, t.last_alert_sent, t.project_id, t.status_id, t.assignee_id,
+      t.documentation, t.progress, t.last_alert_sent, t.completed_at, t.project_id, t.status_id, t.assignee_id,
       t.created_at, t.updated_at,
       ts.id as status_id_ref,
       ts.name as status_name,
@@ -448,6 +449,7 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
     documentation: row.documentation,
     progress: row.progress,
     lastAlertSent: row.last_alert_sent,
+    completedAt: row.completed_at,
     projectId: row.project_id,
     statusId: row.status_id,
     assigneeId: row.assignee_id,
@@ -644,7 +646,7 @@ export async function getTasks(projectId: string): Promise<Task[]> {
   const result = await sqlGateway.query(`
     SELECT
       t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
-      t.documentation, t.progress, t.last_alert_sent, t.project_id, t.status_id, t.assignee_id,
+      t.documentation, t.progress, t.last_alert_sent, t.completed_at, t.project_id, t.status_id, t.assignee_id,
       t.created_at, t.updated_at,
       p.id as proj_id,
       p.name as project_name,
@@ -675,6 +677,7 @@ export async function getTasks(projectId: string): Promise<Task[]> {
     documentation: row.documentation,
     progress: row.progress,
     lastAlertSent: row.last_alert_sent,
+    completedAt: row.completed_at,
     projectId: row.project_id,
     statusId: row.status_id,
     assigneeId: row.assignee_id,
@@ -703,7 +706,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
   const result = await sqlGateway.query(`
     SELECT
       t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
-      t.documentation, t.progress, t.last_alert_sent, t.project_id, t.status_id, t.assignee_id,
+      t.documentation, t.progress, t.last_alert_sent, t.completed_at, t.project_id, t.status_id, t.assignee_id,
       t.created_at, t.updated_at,
       p.id as proj_id,
       p.name as project_name,
@@ -738,6 +741,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
     documentation: row.documentation,
     progress: row.progress,
     lastAlertSent: row.last_alert_sent,
+    completedAt: row.completed_at,
     projectId: row.project_id,
     statusId: row.status_id,
     assigneeId: row.assignee_id,
@@ -842,6 +846,18 @@ export async function updateTask(id: string, data: Partial<Task>): Promise<Task>
   if (data.statusId !== undefined) {
     updates.push('status_id = @statusId');
     params.statusId = data.statusId;
+
+    // Auto-set completed_at if status is 'Done'
+    const statusResult = await sqlGateway.query('SELECT name FROM pm_task_statuses WHERE id = @statusId', { statusId: data.statusId });
+    if (statusResult.recordset.length > 0) {
+      const statusName = statusResult.recordset[0].name;
+      if (['Done', 'Selesai'].includes(statusName)) {
+        updates.push('completed_at = @completedAt');
+        params.completedAt = new Date();
+      } else {
+        updates.push('completed_at = NULL');
+      }
+    }
   }
   if (data.assigneeId !== undefined) {
     updates.push('assignee_id = @assigneeId');

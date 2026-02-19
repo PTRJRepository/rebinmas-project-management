@@ -23,6 +23,7 @@ interface Task {
     dueDate?: Date | null;
     estimatedHours?: number | null;
     progress?: number | null;
+    completedAt?: Date | null;
     docCount?: number;
     assignee?: {
         id: string;
@@ -351,6 +352,14 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
+                                    )}
+
+                                    {/* Done Date */}
+                                    {task.completedAt && (
+                                        <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-green-500/10 text-green-400 border border-green-500/20 font-medium">
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                            <span>Done: {new Date(task.completedAt).toLocaleDateString()}</span>
+                                        </div>
                                     )}
                                 </div>
 

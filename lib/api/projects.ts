@@ -631,48 +631,85 @@ export async function permanentDeleteProject(id: string): Promise<void> {
 export async function getTasks(projectId: string): Promise<Task[]> {
   const result = await sqlGateway.query(`
     SELECT
-      t.*,
+      t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
+      t.documentation, t.progress, t.last_alert_sent, t.project_id, t.status_id, t.assignee_id,
+      t.created_at, t.updated_at,
       ts.id as status_id,
       ts.name as status_name,
-      ts.[order] as status_order,
-      u.id as assignee_id,
-      u.username as assignee_username,
-      u.name as assignee_name,
-      u.email as assignee_email
+      ts.[order] as status_order
     FROM pm_tasks t
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
-    LEFT JOIN pm_users u ON t.assignee_id = u.id
     WHERE t.project_id = @projectId
     ORDER BY t.created_at DESC
   `, { projectId });
 
-  return toCamelCase<Task[]>(result.recordset);
+  return result.recordset.map((row: any) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    priority: row.priority,
+    dueDate: row.due_date,
+    estimatedHours: row.estimated_hours,
+    actualHours: row.actual_hours,
+    documentation: row.documentation,
+    progress: row.progress,
+    lastAlertSent: row.last_alert_sent,
+    projectId: row.project_id,
+    statusId: row.status_id,
+    assigneeId: row.assignee_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    status: {
+      id: row.status_id,
+      name: row.status_name,
+      order: row.status_order,
+    },
+    assignee: null,
+  })) as Task[];
 }
 
 export async function getTaskById(id: string): Promise<Task | null> {
   const result = await sqlGateway.query(`
     SELECT
-      t.*,
+      t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
+      t.documentation, t.progress, t.last_alert_sent, t.project_id, t.status_id, t.assignee_id,
+      t.created_at, t.updated_at,
       ts.id as status_id,
       ts.name as status_name,
-      ts.[order] as status_order,
-      ts.project_id as status_project_id,
-      u.id as assignee_id,
-      u.username as assignee_username,
-      u.name as assignee_name,
-      u.email as assignee_email,
-      p.id as project_id,
-      p.name as project_name
+      ts.[order] as status_order
     FROM pm_tasks t
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
-    LEFT JOIN pm_users u ON t.assignee_id = u.id
-    LEFT JOIN pm_projects p ON t.project_id = p.id
     WHERE t.id = @id
   `, { id });
 
   if (result.recordset.length === 0) return null;
 
-  return toCamelCase<Task>(result.recordset[0]);
+  const row = result.recordset[0];
+  
+  // Explicitly map fields to avoid array duplication
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    priority: row.priority,
+    dueDate: row.due_date,
+    estimatedHours: row.estimated_hours,
+    actualHours: row.actual_hours,
+    documentation: row.documentation,
+    progress: row.progress,
+    lastAlertSent: row.last_alert_sent,
+    projectId: row.project_id,
+    statusId: row.status_id,
+    assigneeId: row.assignee_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    status: {
+      id: row.status_id,
+      name: row.status_name,
+      order: row.status_order,
+    },
+    assignee: null,
+  } as Task;
 }
 
 export async function createTask(data: {

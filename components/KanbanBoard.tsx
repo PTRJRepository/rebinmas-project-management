@@ -41,9 +41,10 @@ interface KanbanBoardProps {
     initialTasks: Task[]
     statuses: Status[]
     projectId: string
+    onMoveToNext?: (taskId: string) => Promise<void>
 }
 
-export default function KanbanBoard({ initialTasks, statuses, projectId }: KanbanBoardProps) {
+export default function KanbanBoard({ initialTasks, statuses, projectId, onMoveToNext }: KanbanBoardProps) {
     const [tasks, setTasks] = useState(initialTasks)
     const [addingToStatusId, setAddingToStatusId] = useState<string | null>(null)
 
@@ -88,25 +89,66 @@ export default function KanbanBoard({ initialTasks, statuses, projectId }: Kanba
 
     const handleMoveToNext = async (taskId: string) => {
         const task = tasks.find(t => t.id === taskId)
-        if (!task) return
+        if (!task) {
+            console.error('[KanbanBoard] Task not found for move:', taskId);
+            return;
+        }
 
         const currentStatusIndex = statuses.findIndex(s => s.id === task.statusId)
         const nextStatus = currentStatusIndex < statuses.length - 1 ? statuses[currentStatusIndex + 1] : null
 
-        if (!nextStatus) return
+        if (!nextStatus) {
+            console.log('[KanbanBoard] No next status available');
+            return;
+        }
+
+        console.log('[KanbanBoard] Moving task to next:', {
+            taskId,
+            taskTitle: task.title,
+            fromStatus: statuses.find(s => s.id === task.statusId)?.name,
+            toStatus: nextStatus.name
+        });
 
         // Optimistic update
         const updatedTasks = tasks.map(t =>
-            t.id === taskId ? { ...t, statusId: nextStatus.id } : t
+            t.id === taskId ? { ...t, statusId: nextStatus!.id } : t
         )
         setTasks(updatedTasks)
 
-        // Server update
-        await updateTaskStatus(taskId, nextStatus.id, projectId)
+        try {
+            // Server update
+            const result = await updateTaskStatus(taskId, nextStatus.id, projectId)
+            console.log('[KanbanBoard] Move result:', result);
+
+            if (result.success) {
+                // Re-sync with server data to ensure consistency
+                console.log('[KanbanBoard] Task moved successfully, re-syncing...');
+                // Force a re-render by updating state
+                setTasks([...updatedTasks]);
+            } else {
+                console.error('[KanbanBoard] Failed to move task:', result.error);
+                // Revert optimistic update on error
+                setTasks(tasks);
+                toast({
+                    title: "Move failed",
+                    description: `Failed to move task: ${result.error}`,
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            console.error('[KanbanBoard] Error moving task:', error);
+            // Revert optimistic update on error
+            setTasks(tasks);
+            toast({
+                title: "Error",
+                description: "Failed to move task. Please try again.",
+                variant: "destructive"
+            });
+        }
 
         // Show toast notification
         toast({
-            title: "Task advanced",
+            title: "Task moved",
             description: `"${task.title}" moved to ${nextStatus.name}`,
         })
     }

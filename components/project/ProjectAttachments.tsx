@@ -43,8 +43,10 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const fetchAttachments = useCallback(async () => {
+        console.log('[ProjectAttachments] Fetching for:', projectId)
         const result = await getProjectAttachments(projectId)
         if (result.success && result.data) {
+            console.log('[ProjectAttachments] Received:', result.data.length, 'items')
             setAttachments(result.data)
         }
     }, [projectId])
@@ -84,10 +86,10 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                 fileSize: file.size,
             })
 
-            if (attachmentResult.success && attachmentResult.data) {
+            if (attachmentResult.success) {
                 toast({ title: 'Success', description: 'File uploaded successfully' })
-                // Update local state immediately
-                setAttachments(prev => [attachmentResult.data, ...prev])
+                // Always re-fetch to ensure sync with DB structure
+                await fetchAttachments()
             } else {
                 throw new Error(attachmentResult.error)
             }
@@ -319,6 +321,5 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                 </CardContent>
             </Card>
         </div>
-    )
     )
 }

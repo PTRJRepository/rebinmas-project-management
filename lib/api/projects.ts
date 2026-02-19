@@ -1138,14 +1138,17 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
   // Use pa_ prefix (short for project assets) to stay under 50 chars
   const projectAssetsTaskId = `pa_${projectId}`;
   const result = await sqlGateway.query(`
-    SELECT * FROM pm_task_docs
-    WHERE task_id = @taskId AND content LIKE '[FILE]%'
+    SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at FROM pm_task_docs
+    WHERE task_id = @taskId AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
     ORDER BY created_at DESC
   `, { taskId: projectAssetsTaskId });
   
   return result.recordset.map((row: any) => {
     try {
-      const jsonStr = row.content.substring(6); // Remove [FILE] prefix
+      const content = row.content || '';
+      if (!content.startsWith('[FILE]')) return null;
+      
+      const jsonStr = content.substring(6); // Remove [FILE] prefix
       const meta = JSON.parse(jsonStr);
       return {
         id: row.id,
@@ -1158,6 +1161,7 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
         createdAt: row.created_at
       };
     } catch (e) {
+      console.error('[getAttachmentsByProject] Parse error:', e.message);
       return null;
     }
   }).filter(Boolean) as Attachment[];

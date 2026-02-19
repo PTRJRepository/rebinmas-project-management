@@ -119,6 +119,13 @@ export default function ProjectBoardClient({
     setTaskList(prev => [newTask, ...prev])
   }
 
+  const handleMoveToNext = async (taskId: string) => {
+    console.log('[ProjectBoardClient] Moving task:', taskId);
+    // The KanbanBoard will handle the optimistic update
+    // We just need to trigger a refresh after the move
+    router.refresh();
+  }
+
   const clearFilter = () => {
     setFilteredTaskIds([])
   }
@@ -800,6 +807,7 @@ export default function ProjectBoardClient({
                 initialTasks={taskList}
                 statuses={project.statuses || []}
                 projectId={project.id}
+                onMoveToNext={handleMoveToNext}
               />
             </div>
           </div>

@@ -113,31 +113,44 @@ class SqlGatewayClient {
     params?: Record<string, any>,
     options?: QueryOptions
   ): Promise<QueryResult<T>> {
-    const response = await fetch(`${this.baseUrl}/v1/query`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': this.apiKey,
-      },
-      body: JSON.stringify({
-        sql,
-        server: options?.server || CONFIG.DEFAULT_SERVER,
-        database: options?.database || CONFIG.DEFAULT_DATABASE,
-        params,
-      }),
-    });
-
-    const result: ApiResponse<QueryResult<T>> = await response.json();
-
-    if (!result.success) {
-      throw new SqlGatewayError(result.error || 'Query failed', {
-        sql,
-        server: options?.server || CONFIG.DEFAULT_SERVER,
-        database: options?.database || CONFIG.DEFAULT_DATABASE,
+    try {
+      const response = await fetch(`${this.baseUrl}/v1/query`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+        },
+        body: JSON.stringify({
+          sql,
+          server: options?.server || CONFIG.DEFAULT_SERVER,
+          database: options?.database || CONFIG.DEFAULT_DATABASE,
+          params,
+        }),
       });
-    }
 
-    return result.data!;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: ApiResponse<QueryResult<T>> = await response.json();
+
+      if (!result.success) {
+        throw new SqlGatewayError(result.error || 'Query failed', {
+          sql,
+          server: options?.server || CONFIG.DEFAULT_SERVER,
+          database: options?.database || CONFIG.DEFAULT_DATABASE,
+        });
+      }
+
+      return result.data!;
+    } catch (error: any) {
+      console.error('[SqlGatewayClient] Query Error:', error.message);
+      if (error.message.includes('fetch failed')) {
+        console.error('[SqlGatewayClient] NETWORK ERROR: Cannot reach API Gateway at', this.baseUrl);
+        console.error('[SqlGatewayClient] Please check if the production server has access to this IP.');
+      }
+      throw error;
+    }
   }
 
   /**

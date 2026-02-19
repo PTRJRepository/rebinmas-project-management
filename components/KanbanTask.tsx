@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, ArrowUp, Minus, ArrowDown, ChevronRight, User, FileText } from 'lucide-react';
+import { Calendar, Clock, ArrowUp, Minus, ArrowDown, ChevronRight, User, FileText, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';

@@ -52,13 +52,16 @@ export async function setSession(sessionData: SessionData): Promise<void> {
   const isProduction = process.env.NODE_ENV === 'production';
   const maxAge = parseInt(process.env.SESSION_MAX_AGE || '7', 10) * 60 * 60 * 24;
 
-  // Get domain from environment variable or use default
+  // IMPORTANT for production on different servers/IPs:
+  // 1. If not using HTTPS, 'secure' must be false
+  // 2. If using IP address instead of domain, 'domain' should usually be omitted
+  const sessionSecure = process.env.SESSION_SECURE === 'true'; // Allow explicit override
   const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
   
   console.log('[setSession] Configuration:', {
     isProduction,
     domain: cookieDomain,
-    secure: isProduction,
+    secure: sessionSecure || (isProduction && false), // Default to false unless explicitly true
     path: '/',
     sameSite: 'lax',
     maxAge: `${maxAge} seconds`
@@ -66,11 +69,14 @@ export async function setSession(sessionData: SessionData): Promise<void> {
 
   cookieStore.set('session', sessionValue, {
     httpOnly: true,
-    secure: isProduction, // HTTPS only in production
-    sameSite: 'lax',
+    // If you are using HTTP (not HTTPS) in production, secure must be false
+    // otherwise the browser will refuse to save the cookie
+    secure: sessionSecure, 
+    sameSite: 'lax', // Use 'lax' for better compatibility across different IPs/domains
     maxAge,
     path: '/',
-    domain: cookieDomain, // Set domain for cross-server sessions
+    // If cookieDomain is not set, it defaults to the host that set it
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
   });
 
   console.log('[setSession] Session created successfully for:', sessionData.email);

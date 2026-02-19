@@ -427,7 +427,8 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
       u.id as assignee_id_ref,
       u.username as assignee_username,
       u.name as assignee_name,
-      u.email as assignee_email
+      u.email as assignee_email,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id) as doc_count
     FROM pm_tasks t
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
     LEFT JOIN pm_users u ON t.assignee_id = u.id
@@ -452,6 +453,7 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
     assigneeId: row.assignee_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    docCount: row.doc_count || 0,
     status: {
       id: row.status_id_ref,
       name: row.status_name,
@@ -652,7 +654,8 @@ export async function getTasks(projectId: string): Promise<Task[]> {
       u.id as assignee_id_ref,
       u.username as assignee_username,
       u.name as assignee_name,
-      u.email as assignee_email
+      u.email as assignee_email,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id) as doc_count
     FROM pm_tasks t
     LEFT JOIN pm_projects p ON t.project_id = p.id
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
@@ -677,6 +680,7 @@ export async function getTasks(projectId: string): Promise<Task[]> {
     assigneeId: row.assignee_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    docCount: row.doc_count || 0,
     project: {
       id: row.proj_id,
       name: row.project_name,
@@ -709,7 +713,8 @@ export async function getTaskById(id: string): Promise<Task | null> {
       u.id as assignee_id_ref,
       u.username as assignee_username,
       u.name as assignee_name,
-      u.email as assignee_email
+      u.email as assignee_email,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id) as doc_count
     FROM pm_tasks t
     LEFT JOIN pm_projects p ON t.project_id = p.id
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
@@ -738,6 +743,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
     assigneeId: row.assignee_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    docCount: row.doc_count || 0,
     project: {
       id: row.proj_id,
       name: row.project_name,
@@ -1073,6 +1079,36 @@ export async function getProjectDashboardStats(projectId: string) {
     tasksByStatus,
     recentActivities,
   };
+}
+
+export async function getGlobalRecentActivities(limit: number = 10) {
+  const activitiesResult = await sqlGateway.query(`
+    SELECT TOP ${limit}
+      'task' as type,
+      t.id,
+      t.title as content,
+      t.updated_at as date,
+      u.username as user_name,
+      ts.name as status_name,
+      p.name as project_name,
+      p.id as project_id
+    FROM pm_tasks t
+    JOIN pm_projects p ON t.project_id = p.id
+    LEFT JOIN pm_users u ON t.assignee_id = u.id
+    LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
+    ORDER BY t.updated_at DESC
+  `);
+
+  return activitiesResult.recordset.map((r: any) => ({
+    id: r.id,
+    type: r.type,
+    content: r.content,
+    date: r.date,
+    userName: r.user_name || 'System',
+    statusName: r.status_name,
+    projectName: r.project_name,
+    projectId: r.project_id
+  }));
 }
 
 // ==================================================

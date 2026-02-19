@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, ArrowUp, Minus, ArrowDown, ChevronRight, User } from 'lucide-react';
+import { Calendar, Clock, ArrowUp, Minus, ArrowDown, ChevronRight, User, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ interface Task {
     dueDate?: Date | null;
     estimatedHours?: number | null;
     progress?: number | null;
+    docCount?: number;
     assignee?: {
         id: string;
         username: string;
@@ -330,6 +331,23 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                     <p className="text-xs">Estimated time</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    )}
+
+                                    {/* Documentation Card Count */}
+                                    {task.docCount !== undefined && task.docCount > 0 && (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20 font-medium">
+                                                        <FileText className="w-3.5 h-3.5" />
+                                                        <span>{task.docCount} docs</span>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p className="text-xs">{task.docCount} documentation cards</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>

@@ -18,6 +18,7 @@ import {
     getProjectWithTasks,
     deleteProject,
     getProjectDashboardStats,
+    getGlobalRecentActivities,
     updateProject,
     restoreProject,
     permanentDeleteProject,
@@ -171,6 +172,15 @@ export async function getProject(projectId: string) {
             return { success: false, error: 'Project not found' }
         }
         return { success: true, data: project, userRole: access.role }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function getRecentActivitiesAction(limit?: number) {
+    try {
+        const activities = await getGlobalRecentActivities(limit)
+        return { success: true, data: activities }
     } catch (error: any) {
         return { success: false, error: error.message }
     }

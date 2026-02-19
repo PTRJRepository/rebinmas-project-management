@@ -29,7 +29,8 @@ import {
   deleteProjectAction,
   restoreProjectAction,
   permanentDeleteProjectAction,
-  getDeletedProjectsAction
+  getDeletedProjectsAction,
+  getRecentActivitiesAction
 } from '@/app/actions/project';
 import { Project, Task } from '@/lib/api/projects';
 
@@ -38,6 +39,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [deletedProjects, setDeletedProjects] = useState<Project[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
@@ -77,18 +79,20 @@ export default function DashboardPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      console.log('Fetching projects and tasks...');
+      console.log('Fetching projects, tasks and activities...');
       const results = await Promise.allSettled([
         fetch('/api/projects'),
-        fetch('/api/tasks')
+        fetch('/api/tasks'),
+        getRecentActivitiesAction(10)
       ]);
 
       const projectsResult = results[0];
       const tasksResult = results[1];
+      const activitiesResult = results[2];
 
       // Handle Projects
       if (projectsResult.status === 'fulfilled') {
-        const res = projectsResult.value;
+        const res = projectsResult.value as Response;
         console.log('Projects Res Status:', res.status);
         if (res.ok) {
           const data = await res.json();
@@ -105,7 +109,7 @@ export default function DashboardPage() {
 
       // Handle Tasks
       if (tasksResult.status === 'fulfilled') {
-        const res = tasksResult.value;
+        const res = tasksResult.value as Response;
         console.log('Tasks Res Status:', res.status);
         if (res.ok) {
           const data = await res.json();
@@ -118,6 +122,20 @@ export default function DashboardPage() {
       } else {
         console.error('Tasks Fetch failed:', tasksResult.reason);
         setAllTasks([]);
+      }
+
+      // Handle Recent Activities
+      if (activitiesResult.status === 'fulfilled') {
+        const res = activitiesResult.value;
+        if (res.success && res.data) {
+          setRecentActivities(res.data);
+        } else {
+          console.error('Activities API failed:', res.error);
+          setRecentActivities([]);
+        }
+      } else {
+        console.error('Activities Fetch failed:', activitiesResult.reason);
+        setRecentActivities([]);
       }
 
     } catch (error) {
@@ -1240,12 +1258,66 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </div>
-                </div>
-
-              </div>
-            )}
-          </>
-        ) : (
+                                </div>
+                
+                                {/* Global Recent Activity */}
+                                {recentActivities.length > 0 && (
+                                  <div className="mt-8">
+                                    <div className="flex items-center gap-3 mb-4">
+                                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                                        <Clock className="w-5 h-5 text-indigo-400" />
+                                      </div>
+                                      <div>
+                                        <h2 className="text-xl font-bold text-sky-100 heading-glow">Aktivitas Terbaru</h2>
+                                        <p className="text-sm text-sky-400/70">Pembaruan terkini dari semua proyek</p>
+                                      </div>
+                                    </div>
+                                    <Card className="glass-card border border-cyan-500/10 overflow-hidden">
+                                      <CardContent className="p-0">
+                                        <div className="divide-y divide-cyan-500/10">
+                                          {recentActivities.map((activity) => (
+                                            <div key={activity.id} className="p-4 hover:bg-white/5 transition-colors group">
+                                              <div className="flex items-start justify-between gap-4">
+                                                <div className="flex gap-3">
+                                                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
+                                                    <Users className="w-4 h-4 text-indigo-400" />
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-sm text-sky-100">
+                                                      <span className="font-semibold text-cyan-400">{activity.userName}</span> memperbarui <span className="font-medium italic">"{activity.content}"</span>
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                      <Link href={`/projects/${activity.projectId}`} className="text-xs text-indigo-400 hover:underline">
+                                                        {activity.projectName}
+                                                      </Link>
+                                                      <span className="text-[10px] text-sky-400/40">•</span>
+                                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                                                        {activity.statusName || 'Updated'}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <span className="text-[10px] text-sky-400/50 whitespace-nowrap pt-1">
+                                                  {new Date(activity.date).toLocaleString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                  })}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                )}
+                
+                              </div>
+                            )}
+                          </>
+                        ) : (
           /* Trash View */
           <div className="space-y-6">
             <div className="glass-card rounded-xl border border-red-500/30 p-6">

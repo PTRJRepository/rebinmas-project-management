@@ -202,17 +202,36 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, onMoveT
             statusTasks = statusTasks.filter(task => filteredTaskIds.includes(task.id))
         }
 
+        console.log(`[KanbanBoard] Tasks for status ${statusId}:`, statusTasks.length);
         return statusTasks
     }
 
     const isFilterActive = filteredTaskIds.length > 0
 
-    // Filter statuses to only include the required ones: Planning (To Do), On Progress, Selesai (Done)
+    // Use all statuses from the project, but ensure we have the 3 main ones
+    // Filter to show only: Planning/To Do/Backlog, In Progress/On Progress, Done/Selesai
+    const findStatus = (names: string[]) => {
+        for (const name of names) {
+            const status = statuses.find(s => s.name.toLowerCase().includes(name.toLowerCase()));
+            if (status) return status;
+        }
+        return null;
+    };
+
+    const todoStatus = findStatus(['To Do', 'Backlog', 'Planning']);
+    const progressStatus = findStatus(['In Progress', 'On Progress', 'Progress']);
+    const doneStatus = findStatus(['Done', 'Selesai', 'Finish']);
+
+    // Only show columns that exist in the project
     const displayStatuses = [
-        { id: statuses.find(s => s.name === 'To Do' || s.name === 'Backlog' || s.name === 'Planning')?.id || 'todo', name: 'Planning' },
-        { id: statuses.find(s => s.name === 'In Progress' || s.name === 'On Progress')?.id || 'inprogress', name: 'On Progress' },
-        { id: statuses.find(s => s.name === 'Done' || s.name === 'Selesai')?.id || 'done', name: 'Selesai' }
-    ].filter(s => s.id !== undefined);
+        todoStatus,
+        progressStatus,
+        doneStatus
+    ].filter((s): s is Status => s !== null);
+
+    console.log('[KanbanBoard] Display statuses:', displayStatuses);
+    console.log('[KanbanBoard] All statuses:', statuses);
+    console.log('[KanbanBoard] Tasks count:', tasks.length);
 
     return (
         <div className="flex flex-col h-full overflow-hidden">

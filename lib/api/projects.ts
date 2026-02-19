@@ -1169,14 +1169,17 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
 
 export async function getAttachmentsByTask(taskId: string): Promise<Attachment[]> {
   const result = await sqlGateway.query(`
-    SELECT * FROM pm_task_docs
-    WHERE task_id = @taskId AND content LIKE '[FILE]%'
+    SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at FROM pm_task_docs
+    WHERE task_id = @taskId AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
     ORDER BY created_at DESC
   `, { taskId });
   
   return result.recordset.map((row: any) => {
     try {
-      const jsonStr = row.content.substring(6); // Remove [FILE] prefix
+      const content = row.content || '';
+      if (!content.startsWith('[FILE]')) return null;
+
+      const jsonStr = content.substring(6); // Remove [FILE] prefix
       const meta = JSON.parse(jsonStr);
       return {
         id: row.id,
@@ -1189,6 +1192,7 @@ export async function getAttachmentsByTask(taskId: string): Promise<Attachment[]
         createdAt: row.created_at
       };
     } catch (e) {
+      console.error('[getAttachmentsByTask] Parse error:', e.message);
       return null;
     }
   }).filter(Boolean) as Attachment[];
@@ -1257,13 +1261,57 @@ export async function deleteAttachment(id: string): Promise<void> {
 }
 
 // ==================================================
+// PROJECT DOCUMENTATION OPERATIONS
+// ==================================================
+
+export async function getProjectDocs(projectId: string): Promise<TaskDoc[]> {
+  const projectDocTaskId = `pd_${projectId}`;
+  const result = await sqlGateway.query(`
+    SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at, updated_at FROM pm_task_docs
+    WHERE task_id = @taskId AND (content IS NULL OR CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%')
+    ORDER BY created_at DESC
+  `, { taskId: projectDocTaskId });
+  return toCamelCase<TaskDoc[]>(result.recordset);
+}
+
+export async function createProjectDoc(data: {
+  projectId: string;
+  title: string;
+  content: string;
+}): Promise<TaskDoc> {
+  const id = generateId('pdoc');
+  const taskId = `pd_${data.projectId}`;
+  const now = new Date();
+
+  await sqlGateway.query(`
+    INSERT INTO pm_task_docs (id, task_id, title, content, created_at, updated_at)
+    VALUES (@id, @taskId, @title, @content, @createdAt, @updatedAt)
+  `, {
+    id,
+    taskId,
+    title: data.title,
+    content: data.content,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const result = await sqlGateway.query('SELECT * FROM pm_task_docs WHERE id = @id', { id });
+  return toCamelCase<TaskDoc>(result.recordset[0]);
+}
+
+// updateProjectDoc and deleteProjectDoc can reuse updateTaskDoc and deleteTaskDoc
+// but we'll export aliases for clarity
+export const updateProjectDoc = updateTaskDoc;
+export const deleteProjectDoc = deleteTaskDoc;
+
+// ==================================================
 // TASK DOCUMENTATION OPERATIONS
 // ==================================================
 
 export async function getTaskDocs(taskId: string): Promise<TaskDoc[]> {
   const result = await sqlGateway.query(`
-    SELECT * FROM pm_task_docs
-    WHERE task_id = @taskId AND (content IS NULL OR content NOT LIKE '[FILE]%')
+    SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at, updated_at FROM pm_task_docs
+    WHERE task_id = @taskId AND (content IS NULL OR CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%')
     ORDER BY created_at DESC
   `, { taskId });
   return toCamelCase<TaskDoc[]>(result.recordset);

@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   // Transpile packages that need it
   transpilePackages: ['@excalidraw/excalidraw'],
 
+  // Enable standalone output for better production deployment
+  output: 'standalone',
+
+  // Configure static file serving
+  experimental: {
+    // Ensure public folder is properly served
+    outputFileTracingRoot: undefined,
+  },
+
   webpack: (config, { isServer }) => {
     // Excalidraw compatibility
     config.resolve.alias = {

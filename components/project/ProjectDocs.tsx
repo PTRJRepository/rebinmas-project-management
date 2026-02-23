@@ -9,7 +9,9 @@ import {
     Trash2, 
     Edit2, 
     Loader2, 
-    Sparkles 
+    Sparkles,
+    Calendar,
+    FileImage
 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { 
@@ -40,6 +42,22 @@ interface ProjectDoc {
 
 interface ProjectDocsProps {
     projectId: string
+}
+
+// Helper function to strip HTML tags and get plain text preview
+const getPlainTextPreview = (html: string | null, maxLength: number = 150): string => {
+    if (!html) return ''
+    // Remove HTML tags
+    const plainText = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    // Truncate to maxLength
+    if (plainText.length <= maxLength) return plainText
+    return plainText.substring(0, maxLength).trim() + '...'
+}
+
+// Helper to check if content has images
+const hasImages = (html: string | null): boolean => {
+    if (!html) return false
+    return html.includes('<img') || html.includes('data:image')
 }
 
 export function ProjectDocs({ projectId }: ProjectDocsProps) {
@@ -81,7 +99,7 @@ export function ProjectDocs({ projectId }: ProjectDocsProps) {
 
     const handleSaveDoc = async () => {
         if (!docTitle.trim()) {
-            toast({ variant: "destructive", description: "Title is required" })
+            toast({ variant: "destructive", description: "Judul harus diisi" })
             return
         }
 
@@ -95,11 +113,11 @@ export function ProjectDocs({ projectId }: ProjectDocsProps) {
             }
 
             if (result.success) {
-                toast({ title: "Success", description: editingDoc ? "Documentation updated" : "Documentation added" })
+                toast({ title: "Berhasil", description: editingDoc ? "Dokumentasi diperbarui" : "Dokumentasi ditambahkan" })
                 setDocDialogOpen(false)
                 fetchDocs()
             } else {
-                toast({ variant: "destructive", title: "Error", description: result.error || "Failed to save documentation" })
+                toast({ variant: "destructive", title: "Error", description: result.error || "Gagal menyimpan dokumentasi" })
             }
         } finally {
             setIsSaving(false)
@@ -107,20 +125,20 @@ export function ProjectDocs({ projectId }: ProjectDocsProps) {
     }
 
     const handleDeleteDoc = async (docId: string) => {
-        if (!confirm('Are you sure you want to delete this documentation card?')) return
+        if (!confirm('Apakah Anda yakin ingin menghapus dokumentasi ini?')) return
 
         const result = await deleteProjectDocAction(docId, projectId)
         if (result.success) {
-            toast({ title: "Success", description: "Documentation deleted" })
+            toast({ title: "Berhasil", description: "Dokumentasi dihapus" })
             fetchDocs()
         } else {
-            toast({ variant: "destructive", title: "Error", description: result.error || "Failed to delete documentation" })
+            toast({ variant: "destructive", title: "Error", description: result.error || "Gagal menghapus dokumentasi" })
         }
     }
 
     const handleEditorImageUpload = async (file: File): Promise<string> => {
         if (file.size > 10 * 1024 * 1024) {
-            toast({ variant: "destructive", description: "File size too large (max 10MB)" })
+            toast({ variant: "destructive", description: "Ukuran file terlalu besar (maksimal 10MB)" })
             throw new Error("File too large")
         }
 
@@ -134,7 +152,7 @@ export function ProjectDocs({ projectId }: ProjectDocsProps) {
 
         if (!res.ok) {
             const errorData = await res.json().catch(() => ({}))
-            throw new Error(errorData.details || errorData.error || 'Upload failed')
+            throw new Error(errorData.details || errorData.error || 'Upload gagal')
         }
         
         const data = await res.json()
@@ -167,45 +185,82 @@ export function ProjectDocs({ projectId }: ProjectDocsProps) {
 
             {docs.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {docs.map((doc) => (
-                        <Card key={doc.id} className="bg-white border-gray-200 group hover:shadow-md transition-all h-full flex flex-col">
-                            <CardHeader className="p-4 pb-2 border-b border-gray-50 flex flex-row items-center justify-between space-y-0">
-                                <CardTitle className="text-base font-bold text-gray-800 truncate pr-8">
-                                    {doc.title}
-                                </CardTitle>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button 
-                                        size="icon" 
-                                        variant="ghost" 
-                                        className="h-8 w-8 text-gray-400 hover:text-sky-600 hover:bg-sky-50"
-                                        onClick={() => handleOpenEditDoc(doc)}
-                                    >
-                                        <Edit2 className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
-                                        size="icon" 
-                                        variant="ghost" 
-                                        className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
-                                        onClick={() => handleDeleteDoc(doc.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-3 flex-1 overflow-hidden">
-                                <div className="text-sm text-gray-600 line-clamp-4 prose prose-sm max-w-none">
-                                    <div dangerouslySetInnerHTML={{ __html: doc.content || 'No content' }} />
-                                </div>
-                                <p className="text-[10px] text-gray-400 mt-4 font-medium italic">
-                                    Last updated: {new Date(doc.updatedAt).toLocaleDateString('id-ID', {
-                                        day: 'numeric',
-                                        month: 'long',
-                                        year: 'numeric'
-                                    })}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ))}
+                    {docs.map((doc) => {
+                        const preview = getPlainTextPreview(doc.content)
+                        const containsImages = hasImages(doc.content)
+                        
+                        return (
+                            <Card 
+                                key={doc.id} 
+                                className="bg-white border-gray-200 hover:border-sky-300 hover:shadow-lg transition-all duration-300 group cursor-pointer h-full flex flex-col"
+                                onClick={() => handleOpenEditDoc(doc)}
+                            >
+                                <CardHeader className="p-4 pb-2 border-b border-gray-100 flex flex-row items-start justify-between space-y-0">
+                                    <div className="flex-1 min-w-0 pr-2">
+                                        <CardTitle className="text-base font-bold text-gray-800 truncate">
+                                            {doc.title}
+                                        </CardTitle>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <Calendar className="h-3 w-3 text-gray-400" />
+                                            <p className="text-[11px] text-gray-400">
+                                                {new Date(doc.updatedAt).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                    year: 'numeric'
+                                                })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                        <Button 
+                                            size="icon" 
+                                            variant="ghost" 
+                                            className="h-8 w-8 text-gray-400 hover:text-sky-600 hover:bg-sky-50"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleOpenEditDoc(doc)
+                                            }}
+                                        >
+                                            <Edit2 className="h-4 w-4" />
+                                        </Button>
+                                        <Button 
+                                            size="icon" 
+                                            variant="ghost" 
+                                            className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleDeleteDoc(doc.id)
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-3 flex-1 flex flex-col">
+                                    {/* Preview Content */}
+                                    <div className="flex-1 min-h-[80px]">
+                                        {preview ? (
+                                            <p className="text-sm text-gray-600 line-clamp-4 leading-relaxed">
+                                                {preview}
+                                            </p>
+                                        ) : (
+                                            <p className="text-sm text-gray-400 italic">
+                                                Belum ada konten
+                                            </p>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Image indicator */}
+                                    {containsImages && (
+                                        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-100">
+                                            <FileImage className="h-3.5 w-3.5 text-sky-500" />
+                                            <span className="text-xs text-sky-600 font-medium">Berisi gambar</span>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-16 px-6 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 text-center">

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "postbuild": "node scripts/ensure-uploads-folder.js",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "migrate": "tsx scripts/migrate-sqlite-to-sqlserver.ts",

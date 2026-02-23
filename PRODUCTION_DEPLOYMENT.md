@@ -76,9 +76,141 @@ NEXT_PUBLIC_APP_URL=https://yourdomain.com
 
 ---
 
-## 🔍 Troubleshooting Login Issues
+## 📁 Upload Folder Configuration
 
-### Masalah Umum & Solusi
+### Penting: Folder Uploads
+
+Aplikasi menyimpan file upload (gambar) di folder `public/uploads`. Pastikan folder ini ada dan memiliki permission yang benar:
+
+```bash
+# Buat folder uploads jika belum ada
+mkdir -p public/uploads
+
+# Set permission (Linux/Mac)
+chmod 755 public/uploads
+
+# Untuk Windows, pastikan folder memiliki write permission
+```
+
+### Untuk Deployment dengan PM2
+
+```bash
+# Build aplikasi
+npm run build
+
+# Pastikan folder uploads ada di production
+mkdir -p /path/to/app/public/uploads
+
+# Start dengan PM2
+pm2 start npm --name "schedule-tracker" -- start
+```
+
+### Untuk Deployment dengan Docker
+
+Tambahkan volume untuk folder uploads:
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY .next .next
+COPY public public
+# Pastikan folder uploads ada
+RUN mkdir -p public/uploads
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+Docker Compose:
+
+```yaml
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./uploads:/app/public/uploads  # Persist uploads
+    environment:
+      - NODE_ENV=production
+```
+
+---
+
+## 🔍 Troubleshooting
+
+### Masalah Upload Gambar
+
+#### 1. Gambar Tidak Muncul Setelah Upload
+
+**Penyebab:** Folder `public/uploads` tidak ada atau tidak writable
+
+**Solusi:**
+```bash
+# Buat folder dan set permission
+mkdir -p public/uploads
+chmod 755 public/uploads
+
+# Untuk production dengan PM2/Docker, pastikan folder di-mount dengan benar
+```
+
+#### 2. Error "Could not create upload directory"
+
+**Penyebab:** Aplikasi tidak memiliki permission untuk membuat folder
+
+**Solusi:**
+```bash
+# Buat folder secara manual sebelum menjalankan aplikasi
+mkdir -p public/uploads
+
+# Set ownership jika menggunakan user tertentu
+chown -R node:node public/uploads
+```
+
+#### 3. Gambar Tersimpan tapi Tidak Bisa Diakses
+
+**Penyebab:** Next.js standalone tidak melayani file statis dengan benar
+
+**Solusi:**
+- Pastikan folder `public` di-copy ke lokasi yang benar
+- Untuk standalone, copy folder `public` ke `.next/standalone/public`
+
+---
+
+### Masalah Task Detail Tidak Terbuka
+
+#### Gejala: Klik task card tidak membuka halaman detail
+
+**Penyebab:** Event propagation atau router issue
+
+**Solusi:**
+1. Clear browser cache dan hard refresh (Ctrl+Shift+R)
+2. Pastikan JavaScript tidak diblokir
+3. Cek console browser untuk error
+
+---
+
+### Masalah Dokumentasi Tidak Tersimpan
+
+#### Gejala: Dokumentasi task atau project tidak tersimpan setelah edit
+
+**Penyebab:** Koneksi database atau validasi gagal
+
+**Solusi:**
+1. Cek koneksi SQL Gateway
+2. Cek console browser untuk error
+3. Cek server log untuk detail error
+
+---
+
+### Masalah Login di Production
 
 #### 1. Login Berhasil Tapi Session Hilang Setelah Redirect
 
@@ -314,11 +446,23 @@ pm2 logs schedule-tracker
 2. Check jika menggunakan HTTPS (untuk production)
 3. Check browser settings (block third-party cookies?)
 
-### Q: Bagaimana cara test di production tanpa HTTPS?
+### Q: Gambar tidak muncul setelah upload?
 **A:** 
-- Untuk testing saja, set `COOKIE_DOMAIN` ke IP address
-- Example: `COOKIE_DOMAIN=192.168.1.100`
-- Tapi untuk production WAJIB HTTPS!
+1. Pastikan folder `public/uploads` ada dan writable
+2. Check permission folder
+3. Untuk Docker, pastikan volume di-mount dengan benar
+
+### Q: Task detail tidak terbuka saat diklik?
+**A:**
+1. Clear browser cache
+2. Hard refresh (Ctrl+Shift+R)
+3. Check console browser untuk error JavaScript
+
+### Q: Dokumentasi tidak tersimpan?
+**A:**
+1. Check koneksi SQL Gateway
+2. Check console browser untuk error
+3. Check server log untuk detail error
 
 ---
 
@@ -330,8 +474,9 @@ Jika masih ada masalah:
 2. **Test SQL Gateway** - `curl http://API_URL/health`
 3. **Verify env vars** - Pastikan `.env.production` sudah benar
 4. **Check cookies** - F12 > Application > Cookies
+5. **Check uploads** - Pastikan `public/uploads` ada dan writable
 
 ---
 
-**Last Updated:** 19 Februari 2026  
-**Version:** 1.0.0
+**Last Updated:** 23 Februari 2026  
+**Version:** 2.0.0

@@ -171,17 +171,27 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
     const handleCardClick = (e: React.MouseEvent) => {
         // Don't navigate if clicking on interactive elements
         const target = e.target as HTMLElement;
-        if (
+        
+        // Check if clicking on button, input, or their children
+        const isInteractiveElement = 
             target instanceof HTMLButtonElement ||
             target instanceof HTMLInputElement ||
             target.closest('button') ||
             target.closest('input') ||
-            target.closest('[role="button"]')
-        ) {
-            console.log('[KanbanTask] Click prevented - interactive element');
+            target.closest('[role="button"]') ||
+            target.closest('[data-no-navigate="true"]');
+        
+        // Also check if this is a drag event (drag handle)
+        const isDragging = target.closest('[data-rbd-drag-handle-draggable-id]');
+        
+        if (isInteractiveElement || isDragging) {
+            console.log('[KanbanTask] Click prevented - interactive element or dragging');
             return;
         }
+        
         console.log('[KanbanTask] Navigating to task detail:', task.id);
+        e.preventDefault();
+        e.stopPropagation();
         router.push(`/projects/${projectId}/board/${task.id}`);
     };
 

@@ -3,6 +3,23 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+// Get the project root directory reliably
+const getProjectRoot = () => {
+    // In production (standalone), the working directory may differ
+    // Use __dirname as fallback which is more reliable
+    try {
+        // Try process.cwd() first (development)
+        const cwdPath = process.cwd();
+        if (cwdPath) return cwdPath;
+    } catch (e) {
+        // Ignore
+    }
+    
+    // Fallback to current file's directory and traverse up
+    // This works in both dev and production
+    return process.env.NEXT_PROJECT_ROOT || process.cwd();
+};
+
 export async function POST(request: NextRequest) {
     try {
         console.log('[Upload API] Received upload request');
@@ -42,17 +59,40 @@ export async function POST(request: NextRequest) {
 
         const filename = `img-${uniqueSuffix}.${extension}`;
 
-        // Save to public/uploads (ensure directory exists)
-        const uploadDir = join(process.cwd(), 'public', 'uploads');
-        console.log('[Upload API] Saving to directory:', uploadDir);
+        // Save to public/uploads - use multiple fallback paths for reliability
+        const projectRoot = getProjectRoot();
+        const uploadDirs = [
+            join(projectRoot, 'public', 'uploads'),
+            // Fallback paths for different production setups
+            join(process.cwd(), 'public', 'uploads'),
+            join('/app', 'public', 'uploads'), // Common Docker path
+        ];
+
+        console.log('[Upload API] Project root:', projectRoot);
         
-        try {
-            await mkdir(uploadDir, { recursive: true });
-        } catch (err: any) {
-            console.warn('[Upload API] Directory creation warning (might exist):', err.message);
+        let uploadDir: string | null = null;
+        let filepath: string | null = null;
+
+        // Try each possible upload directory
+        for (const dir of uploadDirs) {
+            try {
+                await mkdir(dir, { recursive: true });
+                uploadDir = dir;
+                filepath = join(dir, filename);
+                console.log('[Upload API] Using upload directory:', dir);
+                break;
+            } catch (err: any) {
+                console.warn('[Upload API] Cannot create directory:', dir, err.message);
+            }
         }
 
-        const filepath = join(uploadDir, filename);
+        if (!uploadDir || !filepath) {
+            console.error('[Upload API] Could not create upload directory');
+            return NextResponse.json({ 
+                error: 'Could not create upload directory',
+            }, { status: 500 });
+        }
+
         console.log('[Upload API] Full file path:', filepath);
 
         await writeFile(filepath, buffer);

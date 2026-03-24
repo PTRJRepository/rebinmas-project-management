@@ -144,6 +144,8 @@ export interface Task {
   createdAt: Date;
   updatedAt: Date;
   // Computed fields
+  docCount?: number;
+  attachmentCount?: number;
   status?: {
     id: string;
     name: string;
@@ -461,6 +463,7 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     docCount: row.doc_count || 0,
+    attachmentCount: row.attachment_count || 0,
     status: {
       id: row.status_id_ref,
       name: row.status_name,
@@ -717,6 +720,8 @@ export async function getTasks(projectId: string): Promise<Task[]> {
       name: row.assignee_name,
       email: row.assignee_email,
     } : null,
+    docs: await getTaskDocs(row.id),
+    attachments: await getAttachmentsByTask(row.id),
   })) as Task[];
 }
 
@@ -783,8 +788,8 @@ export async function getTaskById(id: string): Promise<Task | null> {
       name: row.assignee_name,
       email: row.assignee_email,
     } : null,
-    docs: await getTaskDocs(id),
-    attachments: await getAttachmentsByTask(id),
+    docs: await getTaskDocs(row.id),
+    attachments: await getAttachmentsByTask(row.id),
   } as Task;
 }
 

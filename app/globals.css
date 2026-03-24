@@ -158,3 +158,261 @@ h1, h2, h3, h4, h5, h6 {
 .animate-slide-in-right {
   animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* ========================================
+   PRINT STYLES - Professional Report Output
+   ======================================== */
+
+@media print {
+  /* Reset & Basic Page Setup */
+  @page {
+    size: A4;
+    margin: 15mm 15mm 20mm 15mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html, body {
+    background: white !important;
+    color: #1e293b !important;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  /* Hide Elements Not Needed for Print */
+  .print\:hidden,
+  button:not(.print\:visible),
+  [class*="hover:"]:not(.print\:visible),
+  nav,
+  header:not(.print\:visible),
+  footer,
+  .no-print,
+  .sidebar,
+  .sidebar-glass,
+  .fixed,
+  .sticky,
+  .absolute,
+  .backdrop-blur,
+  .bg-gradient-to-r,
+  .animate-pulse,
+  .animate-spin {
+    display: none !important;
+  }
+
+  /* Show Elements Marked for Print */
+  .print\:block,
+  .print\:inline,
+  .print\:flex {
+    display: block !important;
+  }
+
+  /* Page Breaks */
+  .break-before { page-break-before: always; }
+  .break-after { page-break-after: always; }
+  .avoid-break { page-break-inside: avoid; }
+
+  /* Card & Panel Reset for Print */
+  .glass-card,
+  .glass-panel,
+  .bg-slate-900,
+  .bg-slate-900\/40,
+  .bg-slate-900\/50,
+  .bg-slate-800,
+  .bg-slate-800\/30,
+  .bg-slate-800\/50 {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Border Reset */
+  .border-white\/5,
+  .border-white\/10,
+  .border-slate-700,
+  .border-slate-800 {
+    border-color: #e2e8f0 !important;
+  }
+
+  /* Text Color Reset for Print */
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300,
+  .text-slate-400,
+  .text-slate-500 {
+    color: #1e293b !important;
+  }
+
+  .text-sky-400,
+  .text-sky-500 {
+    color: #0284c7 !important;
+  }
+
+  .text-white {
+    color: #0f172a !important;
+  }
+
+  /* Priority Badge Print Colors */
+  .bg-red-500,
+  .bg-red-500\/20,
+  .bg-orange-500,
+  .bg-orange-500\/20,
+  .bg-yellow-500,
+  .bg-yellow-500\/20,
+  .bg-green-500,
+  .bg-green-500\/20 {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+  }
+
+  /* Progress Bar Print */
+  .bg-sky-500,
+  .bg-emerald-500 {
+    background: #0284c7 !important;
+  }
+
+  /* Kanban Board Print */
+  .kanban-board {
+    display: block !important;
+  }
+
+  .kanban-column {
+    width: 100% !important;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    background: white;
+  }
+
+  /* Task Cards Print */
+  .task-card {
+    page-break-inside: avoid;
+    border: 1px solid #e2e8f0;
+    background: white;
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+
+  /* Attachment Lists Print */
+  .attachment-list {
+    display: block !important;
+  }
+
+  .attachment-item {
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 5px;
+    background: white !important;
+  }
+
+  /* Documentation Cards Print */
+  .doc-card {
+    page-break-inside: avoid;
+    border: 1px solid #e2e8f0;
+    background: white;
+    margin-bottom: 15px;
+  }
+
+  /* Image Gallery Print */
+  .image-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .image-gallery img {
+    width: 100%;
+    height: auto;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* Header Styling */
+  .print-header {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #0284c7;
+    margin-bottom: 20px;
+  }
+
+  /* Stats Grid Print */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    text-align: center;
+    background: white !important;
+  }
+
+  /* Table Styling for Print */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+
+  th, td {
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    text-align: left;
+  }
+
+  th {
+    background: #f8fafc !important;
+    font-weight: 600;
+  }
+
+  /* Project Report Specific */
+  .project-banner {
+    height: 150px;
+    overflow: hidden;
+  }
+
+  .project-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Task Detail Panel Print */
+  .task-detail-panel {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    border: none !important;
+  }
+
+  /* Metadata Section Print */
+  .metadata-section {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+
+  /* Overdue/Status Indicators Print */
+  .overdue-indicator {
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #991b1b !important;
+  }
+
+  .done-indicator {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    color: #166534 !important;
+  }
+}

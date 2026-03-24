@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, ArrowUp, Minus, ArrowDown, ChevronRight, User, FileText, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock, ArrowUp, Minus, ArrowDown, ChevronRight, User, FileText, CheckCircle2, Paperclip } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -413,6 +413,23 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext, isS
                                         </TooltipProvider>
                                     )}
 
+                                    {/* Attachment Indicator */}
+                                    {task.attachmentCount !== undefined && task.attachmentCount > 0 && (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20 font-medium">
+                                                        <Paperclip className="w-3.5 h-3.5" />
+                                                        <span>{task.attachmentCount}</span>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p className="text-xs">{task.attachmentCount} attachments</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    )}
+
                                     {/* Done Date */}
                                     {task.completedAt && (
                                         <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-green-500/10 text-green-400 border border-green-500/20 font-medium">
@@ -443,7 +460,6 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext, isS
                                         </Tooltip>
                                     </TooltipProvider>
                                 )}
-                            </div>
                             </div>
 
                             {/* Overdue Warning Banner */}

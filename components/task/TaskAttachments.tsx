@@ -50,6 +50,11 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
         }
     }, [taskId, initialAttachments])
 
+    // Dispatch event when attachments change
+    const notifyAttachmentChange = useCallback(() => {
+        window.dispatchEvent(new CustomEvent('task-attachment-changed'));
+    }, []);
+
     const uploadFile = async (file: File) => {
         console.log('[TaskAttachments] Starting upload for file:', file.name, 'taskId:', taskId, 'projectId:', projectId);
         setIsUploading(true)
@@ -91,6 +96,9 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                     return [newAttachment, ...prev]
                 })
 
+                // Notify parent to refresh
+                notifyAttachmentChange();
+
                 // Refresh the page after a short delay to get fresh data from server
                 setTimeout(() => {
                     router.refresh()
@@ -121,6 +129,8 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
         if (result.success) {
             toast({ title: 'Success', description: 'Attachment deleted' })
             setAttachments(prev => prev.filter(a => a.id !== id))
+            notifyAttachmentChange();
+            router.refresh();
         } else {
             toast({
                 variant: 'destructive',
@@ -177,11 +187,11 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
     }
 
     return (
-        <Card className="bg-slate-900 border-slate-700 shadow-sm overflow-hidden">
-            <CardHeader className="border-b border-slate-800 flex flex-row items-center justify-between py-4">
-                <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+        <Card className="bg-slate-900 border-slate-700 shadow-sm overflow-hidden print:bg-white print:border-gray-300">
+            <CardHeader className="border-b border-slate-800 flex flex-row items-center justify-between py-4 print:border-gray-200">
+                <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2 print:text-black">
                     <Paperclip className="h-4 w-4 text-sky-500" />
-                    Attachments
+                    Attachments ({attachments.length})
                 </CardTitle>
                 <div className="flex items-center gap-2">
                     <input
@@ -195,7 +205,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                         variant="outline"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        className="h-7 text-xs bg-slate-800 border-slate-700 text-slate-300 hover:text-white"
+                        className="h-7 text-xs bg-slate-800 border-slate-700 text-slate-300 hover:text-white print:hidden"
                     >
                         {isUploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
                         Add
@@ -204,12 +214,12 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
             </CardHeader>
             <CardContent className="p-0">
                 {/* Drop Zone */}
-                <div
+                <div 
                     onDragOver={onDragOver}
                     onDragLeave={onDragLeave}
                     onDrop={onDrop}
                     className={cn(
-                        "p-4 border-b border-dashed transition-colors flex flex-col items-center justify-center gap-1",
+                        "p-4 border-b border-dashed transition-colors flex flex-col items-center justify-center gap-1 print:hidden",
                         isDragging ? "bg-sky-500/10 border-sky-500" : "bg-slate-900/50 border-slate-800",
                         isUploading && "opacity-50 pointer-events-none"
                     )}
@@ -220,31 +230,31 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                 </div>
 
                 {/* List */}
-                <div className="divide-y divide-slate-800 max-h-[300px] overflow-y-auto">
+                <div className="divide-y divide-slate-800 max-h-[300px] overflow-y-auto print:max-h-none print:divide-gray-200">
                     {attachments.length > 0 ? (
                         attachments.map((att) => (
-                            <div key={att.id} className="p-3 flex items-center justify-between group hover:bg-slate-800/50 transition-colors">
+                            <div key={att.id} className="p-3 flex items-center justify-between group hover:bg-slate-800/50 transition-colors print:hover:bg-transparent">
                                 <div className="flex items-center gap-2 min-w-0">
                                     <div className={cn(
-                                        "h-8 w-8 rounded flex items-center justify-center shrink-0",
-                                        att.fileType === 'image' ? "bg-purple-500/10 text-purple-400" : "bg-sky-500/10 text-sky-400"
+                                        "h-8 w-8 rounded flex items-center justify-center shrink-0 print:bg-gray-100",
+                                        att.fileType === 'image' ? "bg-purple-500/10 text-purple-400 print:text-purple-600" : "bg-sky-500/10 text-sky-400 print:text-sky-600"
                                     )}>
                                         {att.fileType === 'image' ? <ImageIcon className="h-4 w-4" /> : <FileIcon className="h-4 w-4" />}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-xs font-medium text-slate-200 truncate max-w-[120px]" title={att.fileName}>
+                                        <p className="text-xs font-medium text-slate-200 truncate max-w-[120px] print:text-black print:max-w-none" title={att.fileName}>
                                             {att.fileName}
                                         </p>
-                                        <p className="text-[10px] text-slate-500">{formatSize(att.fileSize)}</p>
+                                        <p className="text-[10px] text-slate-500 print:text-gray-500">{formatSize(att.fileSize)}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity print:opacity-100">
                                     {att.previewUrl && (
                                         <a
                                             href={att.previewUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="p-1.5 text-slate-400 hover:text-purple-400 transition-colors rounded hover:bg-slate-700"
+                                            className="p-1.5 text-slate-400 hover:text-purple-400 transition-colors rounded hover:bg-slate-700 print:text-purple-600"
                                             title="Preview"
                                         >
                                             <Eye className="h-3.5 w-3.5" />
@@ -254,14 +264,14 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                                         href={att.fileUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="p-1.5 text-slate-400 hover:text-sky-400 transition-colors rounded hover:bg-slate-700"
+                                        className="p-1.5 text-slate-400 hover:text-sky-400 transition-colors rounded hover:bg-slate-700 print:text-sky-600"
                                         title="Download"
                                     >
                                         <Download className="h-3.5 w-3.5" />
                                     </a>
                                     <button
                                         onClick={() => handleDelete(att.id)}
-                                        className="p-1.5 text-slate-400 hover:text-red-400 transition-colors rounded hover:bg-slate-700"
+                                        className="p-1.5 text-slate-400 hover:text-red-400 transition-colors rounded hover:bg-slate-700 print:hidden"
                                     >
                                         <Trash2 className="h-3.5 w-3.5" />
                                     </button>
@@ -270,7 +280,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                         ))
                     ) : (
                         <div className="py-6 text-center">
-                            <p className="text-[10px] text-slate-600 italic">No attachments</p>
+                            <p className="text-[10px] text-slate-600 italic print:text-gray-400">No attachments</p>
                         </div>
                     )}
                 </div>

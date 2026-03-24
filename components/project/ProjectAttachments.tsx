@@ -47,6 +47,7 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
     const { toast } = useToast()
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [refreshKey, setRefreshKey] = useState(0)
 
     const fetchAttachments = useCallback(async () => {
         console.log('[ProjectAttachments] Fetching for:', projectId)
@@ -60,6 +61,17 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
     useEffect(() => {
         fetchAttachments()
     }, [fetchAttachments])
+
+    // Listen for refresh events
+    useEffect(() => {
+        const handleRefresh = () => {
+            console.log('[ProjectAttachments] Refresh event received');
+            setRefreshKey(k => k + 1);
+            fetchAttachments();
+        };
+        window.addEventListener('project-attachment-changed', handleRefresh);
+        return () => window.removeEventListener('project-attachment-changed', handleRefresh);
+    }, [fetchAttachments]);
 
     const uploadFile = async (file: File) => {
         if (file.size > 10 * 1024 * 1024) {
@@ -105,6 +117,9 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                 console.log('[ProjectAttachments] Adding optimistic attachment:', newAttachment);
                 setAttachments(prev => [newAttachment, ...prev]);
 
+                // Dispatch event for parent refresh
+                window.dispatchEvent(new CustomEvent('project-attachment-changed'));
+
                 // Force a complete re-fetch after a short delay to ensure data is synced
                 setTimeout(async () => {
                     console.log('[ProjectAttachments] Force re-fetching attachments...');
@@ -139,7 +154,9 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
         const result = await deleteAttachmentAction(id, projectId)
         if (result.success) {
             toast({ title: 'Success', description: 'Attachment deleted' })
-            fetchAttachments()
+            setAttachments(prev => prev.filter(a => a.id !== id))
+            window.dispatchEvent(new CustomEvent('project-attachment-changed'));
+            fetchAttachments();
         } else {
             toast({ 
                 variant: 'destructive', 
@@ -196,13 +213,13 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" key={refreshKey}>
             {/* Documentation Gallery Section (Images Only) */}
             {attachments.filter(a => a.fileType === 'image').length > 0 && (
-                <Card className="bg-slate-900/50 border-white/5 shadow-sm overflow-hidden glass-card">
-                    <CardHeader className="border-b border-white/5 py-4">
-                        <CardTitle className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk">
-                            <ImageIcon className="h-5 w-5 text-purple-400" />
+                <Card className="bg-slate-900/50 border-white/5 shadow-sm overflow-hidden glass-card print:border-gray-300 print:bg-white">
+                    <CardHeader className="border-b border-white/5 py-4 print:border-gray-200">
+                        <CardTitle className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk print:text-black">
+                            <ImageIcon className="h-5 w-5 text-purple-400 print:text-purple-600" />
                             Project Documentation Gallery
                         </CardTitle>
                     </CardHeader>
@@ -211,13 +228,13 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                             {attachments
                                 .filter(a => a.fileType === 'image')
                                 .map((att) => (
-                                    <div key={att.id} className="group relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-slate-950 hover:shadow-lg transition-all duration-300">
+                                    <div key={att.id} className="group relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-slate-950 hover:shadow-lg transition-all duration-300 print:border-gray-300">
                                         <img 
                                             src={att.fileUrl} 
                                             alt={att.fileName}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                         />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px] print:hidden">
                                             <a 
                                                 href={att.fileUrl} 
                                                 target="_blank" 
@@ -245,11 +262,11 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                 </Card>
             )}
 
-            <Card className="bg-slate-900/50 border-white/5 shadow-sm overflow-hidden glass-card">
-                <CardHeader className="border-b border-white/5 flex flex-row items-center justify-between py-4">
-                    <CardTitle className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk">
-                        <Paperclip className="h-5 w-5 text-sky-400" />
-                        Upload Project Assets
+            <Card className="bg-slate-900/50 border-white/5 shadow-sm overflow-hidden glass-card print:border-gray-300 print:bg-white">
+                <CardHeader className="border-b border-white/5 flex flex-row items-center justify-between py-4 print:border-gray-200">
+                    <CardTitle className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk print:text-black">
+                        <Paperclip className="h-5 w-5 text-sky-400 print:text-sky-600" />
+                        Upload Project Assets ({attachments.length})
                     </CardTitle>
                     <div className="flex items-center gap-2">
                         <input 
@@ -263,7 +280,7 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                             variant="outline" 
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
-                            className="h-8 border-white/10 text-slate-300 hover:bg-white/5"
+                            className="h-8 border-white/10 text-slate-300 hover:bg-white/5 print:hidden"
                         >
                             {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
                             Upload
@@ -277,7 +294,7 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                         onDragLeave={onDragLeave}
                         onDrop={onDrop}
                         className={cn(
-                            "p-8 border-b border-dashed transition-colors flex flex-col items-center justify-center gap-2",
+                            "p-8 border-b border-dashed transition-colors flex flex-col items-center justify-center gap-2 print:hidden",
                             isDragging ? "bg-sky-500/10 border-sky-500/50" : "bg-slate-900/30 border-white/10",
                             isUploading && "opacity-50 pointer-events-none"
                         )}
@@ -294,7 +311,7 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                     </div>
 
                     {/* List */}
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-white/5 print:divide-gray-200">
                         {isUploading && (
                             <div className="p-4 flex items-center justify-between bg-sky-500/5 animate-pulse">
                                 <div className="flex items-center gap-3">
@@ -310,19 +327,19 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                         )}
                         {attachments.length > 0 ? (
                             attachments.map((att) => (
-                                <div key={att.id} className="p-4 flex items-center justify-between group hover:bg-white/5 transition-colors">
+                                <div key={att.id} className="p-4 flex items-center justify-between group hover:bg-white/5 transition-colors print:hover:bg-transparent">
                                     <div className="flex items-center gap-3 min-w-0">
                                         <div className={cn(
-                                            "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-                                            att.fileType === 'image' ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                                            "h-10 w-10 rounded-lg flex items-center justify-center shrink-0 print:bg-gray-100",
+                                            att.fileType === 'image' ? "bg-purple-500/10 text-purple-400 border border-purple-500/20 print:text-purple-600" : "bg-sky-500/10 text-sky-400 border border-sky-500/20 print:text-sky-600"
                                         )}>
                                             {att.fileType === 'image' ? <ImageIcon className="h-5 w-5" /> : <FileIcon className="h-5 w-5" />}
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-sm font-medium text-slate-200 truncate" title={att.fileName}>
+                                            <p className="text-sm font-medium text-slate-200 truncate print:text-black" title={att.fileName}>
                                                 {att.fileName}
                                             </p>
-                                            <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                                            <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 mt-0.5 print:text-gray-500">
                                                 <span className={cn(
                                                     "px-1.5 py-0.5 rounded-md font-bold uppercase",
                                                     att.sourceTitle === 'Project Assets' ? "bg-amber-500/10 text-amber-500" : "bg-sky-500/10 text-sky-500"
@@ -336,13 +353,13 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 print:gap-2">
                                         {att.previewUrl && (
                                             <a 
                                                 href={att.previewUrl} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
-                                                className="p-2 text-slate-500 hover:text-purple-400 transition-colors rounded-md hover:bg-white/5"
+                                                className="p-2 text-slate-500 hover:text-purple-400 transition-colors rounded-md hover:bg-white/5 print:text-purple-600"
                                                 title="Preview File"
                                             >
                                                 <Eye className="h-4 w-4" />
@@ -352,14 +369,14 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                                             href={att.fileUrl} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            className="p-2 text-slate-500 hover:text-sky-400 transition-colors rounded-md hover:bg-white/5"
+                                            className="p-2 text-slate-500 hover:text-sky-400 transition-colors rounded-md hover:bg-white/5 print:text-sky-600"
                                             title="Download File"
                                         >
                                             <Download className="h-4 w-4" />
                                         </a>
                                         <button 
                                             onClick={() => handleDelete(att.id)}
-                                            className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-md hover:bg-white/5"
+                                            className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-md hover:bg-white/5 print:hidden"
                                             title="Delete File"
                                         >
                                             <Trash2 className="h-4 w-4" />
@@ -370,7 +387,7 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                         ) : (
                             <div className="py-12 text-center">
                                 <Paperclip className="h-8 w-8 text-slate-700 mx-auto mb-2" />
-                                <p className="text-sm text-slate-500 italic">No attachments found for this project</p>
+                                <p className="text-sm text-slate-500 italic print:text-gray-400">No attachments found for this project</p>
                             </div>
                         )}
                     </div>

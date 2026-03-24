@@ -40,6 +40,7 @@ interface TaskDetailPanelProps {
 export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelProps) {
     const [task, setTask] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
         if (taskId) {
@@ -47,6 +48,18 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
         } else {
             setTask(null);
         }
+    }, [taskId]);
+
+    // Listen for attachment changes to refresh task data
+    useEffect(() => {
+        const handleAttachmentRefresh = () => {
+            console.log('[TaskDetailPanel] Attachment changed, refreshing task data...');
+            setRefreshKey(k => k + 1);
+            loadTask();
+        };
+
+        window.addEventListener('task-attachment-changed', handleAttachmentRefresh);
+        return () => window.removeEventListener('task-attachment-changed', handleAttachmentRefresh);
     }, [taskId]);
 
     const loadTask = async () => {
@@ -74,19 +87,20 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
         <>
             {/* Backdrop */}
             <div 
-                className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-40 transition-opacity animate-in fade-in duration-300" 
+                className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-40 transition-opacity animate-in fade-in duration-300 print:hidden" 
                 onClick={onClose}
             />
             
             {/* Panel */}
             <div className={cn(
                 "fixed top-0 right-0 h-screen w-full md:w-[700px] lg:w-[1000px] bg-slate-950 border-l border-white/10 z-50 flex flex-col",
-                "animate-in slide-in-from-right duration-500 ease-out shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                "animate-in slide-in-from-right duration-500 ease-out shadow-[0_0_50px_rgba(0,0,0,0.5)]",
+                "print:relative print:w-full print:h-auto print:border-0 print:shadow-none print:animate-none"
             )}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-900/50 backdrop-blur-md">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-900/50 backdrop-blur-md print:bg-transparent">
                     <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-400 hover:text-white hover:bg-white/5 rounded-xl">
+                        <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-400 hover:text-white hover:bg-white/5 rounded-xl print:hidden">
                             <X className="w-5 h-5" />
                         </Button>
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -103,7 +117,7 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-950/50">
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-950/50 print:overflow-visible">
                     {loading ? (
                         <div className="h-full flex items-center justify-center">
                             <div className="flex flex-col items-center gap-4">
@@ -128,22 +142,22 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                                     <div className="h-1 w-1 rounded-full bg-slate-700" />
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Status: {task.status?.name || 'Unknown'}</span>
                                 </div>
-                                <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight">
+                                <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight print:text-2xl print:text-black">
                                     {task.title}
                                 </h1>
                             </div>
 
                             {/* Main Grid */}
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 print:grid-cols-1 print:gap-4">
                                 {/* Left Side: Content (8 cols) */}
-                                <div className="lg:col-span-8 space-y-12">
+                                <div className="lg:col-span-8 space-y-12 print:space-y-4">
                                     {/* Description */}
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-slate-300 font-bold text-xs uppercase tracking-widest">
                                             <AlertCircle className="w-4 h-4 text-sky-400" />
                                             Detailed Description
                                         </div>
-                                        <div className="bg-slate-900/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm shadow-inner">
+                                        <div className="bg-slate-900/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm shadow-inner print:bg-white print:text-black print:border-gray-300">
                                             <TaskDescriptionEditor task={task} projectId={projectId} />
                                         </div>
                                     </div>
@@ -155,6 +169,7 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                                             Task Assets & Files
                                         </div>
                                         <TaskAttachments
+                                            key={`task-attachments-${task.id}-${refreshKey}`}
                                             taskId={task.id}
                                             projectId={projectId}
                                             initialAttachments={task.attachments || []}
@@ -173,42 +188,40 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {task.docs && task.docs.length > 0 ? (
                                                 task.docs.map((doc: any) => (
-                                                    <Card key={doc.id} className="bg-slate-900/40 border-white/5 group hover:border-sky-500/30 transition-all cursor-pointer">
-                                                        <CardHeader className="p-4 pb-2 border-b border-white/5 flex flex-row items-center justify-between space-y-0">
-                                                            <CardTitle className="text-xs font-bold text-slate-200 uppercase truncate">
+                                                    <Card key={doc.id} className="bg-slate-900/40 border-white/5 group hover:border-sky-500/30 transition-all cursor-pointer print:bg-white print:border-gray-300">
+                                                        <CardHeader className="p-4 pb-2 border-b border-white/5 flex flex-row items-center justify-between space-y-0 print:border-gray-200">
+                                                            <CardTitle className="text-xs font-bold text-slate-200 uppercase truncate print:text-black">
                                                                 {doc.title}
                                                             </CardTitle>
                                                         </CardHeader>
                                                         <CardContent className="p-4 pt-3">
-                                                            <div className="text-xs text-slate-400 line-clamp-3 leading-relaxed opacity-80">
+                                                            <div className="text-xs text-slate-400 line-clamp-3 leading-relaxed opacity-80 print:text-gray-700">
                                                                 <div dangerouslySetInnerHTML={{ __html: doc.content || 'No content' }} />
                                                             </div>
-                                                            <p className="text-[9px] font-black text-slate-600 mt-3 uppercase tracking-tighter">
+                                                            <p className="text-[9px] font-black text-slate-600 mt-3 uppercase tracking-tighter print:text-gray-500">
                                                                 Updated: {new Date(doc.updatedAt).toLocaleDateString()}
                                                             </p>
                                                         </CardContent>
                                                     </Card>
                                                 ))
                                             ) : (
-                                                <div className="md:col-span-2 bg-slate-900/20 rounded-2xl p-8 border border-dashed border-white/5 text-center">
+                                                <div className="md:col-span-2 bg-slate-900/20 rounded-2xl p-8 border border-dashed border-white/5 text-center print:bg-gray-100 print:border-gray-300">
                                                     <FileText className="w-6 h-6 text-slate-700 mx-auto mb-2" />
                                                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">No documentation cards</p>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* Discussion Section */}
                                 </div>
 
                                 {/* Right Side: Meta Data (4 cols) */}
-                                <div className="lg:col-span-4 space-y-8">
-                                    <div className="bg-slate-900/40 rounded-3xl p-8 border border-white/5 shadow-xl backdrop-blur-md">
-                                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-8 pb-4 border-b border-white/5">Task Intelligence</h3>
+                                <div className="lg:col-span-4 space-y-8 print:space-y-4">
+                                    <div className="bg-slate-900/40 rounded-3xl p-8 border border-white/5 shadow-xl backdrop-blur-md print:bg-white print:border-gray-300 print:shadow-none print:rounded print:p-4">
+                                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-8 pb-4 border-b border-white/5 print:text-gray-700 print:border-gray-200">Task Intelligence</h3>
                                         <TaskMetadata task={task} projectId={projectId} />
                                     </div>
                                     
-                                    <div className="grid grid-cols-1 gap-3">
+                                    <div className="grid grid-cols-1 gap-3 print:hidden">
                                         <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 border-0 font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]">
                                             <CheckCircle2 className="w-4 h-4 mr-2" />
                                             Complete Task

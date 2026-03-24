@@ -673,7 +673,8 @@ export async function getTasks(projectId: string): Promise<Task[]> {
       u.username as assignee_username,
       u.name as assignee_name,
       u.email as assignee_email,
-      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id) as doc_count
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%') as doc_count,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%') as attachment_count
     FROM pm_tasks t
     LEFT JOIN pm_projects p ON t.project_id = p.id
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
@@ -700,6 +701,7 @@ export async function getTasks(projectId: string): Promise<Task[]> {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     docCount: row.doc_count || 0,
+    attachmentCount: row.attachment_count || 0,
     project: {
       id: row.proj_id,
       name: row.project_name,
@@ -733,7 +735,8 @@ export async function getTaskById(id: string): Promise<Task | null> {
       u.username as assignee_username,
       u.name as assignee_name,
       u.email as assignee_email,
-      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id) as doc_count
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%') as doc_count,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%') as attachment_count
     FROM pm_tasks t
     LEFT JOIN pm_projects p ON t.project_id = p.id
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
@@ -764,6 +767,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     docCount: row.doc_count || 0,
+    attachmentCount: row.attachment_count || 0,
     project: {
       id: row.proj_id,
       name: row.project_name,
@@ -1064,7 +1068,7 @@ export async function getProjectDashboardStats(projectId: string) {
         SELECT t.id FROM pm_tasks t WHERE t.project_id = @projectId
     ))
     AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
-  `, { projectTaskId: `pa_${projectId}`, projectId });
+  `, { projectTaskId: `pa_${projectId}`, projectId: id });
 
   const row = result.recordset[0];
   const totalTasks = row.total_tasks || 0;
@@ -1178,10 +1182,7 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
       END as source_title
     FROM pm_task_docs d
     WHERE (d.task_id = @taskId OR d.task_id IN (
-        SELECT t.id 
-        FROM pm_tasks t
-        JOIN pm_task_statuses s ON t.status_id = s.id
-        WHERE s.project_id = @projectId
+        SELECT t.id FROM pm_tasks t WHERE t.project_id = @projectId
     ))
     AND CAST(d.content AS NVARCHAR(MAX)) LIKE '[FILE]%'
     ORDER BY d.created_at DESC

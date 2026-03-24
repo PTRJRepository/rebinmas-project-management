@@ -12,8 +12,7 @@ import {
     Upload, 
     Loader2, 
     Paperclip,
-    Plus,
-    X,
+    RefreshCw,
     Eye
 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
@@ -42,36 +41,44 @@ interface ProjectAttachmentsProps {
 export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
     const [attachments, setAttachments] = useState<Attachment[]>([])
     const [isUploading, setIsUploading] = useState(false)
-    const [uploadingFileName, setUploadingFileName] = useState<string | null>(null)
     const [isDragging, setIsDragging] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [refreshKey, setRefreshKey] = useState(0)
     const { toast } = useToast()
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const [refreshKey, setRefreshKey] = useState(0)
 
+    // Fetch attachments from server
     const fetchAttachments = useCallback(async () => {
-        console.log('[ProjectAttachments] Fetching for:', projectId)
-        const result = await getProjectAttachments(projectId)
-        if (result.success && result.data) {
-            console.log('[ProjectAttachments] Received:', result.data.length, 'items')
-            setAttachments(result.data)
+        console.log('[ProjectAttachments] Fetching for projectId:', projectId)
+        setIsLoading(true)
+        try {
+            const result = await getProjectAttachments(projectId)
+            if (result.success && result.data) {
+                console.log('[ProjectAttachments] Server returned:', result.data.length, 'items')
+                setAttachments(result.data)
+            }
+        } catch (error) {
+            console.error('[ProjectAttachments] Fetch error:', error)
+        } finally {
+            setIsLoading(false)
         }
     }, [projectId])
 
+    // Initial fetch and when refreshKey changes
     useEffect(() => {
         fetchAttachments()
-    }, [fetchAttachments])
+    }, [fetchAttachments, refreshKey])
 
     // Listen for refresh events
     useEffect(() => {
         const handleRefresh = () => {
-            console.log('[ProjectAttachments] Refresh event received');
-            setRefreshKey(k => k + 1);
-            fetchAttachments();
-        };
-        window.addEventListener('project-attachment-changed', handleRefresh);
-        return () => window.removeEventListener('project-attachment-changed', handleRefresh);
-    }, [fetchAttachments]);
+            console.log('[ProjectAttachments] Refresh event received')
+            setRefreshKey(k => k + 1)
+        }
+        window.addEventListener('project-attachment-changed', handleRefresh)
+        return () => window.removeEventListener('project-attachment-changed', handleRefresh)
+    }, [])
 
     const uploadFile = async (file: File) => {
         if (file.size > 10 * 1024 * 1024) {
@@ -80,7 +87,6 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
         }
 
         setIsUploading(true)
-        setUploadingFileName(file.name)
         try {
             const formData = new FormData()
             formData.append('file', file)
@@ -111,22 +117,10 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                     title: 'Upload Berhasil',
                     description: `${file.name} telah disimpan.`
                 })
-
-                // Optimistic update: Add the new attachment directly to state
-                const newAttachment = attachmentResult.data as Attachment;
-                console.log('[ProjectAttachments] Adding optimistic attachment:', newAttachment);
-                setAttachments(prev => [newAttachment, ...prev]);
-
-                // Dispatch event for parent refresh
-                window.dispatchEvent(new CustomEvent('project-attachment-changed'));
-
-                // Force a complete re-fetch after a short delay to ensure data is synced
-                setTimeout(async () => {
-                    console.log('[ProjectAttachments] Force re-fetching attachments...');
-                    await fetchAttachments();
-                    // Also refresh the entire page to ensure server components are updated
-                    router.refresh();
-                }, 500);
+                // Trigger refresh to fetch fresh data
+                setRefreshKey(k => k + 1)
+                window.dispatchEvent(new CustomEvent('project-attachment-changed'))
+                router.refresh()
             } else {
                 throw new Error(attachmentResult.error)
             }
@@ -139,7 +133,6 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
             })
         } finally {
             setIsUploading(false)
-            setUploadingFileName(null)
         }
     }
 
@@ -154,9 +147,9 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
         const result = await deleteAttachmentAction(id, projectId)
         if (result.success) {
             toast({ title: 'Success', description: 'Attachment deleted' })
-            setAttachments(prev => prev.filter(a => a.id !== id))
-            window.dispatchEvent(new CustomEvent('project-attachment-changed'));
-            fetchAttachments();
+            setRefreshKey(k => k + 1)
+            window.dispatchEvent(new CustomEvent('project-attachment-changed'))
+            router.refresh()
         } else {
             toast({ 
                 variant: 'destructive', 
@@ -202,7 +195,7 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
 
         window.addEventListener('paste', handlePaste)
         return () => window.removeEventListener('paste', handlePaste)
-    }, [projectId, uploadFile])
+    }, [projectId])
 
     const formatSize = (bytes: number) => {
         if (bytes === 0) return '0 Bytes'
@@ -212,51 +205,67 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }
 
+    // Separate images and documents
+    const imageAttachments = attachments.filter(a => a.fileType === 'image')
+    const documentAttachments = attachments.filter(a => a.fileType !== 'image')
+
     return (
-        <div className="space-y-6" key={refreshKey}>
+        <div className="space-y-6">
             {/* Documentation Gallery Section (Images Only) */}
-            {attachments.filter(a => a.fileType === 'image').length > 0 && (
+            {imageAttachments.length > 0 && (
                 <Card className="bg-slate-900/50 border-white/5 shadow-sm overflow-hidden glass-card print:border-gray-300 print:bg-white">
                     <CardHeader className="border-b border-white/5 py-4 print:border-gray-200">
                         <CardTitle className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk print:text-black">
                             <ImageIcon className="h-5 w-5 text-purple-400 print:text-purple-600" />
-                            Project Documentation Gallery
+                            Project Documentation Gallery ({imageAttachments.length})
+                            {isLoading && <Loader2 className="h-4 w-4 animate-spin text-purple-400" />}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-6">
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {attachments
-                                .filter(a => a.fileType === 'image')
-                                .map((att) => (
-                                    <div key={att.id} className="group relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-slate-950 hover:shadow-lg transition-all duration-300 print:border-gray-300">
-                                        <img 
-                                            src={att.fileUrl} 
-                                            alt={att.fileName}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                        />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px] print:hidden">
-                                            <a 
-                                                href={att.fileUrl} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors border border-white/10"
-                                                title="View Full Size"
-                                            >
-                                                <Plus className="h-5 w-5" />
-                                            </a>
-                                            <button 
-                                                onClick={() => handleDelete(att.id)}
-                                                className="p-2 bg-red-500/20 backdrop-blur-md rounded-full text-white hover:bg-red-500/40 transition-colors border border-white/10"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="h-5 w-5" />
-                                            </button>
-                                        </div>
-                                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                                            <p className="text-[10px] text-white truncate font-medium">{att.fileName}</p>
-                                        </div>
+                            {imageAttachments.map((att) => (
+                                <div key={att.id} className="group relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-slate-950 hover:shadow-lg transition-all duration-300 print:border-gray-300">
+                                    <img 
+                                        src={att.fileUrl} 
+                                        alt={att.fileName}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = '/placeholder-image.png'
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px] print:hidden">
+                                        <a 
+                                            href={att.previewUrl || att.fileUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors border border-white/10"
+                                            title="View Full Size"
+                                        >
+                                            <Eye className="h-5 w-5" />
+                                        </a>
+                                        <a 
+                                            href={att.fileUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors border border-white/10"
+                                            title="Download"
+                                        >
+                                            <Download className="h-5 w-5" />
+                                        </a>
+                                        <button 
+                                            onClick={() => handleDelete(att.id)}
+                                            className="p-2 bg-red-500/20 backdrop-blur-md rounded-full text-white hover:bg-red-500/40 transition-colors border border-white/10"
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="h-5 w-5" />
+                                        </button>
                                     </div>
-                                ))}
+                                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+                                        <p className="text-[10px] text-white truncate font-medium">{att.fileName}</p>
+                                        <p className="text-[9px] text-white/60">{formatSize(att.fileSize)}</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </CardContent>
                 </Card>
@@ -266,9 +275,19 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                 <CardHeader className="border-b border-white/5 flex flex-row items-center justify-between py-4 print:border-gray-200">
                     <CardTitle className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk print:text-black">
                         <Paperclip className="h-5 w-5 text-sky-400 print:text-sky-600" />
-                        Upload Project Assets ({attachments.length})
+                        All Assets ({attachments.length})
+                        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-sky-400" />}
                     </CardTitle>
                     <div className="flex items-center gap-2">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setRefreshKey(k => k + 1)}
+                            className="h-8 w-8 p-0 border-white/10 hover:bg-white/5 text-slate-400 hover:text-white print:hidden"
+                            title="Refresh"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                        </Button>
                         <input 
                             type="file" 
                             className="hidden" 
@@ -310,23 +329,18 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                         </div>
                     </div>
 
+                    {/* Loading State */}
+                    {isLoading && attachments.length === 0 && (
+                        <div className="py-12 flex flex-col items-center justify-center gap-3">
+                            <Loader2 className="h-8 w-8 animate-spin text-sky-400" />
+                            <p className="text-xs text-slate-500">Loading attachments...</p>
+                        </div>
+                    )}
+
                     {/* List */}
-                    <div className="divide-y divide-white/5 print:divide-gray-200">
-                        {isUploading && (
-                            <div className="p-4 flex items-center justify-between bg-sky-500/5 animate-pulse">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-lg bg-sky-500/20 flex items-center justify-center">
-                                        <Loader2 className="h-5 w-5 text-sky-400 animate-spin" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-sky-400">Uploading {uploadingFileName}...</p>
-                                        <p className="text-[10px] text-slate-500">Mohon tunggu sebentar</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        {attachments.length > 0 ? (
-                            attachments.map((att) => (
+                    {!isLoading && attachments.length > 0 && (
+                        <div className="divide-y divide-white/5 print:divide-gray-200">
+                            {attachments.map((att) => (
                                 <div key={att.id} className="p-4 flex items-center justify-between group hover:bg-white/5 transition-colors print:hover:bg-transparent">
                                     <div className="flex items-center gap-3 min-w-0">
                                         <div className={cn(
@@ -383,14 +397,18 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                                         </button>
                                     </div>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="py-12 text-center">
-                                <Paperclip className="h-8 w-8 text-slate-700 mx-auto mb-2" />
-                                <p className="text-sm text-slate-500 italic print:text-gray-400">No attachments found for this project</p>
-                            </div>
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Empty State */}
+                    {!isLoading && attachments.length === 0 && (
+                        <div className="py-12 text-center">
+                            <Paperclip className="h-8 w-8 text-slate-700 mx-auto mb-2" />
+                            <p className="text-sm text-slate-500 italic print:text-gray-400">No attachments found for this project</p>
+                            <p className="text-xs text-slate-600 mt-1">Upload files using the Upload button or drag & drop</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>

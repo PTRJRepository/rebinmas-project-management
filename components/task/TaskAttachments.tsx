@@ -12,10 +12,11 @@ import {
     Upload,
     Loader2,
     Paperclip,
-    Eye
+    Eye,
+    RefreshCw
 } from 'lucide-react'
 import {
-    getProjectAttachments,
+    getAttachmentsByTask,
     createAttachmentAction,
     deleteAttachmentAction
 } from '@/app/actions/attachment'
@@ -33,30 +34,59 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
     const [attachments, setAttachments] = useState<Attachment[]>(initialAttachments)
     const [isUploading, setIsUploading] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [refreshKey, setRefreshKey] = useState(0)
     const { toast } = useToast()
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
     const prevTaskIdRef = useRef<string | null>(null)
 
-    // Update attachments when taskId changes (new task loaded), but preserve local state
-    useEffect(() => {
-        console.log('[TaskAttachments] Task changed:', prevTaskIdRef.current, '->', taskId);
-        if (taskId !== prevTaskIdRef.current) {
-            // Only reset to initialAttachments when switching to a different task
-            if (taskId) {
-                setAttachments(initialAttachments)
-            }
-            prevTaskIdRef.current = taskId
+    // Fetch attachments from server
+    const fetchAttachments = useCallback(async () => {
+        if (!taskId) return
+        console.log('[TaskAttachments] Fetching attachments for task:', taskId)
+        setIsLoading(true)
+        try {
+            const result = await getAttachmentsByTask(taskId)
+            console.log('[TaskAttachments] Server returned:', result.data?.length || 0, 'attachments')
+            setAttachments(result.data || [])
+        } catch (error) {
+            console.error('[TaskAttachments] Fetch error:', error)
+        } finally {
+            setIsLoading(false)
         }
-    }, [taskId, initialAttachments])
+    }, [taskId])
 
-    // Dispatch event when attachments change
-    const notifyAttachmentChange = useCallback(() => {
-        window.dispatchEvent(new CustomEvent('task-attachment-changed'));
-    }, []);
+    // Reset and refetch when taskId changes
+    useEffect(() => {
+        console.log('[TaskAttachments] Task changed:', prevTaskIdRef.current, '->', taskId)
+        if (taskId !== prevTaskIdRef.current) {
+            prevTaskIdRef.current = taskId
+            setAttachments(initialAttachments)
+            setRefreshKey(k => k + 1)
+            fetchAttachments()
+        }
+    }, [taskId, initialAttachments, fetchAttachments])
+
+    // Also refetch when refreshKey changes (after upload/delete)
+    useEffect(() => {
+        if (refreshKey > 0) {
+            fetchAttachments()
+        }
+    }, [refreshKey, fetchAttachments])
+
+    // Listen for external refresh events
+    useEffect(() => {
+        const handleRefresh = () => {
+            console.log('[TaskAttachments] Received refresh event')
+            setRefreshKey(k => k + 1)
+        }
+        window.addEventListener('task-attachment-changed', handleRefresh)
+        return () => window.removeEventListener('task-attachment-changed', handleRefresh)
+    }, [])
 
     const uploadFile = async (file: File) => {
-        console.log('[TaskAttachments] Starting upload for file:', file.name, 'taskId:', taskId, 'projectId:', projectId);
+        console.log('[TaskAttachments] Starting upload for file:', file.name, 'taskId:', taskId, 'projectId:', projectId)
         setIsUploading(true)
         try {
             const formData = new FormData()
@@ -70,9 +100,8 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
             if (!res.ok) throw new Error('Upload failed')
 
             const { url, previewUrl } = await res.json()
-            console.log('[TaskAttachments] Upload successful, URL:', url);
+            console.log('[TaskAttachments] Upload successful, URL:', url)
 
-            // Call create attachment action
             const attachmentResult = await createAttachmentAction({
                 projectId,
                 taskId,
@@ -83,26 +112,15 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                 fileSize: file.size,
             })
 
-            console.log('[TaskAttachments] createAttachmentAction result:', attachmentResult);
+            console.log('[TaskAttachments] createAttachmentAction result:', attachmentResult)
 
             if (attachmentResult.success && attachmentResult.data) {
                 toast({ title: 'Success', description: 'File uploaded successfully' })
-                const newAttachment = attachmentResult.data
-                // Add to local state - DON'T overwrite with initialAttachments
-                setAttachments(prev => {
-                    // Check if already exists to avoid duplicates
-                    const exists = prev.some(a => a.id === newAttachment.id)
-                    if (exists) return prev
-                    return [newAttachment, ...prev]
-                })
-
-                // Notify parent to refresh
-                notifyAttachmentChange();
-
-                // Refresh the page after a short delay to get fresh data from server
-                setTimeout(() => {
-                    router.refresh()
-                }, 500)
+                // Trigger refresh to fetch fresh data
+                setRefreshKey(k => k + 1)
+                // Also notify parent components
+                window.dispatchEvent(new CustomEvent('task-attachment-changed'))
+                router.refresh()
             } else {
                 throw new Error(attachmentResult.error)
             }
@@ -128,9 +146,10 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
         const result = await deleteAttachmentAction(id, projectId)
         if (result.success) {
             toast({ title: 'Success', description: 'Attachment deleted' })
-            setAttachments(prev => prev.filter(a => a.id !== id))
-            notifyAttachmentChange();
-            router.refresh();
+            // Trigger refresh to fetch fresh data
+            setRefreshKey(k => k + 1)
+            window.dispatchEvent(new CustomEvent('task-attachment-changed'))
+            router.refresh()
         } else {
             toast({
                 variant: 'destructive',
@@ -176,7 +195,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
 
         window.addEventListener('paste', handlePaste)
         return () => window.removeEventListener('paste', handlePaste)
-    }, [taskId, projectId, uploadFile])
+    }, [taskId, projectId])
 
     const formatSize = (bytes: number) => {
         if (bytes === 0) return '0 Bytes'
@@ -192,6 +211,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                 <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2 print:text-black">
                     <Paperclip className="h-4 w-4 text-sky-500" />
                     Attachments ({attachments.length})
+                    {isLoading && <Loader2 className="h-3 w-3 animate-spin text-sky-400" />}
                 </CardTitle>
                 <div className="flex items-center gap-2">
                     <input
@@ -200,6 +220,15 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                         ref={fileInputRef}
                         onChange={handleFileChange}
                     />
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setRefreshKey(k => k + 1)}
+                        className="h-7 w-7 p-0 text-slate-400 hover:text-white print:hidden"
+                        title="Refresh"
+                    >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                    </Button>
                     <Button
                         size="sm"
                         variant="outline"
@@ -231,7 +260,12 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
 
                 {/* List */}
                 <div className="divide-y divide-slate-800 max-h-[300px] overflow-y-auto print:max-h-none print:divide-gray-200">
-                    {attachments.length > 0 ? (
+                    {isLoading && attachments.length === 0 ? (
+                        <div className="py-8 flex flex-col items-center justify-center gap-2">
+                            <Loader2 className="h-6 w-6 animate-spin text-sky-400" />
+                            <p className="text-xs text-slate-500">Loading attachments...</p>
+                        </div>
+                    ) : attachments.length > 0 ? (
                         attachments.map((att) => (
                             <div key={att.id} className="p-3 flex items-center justify-between group hover:bg-slate-800/50 transition-colors print:hover:bg-transparent">
                                 <div className="flex items-center gap-2 min-w-0">
@@ -242,7 +276,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                                         {att.fileType === 'image' ? <ImageIcon className="h-4 w-4" /> : <FileIcon className="h-4 w-4" />}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-xs font-medium text-slate-200 truncate max-w-[120px] print:text-black print:max-w-none" title={att.fileName}>
+                                        <p className="text-xs font-medium text-slate-200 truncate max-w-[150px] print:text-black print:max-w-none" title={att.fileName}>
                                             {att.fileName}
                                         </p>
                                         <p className="text-[10px] text-slate-500 print:text-gray-500">{formatSize(att.fileSize)}</p>
@@ -280,7 +314,9 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                         ))
                     ) : (
                         <div className="py-6 text-center">
-                            <p className="text-[10px] text-slate-600 italic print:text-gray-400">No attachments</p>
+                            <Paperclip className="h-6 w-6 text-slate-600 mx-auto mb-2" />
+                            <p className="text-xs text-slate-600 italic print:text-gray-400">No attachments yet</p>
+                            <p className="text-[10px] text-slate-700 mt-1">Upload files using the Add button or drag & drop</p>
                         </div>
                     )}
                 </div>

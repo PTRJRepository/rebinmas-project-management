@@ -15,7 +15,9 @@ import {
     ChevronRight,
     ArrowRight,
     FileText,
-    XCircle
+    XCircle,
+    RefreshCw,
+    Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -26,7 +28,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTask } from '@/app/actions/task';
 import { TaskDescriptionEditor } from './TaskDescriptionEditor';
 import { TaskMetadata } from './TaskMetadata';
-import { Loader2 } from 'lucide-react';
 
 import { TaskAttachments } from './TaskAttachments';
 import { getPlainTextPreview } from '@/lib/utils';
@@ -48,19 +49,18 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
         } else {
             setTask(null);
         }
-    }, [taskId]);
+    }, [taskId, refreshKey]);
 
     // Listen for attachment changes to refresh task data
     useEffect(() => {
         const handleAttachmentRefresh = () => {
             console.log('[TaskDetailPanel] Attachment changed, refreshing task data...');
             setRefreshKey(k => k + 1);
-            loadTask();
         };
 
         window.addEventListener('task-attachment-changed', handleAttachmentRefresh);
         return () => window.removeEventListener('task-attachment-changed', handleAttachmentRefresh);
-    }, [taskId]);
+    }, []);
 
     const loadTask = async () => {
         if (!taskId) return;
@@ -69,7 +69,7 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
         try {
             const { data, success } = await getTask(taskId);
             if (success && data) {
-                console.log('[TaskDetailPanel] Loaded task with attachments:', data.attachments?.length || 0, 'taskId:', data.id);
+                console.log('[TaskDetailPanel] Loaded task with attachments:', data.attachments?.length || 0, 'docs:', data.docs?.length || 0, 'taskId:', data.id);
                 setTask(data);
             } else {
                 console.log('[TaskDetailPanel] Failed to load task, success:', success);
@@ -79,6 +79,10 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleRefresh = () => {
+        setRefreshKey(k => k + 1);
     };
 
     if (!taskId) return null;
@@ -110,8 +114,17 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={handleRefresh}
+                            className="text-slate-400 hover:text-white print:hidden"
+                            title="Refresh"
+                        >
+                            <RefreshCw className="w-5 h-5" />
+                        </Button>
                         <Badge variant="outline" className="bg-slate-800/50 border-white/5 text-slate-400 font-bold px-3">
-                            TASK-{task?.id.substring(0, 4).toUpperCase()}
+                            TASK-{task?.id?.substring(0, 4).toUpperCase() || 'LOAD'}
                         </Badge>
                     </div>
                 </div>
@@ -167,6 +180,9 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                                         <div className="flex items-center gap-2 text-slate-300 font-bold text-xs uppercase tracking-widest px-1">
                                             <Paperclip className="w-4 h-4 text-sky-400" />
                                             Task Assets & Files
+                                            <Badge variant="outline" className="ml-2 bg-sky-500/10 text-sky-400 border-sky-500/20 text-[10px]">
+                                                {task.attachments?.length || 0} files
+                                            </Badge>
                                         </div>
                                         <TaskAttachments
                                             key={`task-attachments-${task.id}-${refreshKey}`}
@@ -182,6 +198,9 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                                             <div className="flex items-center gap-2 text-slate-300 font-bold text-xs uppercase tracking-widest">
                                                 <FileText className="w-4 h-4 text-sky-400" />
                                                 Documentation Cards
+                                                <Badge variant="outline" className="ml-2 bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
+                                                    {task.docs?.length || 0} cards
+                                                </Badge>
                                             </div>
                                         </div>
                                         

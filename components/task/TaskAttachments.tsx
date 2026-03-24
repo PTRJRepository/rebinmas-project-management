@@ -16,7 +16,7 @@ import {
     RefreshCw
 } from 'lucide-react'
 import {
-    getAttachmentsByTask,
+    getAttachmentsByTaskAction,
     createAttachmentAction,
     deleteAttachmentAction
 } from '@/app/actions/attachment'
@@ -47,7 +47,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
         console.log('[TaskAttachments] Fetching attachments for task:', taskId)
         setIsLoading(true)
         try {
-            const result = await getAttachmentsByTask(taskId)
+            const result = await getAttachmentsByTaskAction(taskId)
             console.log('[TaskAttachments] Server returned:', result.data?.length || 0, 'attachments')
             setAttachments(result.data || [])
         } catch (error) {

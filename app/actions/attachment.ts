@@ -1,11 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { 
-    getAttachmentsByProject, 
-    createAttachment, 
+import {
+    getAttachmentsByProject,
+    getAttachmentsByTask,
+    createAttachment,
     deleteAttachment,
-    type Attachment 
+    type Attachment
 } from '@/lib/api/projects'
 
 export async function getProjectAttachments(projectId: string) {
@@ -16,6 +17,17 @@ export async function getProjectAttachments(projectId: string) {
         return { success: true, data: attachments }
     } catch (error: any) {
         console.error('[getProjectAttachments] Error:', error.message);
+        return { success: false, error: error.message }
+    }
+}
+
+export async function getAttachmentsByTaskAction(taskId: string) {
+    try {
+        const attachments = await getAttachmentsByTask(taskId)
+        console.log('[getAttachmentsByTaskAction] Server action returning:', attachments.length, 'attachments');
+        return { success: true, data: attachments }
+    } catch (error: any) {
+        console.error('[getAttachmentsByTaskAction] Error:', error.message);
         return { success: false, error: error.message }
     }
 }

@@ -25,6 +25,7 @@ interface Task {
     progress?: number | null;
     completedAt?: Date | null;
     docCount?: number;
+    attachmentCount?: number;
     assignee?: {
         id: string;
         username: string;
@@ -294,10 +295,11 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext, isS
                                         </TooltipProvider>
                                     )}
                                 </div>
+                            </div>
 
-                                {/* Inline Editable Title */}
+                            {/* Inline Editable Title */}
 
-                                {isEditing ? (
+                            {isEditing ? (
                                     <Input
                                         ref={inputRef}
                                         value={title}

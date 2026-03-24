@@ -686,7 +686,7 @@ export async function getTasks(projectId: string): Promise<Task[]> {
     ORDER BY t.created_at DESC
   `, { projectId });
 
-  return result.recordset.map((row: any) => ({
+  return await Promise.all(result.recordset.map(async (row: any): Promise<Task> => ({
     id: row.id,
     title: row.title,
     description: row.description,
@@ -705,10 +705,6 @@ export async function getTasks(projectId: string): Promise<Task[]> {
     updatedAt: row.updated_at,
     docCount: row.doc_count || 0,
     attachmentCount: row.attachment_count || 0,
-    project: {
-      id: row.proj_id,
-      name: row.project_name,
-    },
     status: {
       id: row.status_id_ref,
       name: row.status_name,
@@ -722,7 +718,7 @@ export async function getTasks(projectId: string): Promise<Task[]> {
     } : null,
     docs: await getTaskDocs(row.id),
     attachments: await getAttachmentsByTask(row.id),
-  })) as Task[];
+  })));
 }
 
 export async function getTaskById(id: string): Promise<Task | null> {
@@ -1073,7 +1069,7 @@ export async function getProjectDashboardStats(projectId: string) {
         SELECT t.id FROM pm_tasks t WHERE t.project_id = @projectId
     ))
     AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
-  `, { projectTaskId: `pa_${projectId}`, projectId: id });
+  `, { projectTaskId: `pa_${projectId}`, projectId: projectId });
 
   const row = result.recordset[0];
   const totalTasks = row.total_tasks || 0;

@@ -14,12 +14,13 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
-                className="fixed inset-0 bg-black/50"
+                className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm side-panel-overlay"
                 onClick={() => onOpenChange?.(false)}
             />
-            <div className="relative bg-white rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-auto">
+            <div className="relative bg-slate-950 rounded-2xl shadow-2xl border border-white/10 max-w-md w-full max-h-[90vh] overflow-auto side-panel-content animate-slide-in-right">
+                <DialogClose onClick={() => onOpenChange?.(false)} />
                 {children}
             </div>
         </div>
@@ -28,14 +29,14 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
     <div
-        className={cn('flex flex-col space-y-1.5 text-center sm:text-left px-6 py-4', className)}
+        className={cn('flex flex-col space-y-1.5 text-center sm:text-left px-6 pt-6 pb-2', className)}
         {...props}
     />
 );
 
 const DialogTitle = ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h2
-        className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+        className={cn('text-xl font-bold leading-none tracking-tight text-slate-100 font-space-grotesk', className)}
         {...props}
     />
 );
@@ -46,7 +47,7 @@ const DialogContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElem
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
     <div
-        className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 px-6 py-4', className)}
+        className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 px-6 py-6 border-t border-white/5', className)}
         {...props}
     />
 );
@@ -54,7 +55,7 @@ const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 const DialogClose = ({ onClick }: { onClick?: () => void }) => (
     <button
         onClick={onClick}
-        className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+        className="absolute right-4 top-4 rounded-full p-1.5 text-slate-400 hover:text-slate-100 hover:bg-white/10 transition-all z-10"
     >
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
@@ -63,7 +64,7 @@ const DialogClose = ({ onClick }: { onClick?: () => void }) => (
 
 const DialogDescription = ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
     <p
-        className={cn('text-sm text-gray-500', className)}
+        className={cn('text-sm text-slate-400', className)}
         {...props}
     />
 );
@@ -76,8 +77,19 @@ interface DialogTriggerProps extends React.HTMLAttributes<HTMLElement> {
 const DialogTrigger = React.forwardRef<HTMLElement, DialogTriggerProps>(
     ({ children, asChild, ...props }, ref) => {
         if (asChild) {
-            // If asChild is true, return the children as-is (assuming it's a valid React element)
-            return <>{children}</>;
+            // If asChild is true, we need to clone the child and pass props
+            const child = React.Children.only(children) as React.ReactElement<any>;
+            return React.cloneElement(child, {
+                ...props,
+                onClick: (e: React.MouseEvent) => {
+                    if (child.props && child.props.onClick) {
+                        child.props.onClick(e);
+                    }
+                    if (props.onClick) {
+                        (props.onClick as any)(e);
+                    }
+                }
+            });
         }
         return <button {...props}>{children}</button>;
     }

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Users, Flame, Printer, Settings, KanbanSquare, PenTool, Edit, X, ListTodo } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Users, Flame, Printer, Settings, KanbanSquare, PenTool, Edit, X, ListTodo, Loader2, Paperclip } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import KanbanBoard from '@/components/KanbanBoard'
 import { CanvasBoard } from '@/components/CanvasBoard'
@@ -59,6 +60,7 @@ interface Stats {
   overdueTasks: number
   progress: number
   totalHoursSpent?: number
+  totalAttachments?: number
   recentActivities?: Array<{
     id: string
     type: string
@@ -184,9 +186,9 @@ export default function ProjectBoardClient({
         days: Math.abs(diffDays),
         text: `${Math.abs(diffDays)} hari overdue`,
         color: 'red',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-        textColor: 'text-red-700'
+        bgColor: 'bg-red-500/10',
+        borderColor: 'border-red-500/20',
+        textColor: 'text-red-400'
       }
     } else if (diffDays === 0) {
       return {
@@ -194,9 +196,9 @@ export default function ProjectBoardClient({
         days: 0,
         text: 'DEADLINE HARI INI!',
         color: 'red',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-        textColor: 'text-red-700'
+        bgColor: 'bg-red-500/10',
+        borderColor: 'border-red-500/20',
+        textColor: 'text-red-400'
       }
     } else if (diffDays === 1) {
       return {
@@ -204,9 +206,9 @@ export default function ProjectBoardClient({
         days: 1,
         text: 'Deadline Besok',
         color: 'amber',
-        bgColor: 'bg-amber-50',
-        borderColor: 'border-amber-200',
-        textColor: 'text-amber-700'
+        bgColor: 'bg-amber-500/10',
+        borderColor: 'border-amber-500/20',
+        textColor: 'text-amber-400'
       }
     } else if (diffDays <= 7) {
       return {
@@ -214,9 +216,9 @@ export default function ProjectBoardClient({
         days: diffDays,
         text: `${diffDays} hari lagi`,
         color: 'blue',
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200',
-        textColor: 'text-blue-700'
+        bgColor: 'bg-blue-500/10',
+        borderColor: 'border-blue-500/20',
+        textColor: 'text-blue-400'
       }
     } else {
       return {
@@ -224,9 +226,9 @@ export default function ProjectBoardClient({
         days: diffDays,
         text: `${diffDays} hari lagi`,
         color: 'gray',
-        bgColor: 'bg-gray-50',
-        borderColor: 'border-gray-200',
-        textColor: 'text-gray-700'
+        bgColor: 'bg-slate-800/40',
+        borderColor: 'border-white/5',
+        textColor: 'text-slate-400'
       }
     }
   }
@@ -236,7 +238,7 @@ export default function ProjectBoardClient({
   // Fullscreen canvas view
   if (isCanvasFullscreen) {
     return (
-      <div className="h-screen w-screen">
+      <div className="h-screen w-screen bg-slate-950">
         <CanvasBoard
           projectId={project.id}
           projectName={project.name}
@@ -244,7 +246,7 @@ export default function ProjectBoardClient({
         />
         <button
           onClick={() => setIsCanvasFullscreen(false)}
-          className="fixed top-4 left-4 z-50 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-100"
+          className="fixed top-4 left-4 z-50 bg-slate-900/80 backdrop-blur-md p-2 rounded-lg shadow-lg hover:bg-slate-800 border border-white/10 text-white transition-all"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -253,78 +255,76 @@ export default function ProjectBoardClient({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Page Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-40">
+      <div className="bg-slate-900/50 backdrop-blur-md border-b border-white/5 px-6 py-4 sticky top-0 z-40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/projects">
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="border-white/10 hover:bg-white/5 text-slate-400">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
                 {project.name}
               </h1>
-              <p className="text-sm text-gray-600">Project Dashboard</p>
+              <p className="text-sm text-slate-500 font-medium">Project Dashboard</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             {/* View Switcher */}
-            <div className="inline-flex items-center bg-gray-100 rounded-lg p-1 gap-1">
+            <div className="inline-flex items-center bg-slate-800/50 rounded-lg p-1 gap-1 border border-white/5">
               <button
                 onClick={() => setViewState('overview')}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
                   viewState === 'overview'
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-sky-500/20 text-sky-400 shadow-lg shadow-sky-500/10"
+                    : "text-slate-500 hover:text-slate-300"
                 )}
               >
-                <KanbanSquare className="w-4 h-4 mr-1.5" />
-                Board
+                <KanbanSquare className="w-3.5 h-3.5" />
+                BOARD
               </button>
               <button
                 onClick={() => setViewState('simple')}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
                   viewState === 'simple'
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-sky-500/20 text-sky-400 shadow-lg shadow-sky-500/10"
+                    : "text-slate-500 hover:text-slate-300"
                 )}
               >
-                <ListTodo className="w-4 h-4 mr-1.5" />
-                Simple
+                <ListTodo className="w-3.5 h-3.5" />
+                SIMPLE
               </button>
               <button
                 onClick={() => setIsCanvasFullscreen(true)}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                  viewState === 'canvas'
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
+                  "text-slate-500 hover:text-slate-300"
                 )}
               >
-                <PenTool className="w-4 h-4 mr-1.5" />
-                Canvas
+                <PenTool className="w-3.5 h-3.5" />
+                CANVAS
               </button>
               <button
                 onClick={() => setEditDialogOpen(true)}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                  "text-gray-500 hover:text-gray-700"
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
+                  "text-slate-500 hover:text-slate-300"
                 )}
               >
-                <Edit className="w-4 h-4 mr-1.5" />
-                Edit
+                <Edit className="w-3.5 h-3.5" />
+                EDIT
               </button>
             </div>
 
             <Link href={`/projects/${project.id}/report`}>
               <Button
                 variant="outline"
-                className="print:hidden"
+                className="print:hidden border-white/10 hover:bg-white/5 text-slate-300"
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Print Report
@@ -346,20 +346,41 @@ export default function ProjectBoardClient({
       </div>
 
       {/* Project Banner Image */}
-      <div className="relative h-48 overflow-hidden bg-gray-100">
+      <div className="relative h-56 overflow-hidden bg-slate-900">
         <img
-          src={project.bannerImage || 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg'}
+          src={project.bannerImage || 'https://images.unsplash.com/photo-1506784365847-bbad939e9335?auto=format&fit=crop&q=80&w=2000'}
           alt={project.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-60"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1506784365847-bbad939e9335?auto=format&fit=crop&q=80&w=2000';
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-        <div className="absolute bottom-4 left-6">
-          <h2 className="text-2xl font-bold text-white">{project.name}</h2>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+        <div className="absolute bottom-8 left-8 max-w-4xl">
+          <div className="flex items-center gap-3 mb-3">
+             <Badge variant="outline" className={cn(
+               "font-bold px-3 py-1",
+               project.priority === 'CRITICAL' ? "bg-red-500/20 text-red-400 border-red-500/30" :
+               project.priority === 'HIGH' ? "bg-orange-500/20 text-orange-400 border-orange-500/30" :
+               project.priority === 'MEDIUM' ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
+               "bg-green-500/20 text-green-400 border-green-500/30"
+             )}>
+               {project.priority || 'MEDIUM'}
+             </Badge>
+             <div className="h-4 w-[1px] bg-white/20" />
+             <span className="text-slate-400 text-xs font-bold tracking-widest uppercase flex items-center gap-1.5">
+               <Users className="w-3.5 h-3.5" />
+               {project.owner?.username}
+             </span>
+             <div className="h-4 w-[1px] bg-white/20" />
+             <span className="text-slate-400 text-xs font-bold tracking-widest uppercase flex items-center gap-1.5">
+               <Paperclip className="w-3.5 h-3.5 text-sky-400" />
+               {stats?.totalAttachments || 0} Assets
+             </span>
+          </div>
+          <h2 className="text-4xl font-extrabold text-white tracking-tight leading-tight mb-2">{project.name}</h2>
           {project.description && (
-            <p className="text-white/90 text-sm mt-1 max-w-2xl">{project.description}</p>
+            <p className="text-slate-300 text-base font-medium max-w-2xl line-clamp-2">{project.description}</p>
           )}
         </div>
       </div>
@@ -367,31 +388,39 @@ export default function ProjectBoardClient({
       {/* Project Deadline Banner */}
       {deadlineInfo && (
         <div className={cn(
-          "mx-6 mt-6 px-6 py-4 rounded-xl flex items-center justify-between",
-          deadlineInfo.bgColor,
-          deadlineInfo.borderColor && `border-2 ${deadlineInfo.borderColor}`
+          "mx-6 mt-8 p-6 rounded-2xl flex items-center justify-between border backdrop-blur-sm",
+          deadlineInfo.status === 'overdue' ? "bg-red-500/10 border-red-500/20 shadow-lg shadow-red-500/5" :
+          deadlineInfo.status === 'today' ? "bg-red-500/10 border-red-500/20 shadow-lg shadow-red-500/5" :
+          deadlineInfo.status === 'tomorrow' ? "bg-amber-500/10 border-amber-500/20" :
+          deadlineInfo.status === 'thisWeek' ? "bg-blue-500/10 border-blue-500/20" :
+          "bg-slate-800/40 border-white/5"
         )}>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <div className={cn(
-              "p-3 rounded-full",
-              deadlineInfo.color === 'red' ? "bg-red-100" :
-                deadlineInfo.color === 'amber' ? "bg-amber-100" :
-                  deadlineInfo.color === 'blue' ? "bg-blue-100" : "bg-gray-100"
+              "p-4 rounded-xl shadow-inner",
+              deadlineInfo.status === 'overdue' ? "bg-red-500/20 text-red-400" :
+              deadlineInfo.status === 'today' ? "bg-red-500/20 text-red-400" :
+              deadlineInfo.status === 'tomorrow' ? "bg-amber-500/20 text-amber-400" :
+              deadlineInfo.status === 'thisWeek' ? "bg-blue-500/20 text-blue-400" :
+              "bg-slate-700/50 text-slate-400"
             )}>
-              <Clock className={cn(
-                "w-6 h-6",
-                deadlineInfo.textColor
-              )} />
+              <Clock className="w-7 h-7" />
             </div>
             <div>
-              <p className={cn("text-sm font-medium mb-1", deadlineInfo.textColor)}>
+              <p className={cn(
+                "text-xs font-black tracking-widest uppercase mb-1",
+                deadlineInfo.status === 'overdue' || deadlineInfo.status === 'today' ? "text-red-400" :
+                deadlineInfo.status === 'tomorrow' ? "text-amber-400" :
+                deadlineInfo.status === 'thisWeek' ? "text-blue-400" :
+                "text-slate-500"
+              )}>
                 {deadlineInfo.status === 'overdue' && '⚠️ PROJECT OVERDUE'}
                 {deadlineInfo.status === 'today' && '🔴 DEADLINE HARI INI'}
                 {deadlineInfo.status === 'tomorrow' && '🟠 Deadline Besok'}
                 {deadlineInfo.status === 'thisWeek' && '📅 Deadline Minggu Ini'}
                 {deadlineInfo.status === 'normal' && '📅 Deadline Project'}
               </p>
-              <p className={cn("text-2xl font-bold", deadlineInfo.textColor)}>
+              <p className="text-2xl font-bold text-white">
                 {project.endDate && new Date(project.endDate).toLocaleDateString('id-ID', {
                   weekday: 'long',
                   day: 'numeric',
@@ -401,12 +430,13 @@ export default function ProjectBoardClient({
               </p>
             </div>
           </div>
-          <div className={cn(
-            "text-right",
-            deadlineInfo.color === 'red' || deadlineInfo.color === 'amber' ? "flex items-center gap-2" : ""
-          )}>
-            {(deadlineInfo.color === 'red' || deadlineInfo.color === 'amber') && (
-              <span className={cn("text-xs font-semibold px-3 py-1.5 rounded-full", deadlineInfo.textColor)}>
+          <div className="flex items-center gap-4">
+            {(deadlineInfo.status === 'overdue' || deadlineInfo.status === 'today' || deadlineInfo.status === 'tomorrow') && (
+              <span className={cn(
+                "text-[10px] font-black px-3 py-1.5 rounded-full border uppercase tracking-tighter",
+                deadlineInfo.status === 'overdue' || deadlineInfo.status === 'today' ? "bg-red-500/20 text-red-400 border-red-500/30" :
+                "bg-amber-500/20 text-amber-400 border-amber-500/30"
+              )}>
                 {deadlineInfo.text}
               </span>
             )}
@@ -414,10 +444,10 @@ export default function ProjectBoardClient({
               size="sm"
               onClick={() => setEditDialogOpen(true)}
               className={cn(
-                "shadow-sm",
-                deadlineInfo.color === 'red' ? "bg-red-600 hover:bg-red-700 text-white" :
-                  deadlineInfo.color === 'amber' ? "bg-amber-600 hover:bg-amber-700 text-white" :
-                    "bg-white border-gray-300 hover:bg-gray-50"
+                "font-bold h-10 px-5 rounded-xl transition-all shadow-lg shadow-black/20",
+                deadlineInfo.status === 'overdue' || deadlineInfo.status === 'today' ? "bg-red-600 hover:bg-red-700 text-white" :
+                deadlineInfo.status === 'tomorrow' ? "bg-amber-600 hover:bg-amber-700 text-white" :
+                "bg-slate-800 hover:bg-slate-700 text-white border border-white/5"
               )}
             >
               <Edit className="w-4 h-4 mr-2" />
@@ -427,126 +457,117 @@ export default function ProjectBoardClient({
         </div>
       )}
 
-      <main className="px-6 py-6">
+      <main className="px-6 py-8">
         {/* Stats Cards - Always Visible */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-5 mb-8">
           {/* Total Completed */}
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-4">
+          <div className="bg-slate-900/40 backdrop-blur-sm border border-white/5 rounded-2xl p-5 shadow-sm hover:border-white/10 transition-colors group">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Completed</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats?.completedTasks || 0}</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 group-hover:text-slate-400 transition-colors">Completed</p>
+                  <p className="text-3xl font-bold text-white">{stats?.completedTasks || 0}</p>
                 </div>
-                <div className="h-10 w-10 rounded bg-green-50 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <div className="h-12 w-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center shadow-lg shadow-green-500/5">
+                  <CheckCircle2 className="h-6 w-6 text-green-500" />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </div>
 
           {/* Overdue Tasks */}
-          <Card className={cn(
-            "border-2 shadow-sm",
-            overdueTasks.length > 0 ? "border-red-300 bg-red-50/50" : "border-gray-200"
+          <div className={cn(
+            "backdrop-blur-sm border rounded-2xl p-5 shadow-sm transition-colors group",
+            overdueTasks.length > 0 ? "bg-red-500/5 border-red-500/20 hover:border-red-500/30" : "bg-slate-900/40 border-white/5 hover:border-white/10"
           )}>
-            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Overdue</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 group-hover:text-slate-400 transition-colors">Overdue</p>
                   <p className={cn(
-                    "text-2xl font-semibold",
-                    overdueTasks.length > 0 ? "text-red-600" : "text-gray-900"
+                    "text-3xl font-bold",
+                    overdueTasks.length > 0 ? "text-red-500" : "text-white"
                   )}>{overdueTasks.length}</p>
                 </div>
                 <div className={cn(
-                  "h-10 w-10 rounded flex items-center justify-center",
-                  overdueTasks.length > 0 ? "bg-red-100" : "bg-gray-100"
+                  "h-12 w-12 rounded-xl border flex items-center justify-center shadow-lg transition-colors",
+                  overdueTasks.length > 0 ? "bg-red-500/10 border-red-500/20 shadow-red-500/5" : "bg-slate-800/50 border-white/5"
                 )}>
                   <AlertCircle className={cn(
-                    "h-5 w-5",
-                    overdueTasks.length > 0 ? "text-red-600" : "text-gray-400"
+                    "h-6 w-6",
+                    overdueTasks.length > 0 ? "text-red-500" : "text-slate-500"
                   )} />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </div>
 
           {/* Due Today */}
-          <Card className={cn(
-            "border-2 shadow-sm",
-            dueTodayTasks.length > 0 ? "border-amber-300 bg-amber-50/50" : "border-gray-200"
+          <div className={cn(
+            "backdrop-blur-sm border rounded-2xl p-5 shadow-sm transition-colors group",
+            dueTodayTasks.length > 0 ? "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/30" : "bg-slate-900/40 border-white/5 hover:border-white/10"
           )}>
-            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Due Today</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 group-hover:text-slate-400 transition-colors">Due Today</p>
                   <p className={cn(
-                    "text-2xl font-semibold",
-                    dueTodayTasks.length > 0 ? "text-amber-600" : "text-gray-900"
+                    "text-3xl font-bold",
+                    dueTodayTasks.length > 0 ? "text-amber-500" : "text-white"
                   )}>{dueTodayTasks.length}</p>
                 </div>
                 <div className={cn(
-                  "h-10 w-10 rounded flex items-center justify-center",
-                  dueTodayTasks.length > 0 ? "bg-amber-100" : "bg-gray-100"
+                  "h-12 w-12 rounded-xl border flex items-center justify-center shadow-lg transition-colors",
+                  dueTodayTasks.length > 0 ? "bg-amber-500/10 border-amber-500/20 shadow-amber-500/5" : "bg-slate-800/50 border-white/5"
                 )}>
                   <Flame className={cn(
-                    "h-5 w-5",
-                    dueTodayTasks.length > 0 ? "text-amber-600" : "text-gray-400"
+                    "h-6 w-6",
+                    dueTodayTasks.length > 0 ? "text-amber-500" : "text-slate-500"
                   )} />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </div>
 
           {/* Total Hours Spent */}
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-4">
+          <div className="bg-slate-900/40 backdrop-blur-sm border border-white/5 rounded-2xl p-5 shadow-sm hover:border-white/10 transition-colors group">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Hours</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats?.totalHoursSpent || 0}h</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 group-hover:text-slate-400 transition-colors">Total Hours</p>
+                  <p className="text-3xl font-bold text-white">{stats?.totalHoursSpent || 0}h</p>
                 </div>
-                <div className="h-10 w-10 rounded bg-indigo-50 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-indigo-600" />
+                <div className="h-12 w-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-lg shadow-indigo-500/5">
+                  <Clock className="h-6 w-6 text-indigo-400" />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </div>
 
           {/* Progress */}
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
+          <div className="bg-slate-900/40 backdrop-blur-sm border border-white/5 rounded-2xl p-5 shadow-sm hover:border-white/10 transition-colors group">
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Progress</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats?.progress || 0}%</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 group-hover:text-slate-400 transition-colors">Overall Progress</p>
+                  <p className="text-3xl font-bold text-white">{stats?.progress || 0}%</p>
                 </div>
-                <div className="h-10 w-10 rounded bg-green-50 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <div className="h-12 w-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shadow-lg shadow-sky-500/5">
+                  <KanbanSquare className="h-6 w-6 text-sky-400" />
                 </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/5">
                 <div
-                  className="bg-green-600 h-1.5 rounded-full"
+                  className="bg-gradient-to-r from-sky-500 to-cyan-400 h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(14,165,233,0.4)]"
                   style={{ width: `${stats?.progress || 0}%` }}
                 ></div>
               </div>
-            </CardContent>
-          </Card>
+          </div>
         </div>
 
         {/* Urgent Tasks List */}
         {urgentTasks.length > 0 && (
-          <Card className="border border-gray-200 shadow-sm mb-6">
-            <CardHeader className="border-b border-gray-100">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-orange-500" />
+          <div className="bg-slate-900/20 border border-white/5 rounded-3xl overflow-hidden mb-10">
+            <div className="px-8 py-5 border-b border-white/5 bg-slate-900/40 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
                 Urgent Deadlines
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              </h3>
+              <Badge variant="outline" className="border-white/10 text-slate-500 font-black text-[10px]">{urgentTasks.length} TASKS</Badge>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {urgentTasks.map((task) => {
                   const dueDate = task.dueDate ? new Date(task.dueDate) : null
                   const isOverdue = dueDate && dueDate < today
@@ -559,83 +580,112 @@ export default function ProjectBoardClient({
                       className="block"
                     >
                       <div className={cn(
-                        "p-3 rounded-lg border transition-all hover:shadow-md cursor-pointer",
-                        isOverdue && "bg-red-50 border-red-200 hover:bg-red-100",
-                        isDueToday && !isOverdue && "bg-amber-50 border-amber-200 hover:bg-amber-100",
-                        !isOverdue && !isDueToday && "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                        "p-4 rounded-2xl border transition-all hover:translate-y-[-2px] cursor-pointer relative group overflow-hidden",
+                        isOverdue ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" :
+                        isDueToday ? "bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10" :
+                        "bg-slate-800/30 border-white/5 hover:border-white/10"
                       )}>
-                        <div className="flex items-center justify-between gap-2">
-                          <h4 className="font-medium text-gray-900 text-sm truncate flex-1">{task.title}</h4>
+                        <div className="flex items-center justify-between gap-3 mb-3 relative z-10">
+                          <h4 className="font-bold text-slate-100 text-sm truncate flex-1">{task.title}</h4>
                           <span className={cn(
-                            "px-2 py-0.5 rounded text-xs font-medium shrink-0",
+                            "px-2 py-0.5 rounded-md text-[10px] font-black shrink-0",
                             task.priority === 'CRITICAL' || task.priority === 'HIGH'
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-700"
+                              ? "bg-red-500/20 text-red-400 border border-red-500/20"
+                              : "bg-slate-700/50 text-slate-400 border border-white/5"
                           )}>
                             {task.priority}
                           </span>
                         </div>
                         {dueDate && (
-                          <div className="flex items-center gap-1 mt-2 text-xs">
-                            <Calendar className="w-3 h-3" />
+                          <div className="flex items-center gap-2 relative z-10">
+                            <div className={cn(
+                              "p-1.5 rounded-lg",
+                              isOverdue ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"
+                            )}>
+                              <Calendar className="w-3.5 h-3.5" />
+                            </div>
                             <span className={cn(
-                              "font-medium",
-                              isOverdue ? "text-red-600" : "text-amber-600"
+                              "text-xs font-bold",
+                              isOverdue ? "text-red-400" : "text-amber-400"
                             )}>
                               {isOverdue
-                                ? `Overdue ${Math.ceil((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))}d`
-                                : dueDate.toLocaleDateString()}
+                                ? `Overdue ${Math.ceil((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))} days`
+                                : dueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
                           </div>
                         )}
+                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <ArrowLeft className="w-4 h-4 text-slate-500 rotate-180" />
+                        </div>
                       </div>
                     </Link>
                   )
                 })}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Filter Indicator */}
         {filteredTaskIds.length > 0 && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 mb-4 flex items-center justify-between rounded-lg">
-            <span className="text-sm text-amber-800">
-              Showing {filteredTaskIds.length} urgent task{filteredTaskIds.length !== 1 ? 's' : ''}
-            </span>
-            <button
+          <div className="bg-sky-500/10 border border-sky-500/20 px-6 py-3 mb-6 flex items-center justify-between rounded-2xl backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse shadow-[0_0_8px_rgba(14,165,233,0.6)]" />
+              <span className="text-sm font-bold text-sky-400 uppercase tracking-widest">
+                Filtered: Showing {filteredTaskIds.length} urgent task{filteredTaskIds.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={clearFilter}
-              className="text-sm text-amber-700 hover:text-amber-900 font-medium"
+              className="text-xs font-black text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 px-4 h-8 rounded-lg"
             >
-              Clear Filter
-            </button>
+              CLEAR FILTER
+            </Button>
           </div>
         )}
 
         {/* Simple View - Rencana / Sekarang / Selesai */}
         {viewState === 'simple' && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-            <div className="border-b border-gray-200 px-6 py-4 bg-gray-50">
-              <h2 className="text-lg font-semibold text-gray-900">Project Timeline</h2>
-              <p className="text-sm text-gray-600">Rencana → Sekarang → Selesai</p>
+          <div className="bg-slate-900/20 border border-white/5 rounded-3xl overflow-hidden mb-10 shadow-2xl">
+            <div className="border-b border-white/5 px-8 py-5 bg-slate-900/40 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black text-white tracking-tight">Project Timeline</h2>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">Rencana → Sekarang → Selesai</p>
+              </div>
+              <div className="flex gap-2">
+                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span className="text-[10px] font-black text-blue-400 uppercase">PLANNED</span>
+                 </div>
+                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span className="text-[10px] font-black text-amber-400 uppercase">ACTIVE</span>
+                 </div>
+                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                    <span className="text-[10px] font-black text-green-400 uppercase">DONE</span>
+                 </div>
+              </div>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Rencana (Planned) */}
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                      Rencana
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                <div className="bg-slate-800/30 rounded-2xl p-5 border border-white/5 relative">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm">
+                      <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                      RENCANA
+                    </h3>
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20 font-black text-[10px]">
                         {displayTasks.filter(t => {
                           const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                           return statusName === 'Backlog' || statusName === 'To Do'
                         }).length}
-                      </span>
-                    </h3>
+                    </Badge>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {displayTasks.filter(t => {
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'Backlog' || statusName === 'To Do'
@@ -645,21 +695,21 @@ export default function ProjectBoardClient({
                         href={`/projects/${project.id}/board/${task.id}`}
                         className="block"
                       >
-                        <div className="bg-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
+                        <div className="bg-slate-900/60 p-4 rounded-xl border border-white/5 hover:border-blue-500/30 hover:bg-slate-800/80 transition-all cursor-pointer group">
+                          <div className="flex items-start justify-between gap-3">
+                            <h4 className="font-bold text-slate-200 text-sm group-hover:text-white transition-colors">{task.title}</h4>
                             <span className={cn(
-                              "px-2 py-0.5 rounded text-xs font-medium shrink-0",
-                              task.priority === 'CRITICAL' ? "bg-red-100 text-red-700" :
-                                task.priority === 'HIGH' ? "bg-orange-100 text-orange-700" :
-                                  task.priority === 'MEDIUM' ? "bg-yellow-100 text-yellow-700" :
-                                    "bg-green-100 text-green-700"
+                              "px-2 py-0.5 rounded text-[10px] font-black shrink-0 uppercase",
+                              task.priority === 'CRITICAL' ? "bg-red-500/20 text-red-400" :
+                                task.priority === 'HIGH' ? "bg-orange-500/20 text-orange-400" :
+                                  task.priority === 'MEDIUM' ? "bg-yellow-500/20 text-yellow-400" :
+                                    "bg-green-500/20 text-green-400"
                             )}>
                               {task.priority}
                             </span>
                           </div>
                           {task.dueDate && (
-                            <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                            <div className="flex items-center gap-2 mt-3 text-[10px] font-bold text-slate-500">
                               <Calendar className="w-3 h-3" />
                               {new Date(task.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                             </div>
@@ -671,26 +721,31 @@ export default function ProjectBoardClient({
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'Backlog' || statusName === 'To Do'
                     }).length === 0 && (
-                        <p className="text-sm text-gray-400 text-center py-4">Tidak ada tugas terencana</p>
+                        <div className="text-center py-10">
+                           <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                              <X className="w-5 h-5 text-slate-600" />
+                           </div>
+                           <p className="text-xs font-bold text-slate-600 uppercase tracking-tighter">No tasks planned</p>
+                        </div>
                       )}
                   </div>
                 </div>
 
                 {/* Sekarang (Current/In Progress) */}
-                <div className="bg-amber-50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></div>
-                      Sekarang
-                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                <div className="bg-slate-800/30 rounded-2xl p-5 border border-white/5 relative">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm">
+                      <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
+                      SEKARANG
+                    </h3>
+                    <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 font-black text-[10px]">
                         {displayTasks.filter(t => {
                           const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                           return statusName === 'In Progress' || statusName === 'Review'
                         }).length}
-                      </span>
-                    </h3>
+                    </Badge>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {displayTasks.filter(t => {
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'In Progress' || statusName === 'Review'
@@ -700,33 +755,35 @@ export default function ProjectBoardClient({
                         href={`/projects/${project.id}/board/${task.id}`}
                         className="block"
                       >
-                        <div className="bg-white p-3 rounded-lg border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all cursor-pointer">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
+                        <div className="bg-slate-900/60 p-4 rounded-xl border border-amber-500/20 hover:border-amber-500/40 hover:bg-slate-800/80 transition-all cursor-pointer group">
+                          <div className="flex items-start justify-between gap-3">
+                            <h4 className="font-bold text-slate-200 text-sm group-hover:text-white transition-colors">{task.title}</h4>
                             <span className={cn(
-                              "px-2 py-0.5 rounded text-xs font-medium shrink-0",
-                              task.priority === 'CRITICAL' ? "bg-red-100 text-red-700" :
-                                task.priority === 'HIGH' ? "bg-orange-100 text-orange-700" :
-                                  task.priority === 'MEDIUM' ? "bg-yellow-100 text-yellow-700" :
-                                    "bg-green-100 text-green-700"
+                              "px-2 py-0.5 rounded text-[10px] font-black shrink-0 uppercase",
+                              task.priority === 'CRITICAL' ? "bg-red-500/20 text-red-400" :
+                                task.priority === 'HIGH' ? "bg-orange-500/20 text-orange-400" :
+                                  task.priority === 'MEDIUM' ? "bg-yellow-500/20 text-yellow-400" :
+                                    "bg-green-500/20 text-green-400"
                             )}>
                               {task.priority}
                             </span>
                           </div>
                           {task.dueDate && (
                             <div className={cn(
-                              "flex items-center gap-1 mt-2 text-xs",
-                              new Date(task.dueDate) < today ? "text-red-600" : "text-gray-500"
+                              "flex items-center gap-2 mt-3 text-[10px] font-bold",
+                              new Date(task.dueDate) < today ? "text-red-400" : "text-slate-500"
                             )}>
                               <Calendar className="w-3 h-3" />
                               {new Date(task.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                              {new Date(task.dueDate) < today && " ⚠️"}
+                              {new Date(task.dueDate) < today && <Badge variant="outline" className="ml-auto bg-red-500/10 text-red-400 border-red-500/20 h-4 text-[8px]">OVERDUE</Badge>}
                             </div>
                           )}
                           {task.assignee && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                              <Users className="w-3 h-3" />
-                              {task.assignee.username}
+                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
+                              <div className="w-4 h-4 rounded-full bg-sky-500/20 flex items-center justify-center text-[8px] font-black text-sky-400">
+                                {task.assignee.username[0].toUpperCase()}
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500">{task.assignee.username}</span>
                             </div>
                           )}
                         </div>
@@ -736,26 +793,31 @@ export default function ProjectBoardClient({
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'In Progress' || statusName === 'Review'
                     }).length === 0 && (
-                        <p className="text-sm text-gray-400 text-center py-4">Tidak ada tugas aktif</p>
+                        <div className="text-center py-10">
+                           <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                              <Loader2 className="w-5 h-5 text-slate-600" />
+                           </div>
+                           <p className="text-xs font-bold text-slate-600 uppercase tracking-tighter">No active tasks</p>
+                        </div>
                       )}
                   </div>
                 </div>
 
                 {/* Selesai (Completed) */}
-                <div className="bg-green-50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      Selesai
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                <div className="bg-slate-800/30 rounded-2xl p-5 border border-white/5 relative">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm">
+                      <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                      SELESAI
+                    </h3>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 font-black text-[10px]">
                         {displayTasks.filter(t => {
                           const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                           return statusName === 'Done'
                         }).length}
-                      </span>
-                    </h3>
+                    </Badge>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {displayTasks.filter(t => {
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'Done'
@@ -765,22 +827,13 @@ export default function ProjectBoardClient({
                         href={`/projects/${project.id}/board/${task.id}`}
                         className="block"
                       >
-                        <div className="bg-white p-3 rounded-lg border border-green-200 hover:border-green-300 hover:shadow-sm transition-all cursor-pointer opacity-75">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-medium text-gray-900 text-sm line-through">{task.title}</h4>
-                            <span className={cn(
-                              "px-2 py-0.5 rounded text-xs font-medium shrink-0",
-                              task.priority === 'CRITICAL' ? "bg-red-100 text-red-700" :
-                                task.priority === 'HIGH' ? "bg-orange-100 text-orange-700" :
-                                  task.priority === 'MEDIUM' ? "bg-yellow-100 text-yellow-700" :
-                                    "bg-green-100 text-green-700"
-                            )}>
-                              {task.priority}
-                            </span>
+                        <div className="bg-slate-900/40 p-4 rounded-xl border border-green-500/10 hover:border-green-500/30 hover:bg-slate-800/60 transition-all cursor-pointer group opacity-60 hover:opacity-100">
+                          <div className="flex items-start justify-between gap-3">
+                            <h4 className="font-bold text-slate-400 text-sm group-hover:text-white transition-colors line-through">{task.title}</h4>
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
                           </div>
-                          <div className="flex items-center gap-1 mt-2 text-xs text-green-600">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Selesai
+                          <div className="flex items-center gap-2 mt-3 text-[10px] font-black text-green-500/70 uppercase">
+                            COMPLETED
                           </div>
                         </div>
                       </Link>
@@ -789,7 +842,12 @@ export default function ProjectBoardClient({
                       const statusName = project.statuses.find(s => s.id === t.statusId)?.name
                       return statusName === 'Done'
                     }).length === 0 && (
-                        <p className="text-sm text-gray-400 text-center py-4">Belum ada tugas selesai</p>
+                        <div className="text-center py-10">
+                           <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                              <CheckCircle2 className="w-5 h-5 text-slate-600" />
+                           </div>
+                           <p className="text-xs font-bold text-slate-600 uppercase tracking-tighter">No tasks completed yet</p>
+                        </div>
                       )}
                   </div>
                 </div>
@@ -800,16 +858,24 @@ export default function ProjectBoardClient({
 
         {/* Kanban Board */}
         {viewState === 'overview' && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-            <div className="border-b border-gray-200 px-6 py-4 bg-gray-50">
-              <h2 className="text-lg font-semibold text-gray-900">Kanban Board</h2>
-              <p className="text-sm text-gray-600">Drag & drop tasks to update status</p>
+          <div className="bg-slate-900/40 backdrop-blur-sm rounded-3xl border border-white/5 overflow-hidden mb-10 shadow-2xl">
+            <div className="border-b border-white/5 px-8 py-5 bg-slate-900/60 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black text-white tracking-tight">Kanban Board</h2>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">Drag & drop tasks to update status</p>
+              </div>
+              <div className="flex items-center gap-2">
+                 <Badge variant="outline" className="bg-sky-500/10 text-sky-400 border-sky-500/20 font-black text-[10px] py-1 px-3">
+                    {taskList.length} TASKS TOTAL
+                 </Badge>
+              </div>
             </div>
-            <div className="p-6">
+            <div className="p-0">
               <KanbanBoard
                 initialTasks={taskList}
                 statuses={project.statuses || []}
                 projectId={project.id}
+                currentUserId={currentUserId}
                 onMoveToNext={handleMoveToNext}
               />
             </div>
@@ -818,26 +884,27 @@ export default function ProjectBoardClient({
 
         {/* Recent Activity Section */}
         {stats?.recentActivities && stats.recentActivities.length > 0 && (
-          <Card className="border border-gray-200 shadow-sm mb-6">
-            <CardHeader className="border-b border-gray-100">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-indigo-500" />
+          <div className="bg-slate-900/40 backdrop-blur-sm border border-white/5 rounded-3xl overflow-hidden mb-10 shadow-lg">
+            <div className="px-8 py-5 border-b border-white/5 bg-slate-900/60 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
                 Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
+              </h3>
+              <Clock className="h-5 w-5 text-indigo-400" />
+            </div>
+            <div className="p-6">
               <div className="space-y-4">
                 {stats.recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                    <div className="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                      <Users className="h-4 w-4 text-indigo-600" />
+                  <div key={activity.id} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/30 border border-white/5 hover:border-white/10 transition-colors group">
+                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <Users className="h-5 w-5 text-indigo-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900">
-                          {activity.userName} updated <span className="font-semibold">"{activity.content}"</span>
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm font-medium text-slate-200">
+                          <span className="font-black text-white">{activity.userName}</span> updated <span className="text-sky-400 font-bold italic">"{activity.content}"</span>
                         </p>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter whitespace-nowrap">
                           {new Date(activity.date).toLocaleDateString('id-ID', {
                             day: 'numeric',
                             month: 'short',
@@ -846,53 +913,60 @@ export default function ProjectBoardClient({
                           })}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Status: <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Status:</span>
+                        <Badge variant="outline" className="bg-slate-700/50 text-slate-300 border-white/5 text-[9px] font-bold py-0 px-2 h-5">
                           {activity.statusName || 'Updated'}
-                        </span>
-                      </p>
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {/* Project Documentation Cards */}
-        <div className="mb-8">
-          <ProjectDocs projectId={project.id} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            {/* Project Documentation Cards */}
+            <div className="space-y-6">
+              <ProjectDocs projectId={project.id} />
+            </div>
+
+            {/* Project Assets & Attachments */}
+            <div className="space-y-6">
+              <ProjectAttachments projectId={project.id} />
+            </div>
         </div>
 
-        {/* Project Assets & Attachments */}
-        <div className="mb-6">
-          <ProjectAttachments projectId={project.id} />
-        </div>
-
-        {/* Project Details */}
-        <Card className="border border-gray-200 shadow-sm mt-6">
-          <CardHeader className="border-b border-gray-100">
-            <CardTitle className="text-lg font-semibold text-gray-900">Project Details</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <Users className="h-5 w-5 text-blue-600" />
+        {/* Project Details Card */}
+        <div className="bg-slate-900/40 backdrop-blur-sm border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="px-8 py-5 border-b border-white/5 bg-slate-900/60 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-white flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]" />
+              Project Information
+            </h3>
+            <Settings className="h-5 w-5 text-slate-500" />
+          </div>
+          <div className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/30 border border-white/5">
+                <div className="h-12 w-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                  <Users className="h-6 w-6 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Owner</p>
-                  <p className="text-base font-semibold text-gray-900">{project?.owner?.username || 'Unknown'}</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Owner</p>
+                  <p className="text-base font-bold text-white">{project?.owner?.username || 'Unknown'}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="h-5 w-5 text-blue-600" />
+              <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/30 border border-white/5">
+                <div className="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="h-6 w-6 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Created Date</p>
-                  <p className="text-base font-semibold text-gray-900">
-                    {project?.createdAt ? new Date(project.createdAt).toLocaleDateString('en-US', {
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Created Date</p>
+                  <p className="text-base font-bold text-white">
+                    {project?.createdAt ? new Date(project.createdAt).toLocaleDateString('id-ID', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
@@ -901,14 +975,14 @@ export default function ProjectBoardClient({
                 </div>
               </div>
               {project?.endDate && (
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <Clock className="h-5 w-5 text-blue-600" />
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/30 border border-white/5">
+                  <div className="h-12 w-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-6 w-6 text-orange-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Project Deadline</p>
-                    <p className="text-base font-semibold text-gray-900">
-                      {new Date(project.endDate).toLocaleDateString('en-US', {
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Project Deadline</p>
+                    <p className="text-base font-bold text-white">
+                      {new Date(project.endDate).toLocaleDateString('id-ID', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -919,13 +993,15 @@ export default function ProjectBoardClient({
               )}
             </div>
             {project?.description && (
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <p className="text-sm font-medium text-gray-600 mb-2">Description</p>
-                <p className="text-sm text-gray-700">{project.description}</p>
+              <div className="mt-8 pt-8 border-t border-white/5">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Project Description</p>
+                <div className="p-6 rounded-2xl bg-slate-800/20 border border-white/5">
+                   <p className="text-sm text-slate-300 leading-relaxed font-medium">{project.description}</p>
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </main>
 
       {/* Edit Project Dialog */}
@@ -943,57 +1019,61 @@ export default function ProjectBoardClient({
           })
         }
       }}>
-        <DialogContent className="sm:max-w-[500px] bg-white">
-          <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
+        <DialogContent className="sm:max-w-[550px] bg-slate-900 border-white/10 text-white rounded-3xl overflow-hidden p-0">
+          <DialogHeader className="px-8 pt-8 pb-4">
+            <DialogTitle className="text-2xl font-black tracking-tight">Edit Project</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSaveProject} className="space-y-4 mt-2">
+          <form onSubmit={handleSaveProject} className="space-y-6 mt-2 p-8 pt-0">
             <div className="space-y-2">
-              <Label htmlFor="name">Project Name *</Label>
+              <Label htmlFor="name" className="text-xs font-black text-slate-500 uppercase tracking-widest">Project Name *</Label>
               <Input
                 id="name"
                 required
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                placeholder="Membuat Integrasi Verifikasi Absen Muka"
+                className="bg-slate-800/50 border-white/5 h-12 rounded-xl focus:ring-sky-500/20"
+                placeholder="Project title..."
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-xs font-black text-slate-500 uppercase tracking-widest">Description</Label>
               <Textarea
                 id="description"
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                className="bg-slate-800/50 border-white/5 rounded-xl min-h-[100px] focus:ring-sky-500/20"
                 placeholder="What is this project about?"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
+                <Label htmlFor="startDate" className="text-xs font-black text-slate-500 uppercase tracking-widest">Start Date</Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={editForm.startDate}
                   onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                  className="bg-slate-800/50 border-white/5 h-12 rounded-xl focus:ring-sky-500/20 color-scheme-dark"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">End Date (Deadline)</Label>
+                <Label htmlFor="endDate" className="text-xs font-black text-slate-500 uppercase tracking-widest">Deadline</Label>
                 <Input
                   id="endDate"
                   type="date"
                   value={editForm.endDate}
                   onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                  className="bg-slate-800/50 border-white/5 h-12 rounded-xl focus:ring-sky-500/20 color-scheme-dark"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
+              <Label htmlFor="priority" className="text-xs font-black text-slate-500 uppercase tracking-widest">Priority</Label>
               <select
                 id="priority"
                 value={editForm.priority}
                 onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-12 bg-slate-800/50 border border-white/5 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
               >
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
@@ -1002,42 +1082,37 @@ export default function ProjectBoardClient({
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bannerImage">Banner Image URL</Label>
+              <Label htmlFor="bannerImage" className="text-xs font-black text-slate-500 uppercase tracking-widest">Banner Image URL</Label>
               <Input
                 id="bannerImage"
                 type="url"
                 value={editForm.bannerImage}
                 onChange={(e) => setEditForm({ ...editForm, bannerImage: e.target.value })}
+                className="bg-slate-800/50 border-white/5 h-12 rounded-xl focus:ring-sky-500/20"
                 placeholder="https://example.com/banner.jpg"
               />
-              {editForm.bannerImage && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-gray-200">
-                  <img
-                    src={editForm.bannerImage}
-                    alt="Banner preview"
-                    className="w-full h-24 object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
-                    }}
-                  />
-                </div>
-              )}
             </div>
-            <DialogFooter>
+            <DialogFooter className="bg-slate-800/30 p-6 -mx-8 -mb-8 mt-10 border-t border-white/5 gap-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => setEditDialogOpen(false)}
                 disabled={isSaving}
+                className="text-slate-400 hover:text-white font-bold"
               >
-                Cancel
+                CANCEL
               </Button>
               <Button
                 type="submit"
-                className="bg-blue-600 text-white"
+                className="bg-sky-500 hover:bg-sky-600 text-white font-black px-8 rounded-xl shadow-lg shadow-sky-500/20 h-11"
                 disabled={isSaving}
               >
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    SAVING...
+                  </>
+                ) : 'SAVE CHANGES'}
               </Button>
             </DialogFooter>
           </form>
@@ -1046,3 +1121,4 @@ export default function ProjectBoardClient({
     </div>
   )
 }
+

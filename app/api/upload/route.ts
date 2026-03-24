@@ -1,113 +1,95 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
+import { writeFile } from 'fs/promises';
 
-// Get the project root directory reliably
-const getProjectRoot = () => {
-    // In production (standalone), the working directory may differ
-    // Use __dirname as fallback which is more reliable
-    try {
-        // Try process.cwd() first (development)
-        const cwdPath = process.cwd();
-        if (cwdPath) return cwdPath;
-    } catch (e) {
-        // Ignore
-    }
-    
-    // Fallback to current file's directory and traverse up
-    // This works in both dev and production
-    return process.env.NEXT_PROJECT_ROOT || process.cwd();
-};
+const GDRIVE_GATEWAY_URL = 'http://223.25.98.220:3001/file/upload';
 
 export async function POST(request: NextRequest) {
     try {
-        console.log('[Upload API] Received upload request');
-        const data = await request.formData();
-        const file: File | null = data.get('file') as unknown as File;
+        const formData = await request.formData();
+        const file: File | null = formData.get('file') as unknown as File;
 
         if (!file) {
-            console.error('[Upload API] No file found in form data');
             return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
         }
 
-        console.log('[Upload API] File info:', {
-            name: file.name,
-            type: file.type,
-            size: file.size
-        });
+        console.log(`[Upload API] Processing file: ${file.name} (${file.size} bytes)`);
 
+        // Try forwarding to Gdrive Gateway first
+        try {
+            const gatewayFormData = new FormData();
+            gatewayFormData.append('file', file);
+
+            console.log(`[Upload API] Attempting to forward to gateway: ${GDRIVE_GATEWAY_URL}`);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const response = await fetch(GDRIVE_GATEWAY_URL, {
+                method: 'POST',
+                body: gatewayFormData,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('[Upload API] Gateway success result:', result);
+
+                let url = result.url || result.fileUrl || result.data?.url || result.data?.fileUrl;
+                
+                if (!url && (result.file_id || result.fileId || result.id)) {
+                    const fileId = result.file_id || result.fileId || result.id;
+                    url = `http://223.25.98.220:3001/file/download/${fileId}`;
+                }
+
+                if (url) {
+                    if (!url.startsWith('http')) {
+                        const baseUrl = 'http://223.25.98.220:3001';
+                        url = url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
+                    }
+                    
+                    const previewUrl = result.webViewLink || result.viewUrl || url;
+                    return NextResponse.json({ url, previewUrl });
+                }
+            } else {
+                console.warn(`[Upload API] Gateway returned ${response.status}. Falling back to local storage.`);
+            }
+        } catch (gatewayError) {
+            console.warn('[Upload API] Gateway unreachable or failed. Falling back to local storage:', (gatewayError as any).message);
+        }
+
+        // FALLBACK: Local Storage
+        console.log('[Upload API] Using local storage fallback');
+        
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Create unique filename
-        const uniqueSuffix = `${Date.now()}-${uuidv4()}`;
+        // Define path
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
         
-        // Handle generic names like 'blob' or missing names
-        let name = file.name || 'pasted-image';
-        let extension = 'png';
-        
-        if (name === 'blob' || !name.includes('.')) {
-            // Get extension from mime type
-            extension = file.type.split('/').pop() || 'png';
-            // Sanitize extension (remove stuff like 'svg+xml')
-            extension = extension.split('+')[0];
-            name = `upload-${Date.now()}.${extension}`;
-        } else {
-            extension = name.split('.').pop() || 'png';
+        // Ensure directory exists
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
         }
 
-        const filename = `img-${uniqueSuffix}.${extension}`;
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = `${uniqueSuffix}-${file.name.replace(/\s+/g, '-')}`;
+        const filePath = path.join(uploadDir, filename);
 
-        // Save to public/uploads - use multiple fallback paths for reliability
-        const projectRoot = getProjectRoot();
-        const uploadDirs = [
-            join(projectRoot, 'public', 'uploads'),
-            // Fallback paths for different production setups
-            join(process.cwd(), 'public', 'uploads'),
-            join('/app', 'public', 'uploads'), // Common Docker path
-        ];
-
-        console.log('[Upload API] Project root:', projectRoot);
-        
-        let uploadDir: string | null = null;
-        let filepath: string | null = null;
-
-        // Try each possible upload directory
-        for (const dir of uploadDirs) {
-            try {
-                await mkdir(dir, { recursive: true });
-                uploadDir = dir;
-                filepath = join(dir, filename);
-                console.log('[Upload API] Using upload directory:', dir);
-                break;
-            } catch (err: any) {
-                console.warn('[Upload API] Cannot create directory:', dir, err.message);
-            }
-        }
-
-        if (!uploadDir || !filepath) {
-            console.error('[Upload API] Could not create upload directory');
-            return NextResponse.json({ 
-                error: 'Could not create upload directory',
-            }, { status: 500 });
-        }
-
-        console.log('[Upload API] Full file path:', filepath);
-
-        await writeFile(filepath, buffer);
-        console.log('[Upload API] File written successfully');
-
-        // Return the public URL
+        await writeFile(filePath, buffer);
         const url = `/uploads/${filename}`;
 
+        console.log(`[Upload API] Local upload successful: ${url}`);
         return NextResponse.json({ url });
+
     } catch (error: any) {
         console.error('[Upload API] CRITICAL ERROR:', error);
         return NextResponse.json({ 
             error: 'Upload failed', 
-            details: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            details: error.message 
         }, { status: 500 });
     }
 }

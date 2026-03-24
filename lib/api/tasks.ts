@@ -8,6 +8,7 @@
  */
 
 import { sqlGateway } from './sql-gateway';
+import { getTaskDocs, getAttachmentsByTask } from './projects';
 
 // Helper functions from projects.ts
 function toCamelCase<T = any>(obj: any): T {
@@ -251,7 +252,9 @@ export async function getTaskById(id: string) {
       email: row.assignee_email,
     } : null,
     comments,
-  } as Task;
+    docs: await getTaskDocs(id),
+    attachments: await getAttachmentsByTask(id),
+  } as any;
 }
 
 export async function createTask(data: {

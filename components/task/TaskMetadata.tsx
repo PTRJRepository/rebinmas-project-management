@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { NovelEditor } from '@/components/editor/NovelEditor';
-import { Calendar, Clock, User, FolderOpen, Plus, FileText, Trash2, Edit2, Loader2 } from 'lucide-react';
+import { Calendar, Clock, User, FolderOpen, Plus, FileText, Trash2, Edit2, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDeadlineInfo, getDeadlineClasses, formatDeadline } from '@/lib/deadline-utils';
 import { 
@@ -244,263 +244,118 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
     return (
         <div className="space-y-6">
             {/* Task Information Card */}
-            <Card className="bg-slate-900 border-slate-700">
-                <CardHeader>
-                    <CardTitle className="text-lg text-slate-100">Task Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {/* Project (Read-only) */}
-                    <div className="flex items-center gap-3">
+            <div className="space-y-6">
+                {/* Project (Read-only) */}
+                <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-slate-800/50 flex items-center justify-center border border-white/5">
                         <FolderOpen className="h-5 w-5 text-slate-500 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-500">Project</p>
-                            <p className="text-sm font-medium text-slate-200 truncate">
-                                {task.project?.name || 'N/A'}
-                            </p>
-                        </div>
                     </div>
-
-                    {/* Priority (Editable) */}
-                    <div className="flex items-center gap-3">
-                        <div className="h-5 w-5 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-500">Priority</p>
-                            <select
-                                value={priority}
-                                onChange={handlePriorityChange}
-                                className={cn(
-                                    "text-xs font-semibold px-2 py-1 border mt-1 rounded cursor-pointer",
-                                    getPriorityColor(priority),
-                                    "bg-slate-800 text-slate-100 border-slate-600 focus:ring-2 focus:ring-sky-500"
-                                )}
-                            >
-                                <option value="LOW">LOW</option>
-                                <option value="MEDIUM">MEDIUM</option>
-                                <option value="HIGH">HIGH</option>
-                                <option value="CRITICAL">CRITICAL</option>
-                            </select>
-                        </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Project</p>
+                        <p className="text-sm font-bold text-slate-200 truncate">
+                            {task.project?.name || 'N/A'}
+                        </p>
                     </div>
+                </div>
 
-                    {/* Assignee (Read-only for now - requires user list) */}
-                    {task.assignee && (
-                        <div className="flex items-center gap-3">
-                            <User className="h-5 w-5 text-slate-500 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm text-slate-500">Assignee</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <Avatar className="h-6 w-6">
-                                        <AvatarImage src={task.assignee.avatarUrl || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4868.jpg"} />
-                                        <AvatarFallback className="text-xs bg-sky-500 text-white">
-                                            {task.assignee.username.substring(0, 2).toUpperCase()}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <p className="text-sm font-medium text-slate-200 truncate">
-                                        {task.assignee.username}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Due Date (Editable) */}
-                    <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-slate-500 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-500">Due Date</p>
-                            <input
-                                type="date"
-                                value={dueDate}
-                                onChange={handleDueDateChange}
-                                className={cn(
-                                    "flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors mt-1",
-                                    "bg-slate-800 border-slate-700 text-slate-200",
-                                    "focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                                )}
-                            />
-                        </div>
+                {/* Priority (Editable) */}
+                <div className="flex items-center gap-4">
+                    <div className={cn(
+                        "h-10 w-10 rounded-xl flex items-center justify-center border border-white/5",
+                        task.priority === 'CRITICAL' ? "bg-red-500/10 text-red-400" :
+                        task.priority === 'HIGH' ? "bg-orange-500/10 text-orange-400" :
+                        task.priority === 'MEDIUM' ? "bg-yellow-500/10 text-yellow-400" :
+                        "bg-green-500/10 text-green-400"
+                    )}>
+                        <AlertCircle className="h-5 w-5" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Priority</p>
+                        <select
+                            value={priority}
+                            onChange={handlePriorityChange}
+                            className="bg-transparent text-sm font-bold text-slate-200 border-0 p-0 focus:ring-0 cursor-pointer w-full"
+                        >
+                            <option value="LOW" className="bg-slate-950">LOW</option>
+                            <option value="MEDIUM" className="bg-slate-950">MEDIUM</option>
+                            <option value="HIGH" className="bg-slate-950">HIGH</option>
+                            <option value="CRITICAL" className="bg-slate-950">CRITICAL</option>
+                        </select>
+                    </div>
+                </div>
 
-                    {/* Estimated Hours (Editable) */}
-                    <div className="flex items-center gap-3">
+                {/* Assignee */}
+                <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-slate-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
+                        <Avatar className="h-full w-full rounded-none">
+                            <AvatarImage src={task.assignee?.avatarUrl || ""} />
+                            <AvatarFallback className="bg-slate-800 text-[10px] font-black">
+                                {task.assignee?.username?.substring(0, 2).toUpperCase() || '??'}
+                            </AvatarFallback>
+                        </Avatar>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Assignee</p>
+                        <p className="text-sm font-bold text-slate-200 truncate">
+                            {task.assignee?.username || 'Unassigned'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Due Date (Editable) */}
+                <div className="flex items-center gap-4">
+                    <div className={cn(
+                        "h-10 w-10 rounded-xl flex items-center justify-center border border-white/5",
+                        deadlineInfo.isOverdue ? "bg-red-500/10 text-red-400" : "bg-slate-800/50 text-slate-500"
+                    )}>
+                        <Calendar className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Date</p>
+                        <input
+                            type="date"
+                            value={dueDate}
+                            onChange={handleDueDateChange}
+                            className="bg-transparent text-sm font-bold text-slate-200 border-0 p-0 focus:ring-0 cursor-pointer w-full [color-scheme:dark]"
+                        />
+                    </div>
+                </div>
+
+                {/* Estimated Hours (Editable) */}
+                <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-slate-800/50 flex items-center justify-center border border-white/5">
                         <Clock className="h-5 w-5 text-slate-500 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-500">Estimated Time (Hours)</p>
-                            <input
-                                type="number"
-                                step="0.5"
-                                value={estimatedHours}
-                                onChange={(e) => setEstimatedHours(e.target.value)}
-                                onBlur={handleHoursBlur}
-                                className="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors mt-1 bg-slate-800 border-slate-700 text-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                                placeholder="0.0"
-                            />
-                        </div>
                     </div>
-                </CardContent>
-            </Card>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Effort (Hours)</p>
+                        <input
+                            type="number"
+                            step="0.5"
+                            value={estimatedHours}
+                            onChange={(e) => setEstimatedHours(e.target.value)}
+                            onBlur={handleHoursBlur}
+                            className="bg-transparent text-sm font-bold text-slate-200 border-0 p-0 focus:ring-0 w-full"
+                            placeholder="0.0"
+                        />
+                    </div>
+                </div>
+            </div>
 
-            {/* Progress Card */}
+            {/* Progress Section */}
             {(task.progress !== undefined && task.progress !== null) && (
-                <Card className="bg-slate-900 border-slate-700">
-                    <CardHeader>
-                        <CardTitle className="text-lg text-slate-100">Progress</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-500">Completion</span>
-                                <span className="font-medium text-slate-200">{task.progress}%</span>
-                            </div>
-                            <Progress value={task.progress} className="h-2" />
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Documentation Cards Section */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-sky-500" />
-                        Documentation
-                    </h3>
-                    <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={handleOpenAddDoc}
-                        className="h-8 bg-slate-800 border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-700"
-                    >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Doc
-                    </Button>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                    {task.docs && task.docs.length > 0 ? (
-                        task.docs.map((doc) => (
-                            <Card key={doc.id} className="bg-slate-900 border-slate-700 group">
-                                <CardHeader className="p-4 pb-2 border-b border-slate-800 flex flex-row items-center justify-between space-y-0">
-                                    <CardTitle className="text-sm font-semibold text-slate-200">
-                                        {doc.title}
-                                    </CardTitle>
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button 
-                                            size="icon" 
-                                            variant="ghost" 
-                                            className="h-7 w-7 text-slate-400 hover:text-sky-400 hover:bg-slate-800"
-                                            onClick={() => handleOpenEditDoc(doc)}
-                                        >
-                                            <Edit2 className="h-3.5 w-3.5" />
-                                        </Button>
-                                        <Button 
-                                            size="icon" 
-                                            variant="ghost" 
-                                            className="h-7 w-7 text-slate-400 hover:text-red-400 hover:bg-slate-800"
-                                            onClick={() => handleDeleteDoc(doc.id)}
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-4 pt-3">
-                                    {/* Preview content - simple text summary */}
-                                    <div className="text-sm text-slate-400 line-clamp-3 prose prose-invert prose-sm max-w-none">
-                                        <div dangerouslySetInnerHTML={{ __html: doc.content || 'No content' }} />
-                                    </div>
-                                    <p className="text-[10px] text-slate-600 mt-2">
-                                        Last updated: {new Date(doc.updatedAt).toLocaleDateString()}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ))
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-10 px-6 rounded-lg border-2 border-dashed border-slate-800 bg-slate-900/50 text-center">
-                            <FileText className="h-10 w-10 text-slate-700 mb-2" />
-                            <p className="text-slate-500 text-sm italic">No documentation yet</p>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={handleOpenAddDoc}
-                                className="mt-2 text-sky-500 hover:text-sky-400 p-0 h-auto hover:bg-transparent"
-                            >
-                                Add your first document
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Task Attachments Section */}
-            <div className="pt-2">
-                <TaskAttachments 
-                    taskId={task.id} 
-                    projectId={projectId} 
-                    initialAttachments={task.attachments || []} 
-                />
-            </div>
-
-            {/* Documentation Dialog */}
-            <Dialog open={docDialogOpen} onOpenChange={setDocDialogOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-slate-100 shadow-2xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-500 bg-clip-text text-transparent">
-                            {editingDoc ? 'Edit Documentation' : 'Add Documentation'}
-                        </DialogTitle>
-                    </DialogHeader>
-                    
-                    <div className="space-y-6 mt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="docTitle" className="text-slate-300 font-semibold">Title</Label>
-                            <Input 
-                                id="docTitle"
-                                value={docTitle}
-                                onChange={(e) => setDocTitle(e.target.value)}
-                                placeholder="Documentation title (e.g., API Requirements, Design Specs)"
-                                className="bg-slate-900 border-slate-700 text-slate-100 focus:border-sky-500"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-slate-300 font-semibold">Content</Label>
-                            <div className="min-h-[400px] rounded-lg border border-slate-800 overflow-hidden bg-slate-900">
-                                <NovelEditor
-                                    content={docContent}
-                                    onChange={(content) => setDocContent(content)}
-                                    placeholder="Write your documentation here..."
-                                    showMenuBar={true}
-                                    onImageUpload={handleEditorImageUpload}
-                                />
-                            </div>
-                        </div>
+                <div className="pt-6 border-t border-white/5">
+                    <div className="flex items-center justify-between mb-3">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Progress</p>
+                        <span className="text-xs font-black text-sky-400">{task.progress}%</span>
                     </div>
-
-                    <DialogFooter className="mt-8 pt-6 border-t border-slate-800 gap-3">
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setDocDialogOpen(false)}
-                            className="border-slate-700 text-slate-300 hover:bg-slate-800"
-                            disabled={isSavingDoc}
-                        >
-                            Cancel
-                        </Button>
-                        <Button 
-                            onClick={handleSaveDoc}
-                            className="bg-sky-600 hover:bg-sky-700 text-white min-w-[120px] shadow-lg shadow-sky-900/20"
-                            disabled={isSavingDoc}
-                        >
-                            {isSavingDoc ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                editingDoc ? 'Update Card' : 'Add Card'
-                            )}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                            className="bg-sky-500 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${task.progress}%` }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -47,28 +47,28 @@ export function UserList({ users }: UserListProps) {
     };
 
     return (
-        <Card>
+        <Card className="glass-card border-slate-800">
             <CardHeader>
-                <CardTitle>Users</CardTitle>
+                <CardTitle className="text-slate-100">Users</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="relative w-full overflow-auto">
                     <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b">
-                            <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                        <thead className="[&_tr]:border-b border-slate-800">
+                            <tr className="border-b border-slate-800 transition-colors hover:bg-slate-800/50 data-[state=selected]:bg-slate-800">
+                                <th className="h-12 px-4 text-left align-middle font-medium text-slate-400 [&:has([role=checkbox])]:pr-0">
                                     Name
                                 </th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                                <th className="h-12 px-4 text-left align-middle font-medium text-slate-400 [&:has([role=checkbox])]:pr-0">
                                     Email
                                 </th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                                <th className="h-12 px-4 text-left align-middle font-medium text-slate-400 [&:has([role=checkbox])]:pr-0">
                                     Role
                                 </th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                                <th className="h-12 px-4 text-left align-middle font-medium text-slate-400 [&:has([role=checkbox])]:pr-0">
                                     Joined
                                 </th>
-                                <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                                <th className="h-12 px-4 text-right align-middle font-medium text-slate-400 [&:has([role=checkbox])]:pr-0">
                                     Actions
                                 </th>
                             </tr>
@@ -77,11 +77,11 @@ export function UserList({ users }: UserListProps) {
                             {users.map((user) => (
                                 <tr
                                     key={user.id}
-                                    className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                                    className="border-b border-slate-800 transition-colors hover:bg-slate-800/50 data-[state=selected]:bg-slate-800"
                                 >
-                                    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium">
+                                    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium text-slate-200">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300 border border-slate-700">
                                                 {user.avatarUrl ? (
                                                     <img src={user.avatarUrl} alt={user.name} className="w-full h-full rounded-full object-cover" />
                                                 ) : (
@@ -91,7 +91,7 @@ export function UserList({ users }: UserListProps) {
                                             {user.name}
                                         </div>
                                     </td>
-                                    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-slate-300">
                                         {user.email}
                                     </td>
                                     <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
@@ -99,14 +99,14 @@ export function UserList({ users }: UserListProps) {
                                             {user.role}
                                         </Badge>
                                     </td>
-                                    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-slate-400">
                                         {new Date(user.createdAt).toLocaleDateString()}
                                     </td>
                                     <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-right">
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                             onClick={() => {
                                                 if (confirm('Are you sure you want to delete this user?')) {
                                                     handleDelete(user.id);

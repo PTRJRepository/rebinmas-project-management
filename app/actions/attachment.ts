@@ -10,9 +10,12 @@ import {
 
 export async function getProjectAttachments(projectId: string) {
     try {
+        // Force no-cache to ensure fresh data
         const attachments = await getAttachmentsByProject(projectId)
+        console.log('[getProjectAttachments] Server action returning:', attachments.length, 'attachments');
         return { success: true, data: attachments }
     } catch (error: any) {
+        console.error('[getProjectAttachments] Error:', error.message);
         return { success: false, error: error.message }
     }
 }
@@ -22,6 +25,7 @@ export async function createAttachmentAction(data: {
     taskId?: string;
     fileName: string;
     fileUrl: string;
+    previewUrl?: string;
     fileType: string;
     fileSize: number;
 }) {

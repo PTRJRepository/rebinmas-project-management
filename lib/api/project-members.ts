@@ -164,6 +164,7 @@ export async function getAccessibleProjects(
           u.id as user_id, u.username as owner_username,
           u.email as owner_email, u.name as owner_name,
           (SELECT COUNT(*) FROM pm_tasks t WHERE t.project_id = p.id) as task_count,
+          (SELECT COUNT(*) FROM pm_task_docs d WHERE d.task_id = 'pa_' + p.id OR d.task_id IN (SELECT t2.id FROM pm_tasks t2 WHERE t2.project_id = p.id)) as doc_count,
           'ADMIN' as member_role
         FROM pm_projects p
         LEFT JOIN pm_users u ON p.owner_id = u.id
@@ -189,7 +190,10 @@ export async function getAccessibleProjects(
           email: row.owner_email,
           name: row.owner_name,
         },
-        _count: { tasks: row.task_count },
+        _count: { 
+          tasks: row.task_count,
+          docs: row.doc_count 
+        },
         memberRole: 'ADMIN',
       }));
     }
@@ -204,6 +208,7 @@ export async function getAccessibleProjects(
         u.id as user_id, u.username as owner_username,
         u.email as owner_email, u.name as owner_name,
         (SELECT COUNT(*) FROM pm_tasks t WHERE t.project_id = p.id) as task_count,
+        (SELECT COUNT(*) FROM pm_task_docs d WHERE d.task_id = 'pa_' + p.id OR d.task_id IN (SELECT t2.id FROM pm_tasks t2 WHERE t2.project_id = p.id)) as doc_count,
         'OWNER' as member_role
       FROM pm_projects p
       INNER JOIN pm_users u ON p.owner_id = u.id
@@ -218,6 +223,7 @@ export async function getAccessibleProjects(
         u.id as user_id, u.username as owner_username,
         u.email as owner_email, u.name as owner_name,
         (SELECT COUNT(*) FROM pm_tasks t WHERE t.project_id = p.id) as task_count,
+        (SELECT COUNT(*) FROM pm_task_docs d WHERE d.task_id = 'pa_' + p.id OR d.task_id IN (SELECT t2.id FROM pm_tasks t2 WHERE t2.project_id = p.id)) as doc_count,
         pm.role as member_role
       FROM pm_projects p
       INNER JOIN pm_users u ON p.owner_id = u.id
@@ -246,7 +252,10 @@ export async function getAccessibleProjects(
         email: row.owner_email,
         name: row.owner_name,
       },
-      _count: { tasks: row.task_count },
+      _count: { 
+        tasks: row.task_count,
+        docs: row.doc_count
+      },
       memberRole: row.member_role,
     }));
   } catch (error) {

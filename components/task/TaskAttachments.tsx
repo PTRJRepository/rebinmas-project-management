@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,6 +12,7 @@ import {
     Upload,
     Loader2,
     Paperclip,
+    Eye
 } from 'lucide-react'
 import {
     getProjectAttachments,
@@ -32,9 +34,24 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
     const [isUploading, setIsUploading] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
     const { toast } = useToast()
+    const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const prevTaskIdRef = useRef<string | null>(null)
+
+    // Update attachments when taskId changes (new task loaded), but preserve local state
+    useEffect(() => {
+        console.log('[TaskAttachments] Task changed:', prevTaskIdRef.current, '->', taskId);
+        if (taskId !== prevTaskIdRef.current) {
+            // Only reset to initialAttachments when switching to a different task
+            if (taskId) {
+                setAttachments(initialAttachments)
+            }
+            prevTaskIdRef.current = taskId
+        }
+    }, [taskId, initialAttachments])
 
     const uploadFile = async (file: File) => {
+        console.log('[TaskAttachments] Starting upload for file:', file.name, 'taskId:', taskId, 'projectId:', projectId);
         setIsUploading(true)
         try {
             const formData = new FormData()
@@ -47,7 +64,8 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
 
             if (!res.ok) throw new Error('Upload failed')
 
-            const { url } = await res.json()
+            const { url, previewUrl } = await res.json()
+            console.log('[TaskAttachments] Upload successful, URL:', url);
 
             // Call create attachment action
             const attachmentResult = await createAttachmentAction({
@@ -55,14 +73,28 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                 taskId,
                 fileName: file.name,
                 fileUrl: url,
+                previewUrl: previewUrl || url,
                 fileType: file.type.startsWith('image/') ? 'image' : 'document',
                 fileSize: file.size,
             })
 
+            console.log('[TaskAttachments] createAttachmentAction result:', attachmentResult);
+
             if (attachmentResult.success && attachmentResult.data) {
                 toast({ title: 'Success', description: 'File uploaded successfully' })
                 const newAttachment = attachmentResult.data
-                setAttachments(prev => [newAttachment, ...prev])
+                // Add to local state - DON'T overwrite with initialAttachments
+                setAttachments(prev => {
+                    // Check if already exists to avoid duplicates
+                    const exists = prev.some(a => a.id === newAttachment.id)
+                    if (exists) return prev
+                    return [newAttachment, ...prev]
+                })
+
+                // Refresh the page after a short delay to get fresh data from server
+                setTimeout(() => {
+                    router.refresh()
+                }, 500)
             } else {
                 throw new Error(attachmentResult.error)
             }
@@ -207,11 +239,23 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {att.previewUrl && (
+                                        <a
+                                            href={att.previewUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-1.5 text-slate-400 hover:text-purple-400 transition-colors rounded hover:bg-slate-700"
+                                            title="Preview"
+                                        >
+                                            <Eye className="h-3.5 w-3.5" />
+                                        </a>
+                                    )}
                                     <a
                                         href={att.fileUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="p-1.5 text-slate-400 hover:text-sky-400 transition-colors rounded hover:bg-slate-700"
+                                        title="Download"
                                     >
                                         <Download className="h-3.5 w-3.5" />
                                     </a>

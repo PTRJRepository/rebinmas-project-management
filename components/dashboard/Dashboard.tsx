@@ -2,7 +2,9 @@
 
 import { StatCards } from './StatCards';
 import { ProgressBar } from './ProgressBar';
+import { Card } from '@/components/ui/card';
 import { TaskStatus } from '@prisma/client';
+import { AlertCircle, Clock } from 'lucide-react';
 
 interface DashboardProps {
   stats: {
@@ -19,7 +21,7 @@ export function Dashboard({ stats }: DashboardProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Project Dashboard</h2>
+        <h2 className="text-2xl font-bold text-slate-100">Project Dashboard</h2>
       </div>
       
       <StatCards stats={stats} />
@@ -31,14 +33,14 @@ export function Dashboard({ stats }: DashboardProps) {
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Tasks by Status</h3>
+        <Card className="p-6 glass-card border-slate-800">
+          <h3 className="text-lg font-semibold mb-4 text-slate-100">Tasks by Status</h3>
           <div className="space-y-3">
             {stats.tasksByStatus.map(({ status, count }) => (
               <div key={status} className="flex items-center justify-between">
-                <span className="text-gray-700">{status}</span>
+                <span className="text-slate-300">{status}</span>
                 <div className="flex items-center gap-2">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
+                  <div className="w-32 bg-slate-800 rounded-full h-2">
                     <div
                       className="bg-blue-500 h-2 rounded-full"
                       style={{
@@ -46,7 +48,7 @@ export function Dashboard({ stats }: DashboardProps) {
                       }}
                     />
                   </div>
-                  <span className="text-sm font-medium w-8 text-right">{count}</span>
+                  <span className="text-sm font-medium w-8 text-right text-slate-400">{count}</span>
                 </div>
               </div>
             ))}
@@ -54,17 +56,17 @@ export function Dashboard({ stats }: DashboardProps) {
         </Card>
         
         {(stats.overdueTasks > 0 || stats.dueSoonTasks > 0) && (
-          <Card className="p-6 border-yellow-200 bg-yellow-50">
-            <h3 className="text-lg font-semibold mb-4 text-yellow-800">Attention Required</h3>
+          <Card className="p-6 border-yellow-500/20 bg-yellow-500/5 glass-card">
+            <h3 className="text-lg font-semibold mb-4 text-yellow-200">Attention Required</h3>
             <div className="space-y-2 text-sm">
               {stats.overdueTasks > 0 && (
-                <div className="flex items-center gap-2 text-red-700">
+                <div className="flex items-center gap-2 text-red-400">
                   <AlertCircle className="w-4 h-4" />
                   <span>{stats.overdueTasks} task(s) are overdue</span>
                 </div>
               )}
               {stats.dueSoonTasks > 0 && (
-                <div className="flex items-center gap-2 text-yellow-700">
+                <div className="flex items-center gap-2 text-yellow-400">
                   <Clock className="w-4 h-4" />
                   <span>{stats.dueSoonTasks} task(s) due soon</span>
                 </div>
@@ -76,6 +78,3 @@ export function Dashboard({ stats }: DashboardProps) {
     </div>
   );
 }
-
-import { Card } from '@/components/ui/card';
-import { AlertCircle, Clock } from 'lucide-react';

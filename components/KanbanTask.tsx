@@ -43,6 +43,8 @@ interface KanbanTaskProps {
     projectId: string;
     statuses: Status[];
     onMoveToNext?: (taskId: string) => Promise<void>;
+    isSelected?: boolean;
+    onToggleSelect?: (taskId: string, selected: boolean) => void;
 }
 
 const getPriorityIcon = (priority: string) => {
@@ -96,7 +98,9 @@ const getProgressColor = (progress: number) => {
     return 'bg-red-500';
 };
 
-export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: KanbanTaskProps) {
+import { Checkbox } from '@/components/ui/checkbox';
+
+export function KanbanTask({ task, index, projectId, statuses, onMoveToNext, isSelected = false, onToggleSelect }: KanbanTaskProps) {
     const deadlineInfo = getDeadlineInfo(task.dueDate ? new Date(task.dueDate) : null);
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(task.title);
@@ -229,9 +233,19 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                             {/* Header: Priority Badge & Title */}
                             <div className="space-y-2">
                                 <div className="flex items-start justify-between gap-2">
-                                    {/* Priority Badge with Icon */}
-                                    <TooltipProvider>
-                                        <Tooltip>
+                                    <div className="flex items-center gap-2">
+                                        {onToggleSelect && (
+                                            <div onClick={(e) => e.stopPropagation()} className="print:hidden">
+                                                <Checkbox 
+                                                    checked={isSelected}
+                                                    onCheckedChange={(checked) => onToggleSelect(task.id, checked as boolean)}
+                                                    className="w-4 h-4 rounded border-slate-500 data-[state=checked]:bg-sky-500 data-[state=checked]:border-sky-500"
+                                                />
+                                            </div>
+                                        )}
+                                        {/* Priority Badge with Icon */}
+                                        <TooltipProvider>
+                                            <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <Badge className={cn(
                                                     "text-xs font-semibold px-2 py-0.5 border flex items-center gap-1 shrink-0",
@@ -429,6 +443,7 @@ export function KanbanTask({ task, index, projectId, statuses, onMoveToNext }: K
                                         </Tooltip>
                                     </TooltipProvider>
                                 )}
+                            </div>
                             </div>
 
                             {/* Overdue Warning Banner */}

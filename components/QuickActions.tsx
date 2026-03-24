@@ -35,7 +35,7 @@ export function QuickActions({
                 onStar?.();
                 setOpen(false);
             },
-            className: isStarred ? 'text-yellow-600' : '',
+            className: isStarred ? 'text-yellow-400' : 'text-slate-300',
         },
         {
             label: 'Edit',
@@ -44,7 +44,7 @@ export function QuickActions({
                 onEdit?.();
                 setOpen(false);
             },
-            className: '',
+            className: 'text-slate-300',
         },
         {
             label: 'Archive',
@@ -53,7 +53,7 @@ export function QuickActions({
                 onArchive?.();
                 setOpen(false);
             },
-            className: '',
+            className: 'text-slate-300',
         },
         {
             label: 'Delete',
@@ -62,7 +62,7 @@ export function QuickActions({
                 onDelete?.();
                 setOpen(false);
             },
-            className: 'text-red-600 hover:bg-red-50',
+            className: 'text-red-400 hover:bg-red-500/10',
         },
     ];
 
@@ -140,12 +140,12 @@ export function QuickActions({
                     e.stopPropagation();
                     setOpen(!open);
                 }}
-                className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                className="p-1.5 hover:bg-white/10 rounded transition-colors"
                 aria-label="Project actions menu"
                 aria-haspopup="menu"
                 aria-expanded={open}
             >
-                <MoreVertical className="w-4 h-4 text-gray-600" aria-hidden="true" />
+                <MoreVertical className="w-4 h-4 text-slate-400" aria-hidden="true" />
             </button>
 
             {open && (
@@ -160,7 +160,7 @@ export function QuickActions({
                     {/* Menu */}
                     <div
                         ref={menuRef}
-                        className="absolute right-0 top-8 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-20"
+                        className="absolute right-0 top-8 w-48 bg-slate-900 rounded-md shadow-2xl border border-white/10 py-1 z-20 glass-panel"
                         role="menu"
                         aria-orientation="vertical"
                         aria-labelledby="project-actions-menu"
@@ -177,7 +177,7 @@ export function QuickActions({
                                         action.onClick();
                                     }}
                                     className={cn(
-                                        'w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-left',
+                                        'w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-white/5 transition-colors text-left outline-none focus:bg-white/10',
                                         action.className
                                     )}
                                     role="menuitem"

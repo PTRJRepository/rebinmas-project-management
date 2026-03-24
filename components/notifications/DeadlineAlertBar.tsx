@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Clock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getDeadlineAlerts, type TaskWithDeadline } from '@/lib/deadline-utils';
+import { getDeadlineAlerts, getDeadlineInfo, type TaskWithDeadline } from '@/lib/deadline-utils';
 
 interface DeadlineAlertBarProps {
   tasks: TaskWithDeadline[];
@@ -36,14 +36,14 @@ export function DeadlineAlertBar({ tasks, onFilterTasks }: DeadlineAlertBarProps
 
   const handleViewTasks = () => {
     // Get IDs of all urgent tasks (overdue + due today + due this week)
-    const urgentTaskIds = [
-      ...alerts.upcomingTasks.map(task => task.id),
-      ...tasks.filter(task => {
+    const urgentTaskIds = tasks
+      .filter(task => {
         if (!task.dueDate) return false;
-        const info = task.dueDate ? require('@/lib/deadline-utils').getDeadlineInfo(task.dueDate) : null;
-        return info?.isOverdue || info?.isDueToday;
-      }).map(task => task.id)
-    ];
+        const info = getDeadlineInfo(task.dueDate);
+        // Include any task that has an urgency level or is overdue
+        return info.isOverdue || info.isDueToday || info.urgency !== 'none';
+      })
+      .map(task => task.id);
 
     if (onFilterTasks && urgentTaskIds.length > 0) {
       onFilterTasks(urgentTaskIds);

@@ -122,6 +122,7 @@ export interface Project {
   ownerEmail?: string;
   _count?: {
     tasks: number;
+    docs?: number;
   };
 }
 
@@ -197,6 +198,8 @@ export interface Attachment {
   projectId?: string | null;
   fileName: string;
   fileUrl: string;
+  previewUrl?: string | null;
+  sourceTitle?: string | null; // e.g., 'Project Assets' or Task Title
   fileType: string; // 'image', 'document'
   fileSize: number;
   createdAt: Date;
@@ -481,10 +484,21 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
     updatedAt: row.updated_at,
   }));
 
+  // Get project document count
+  const projectDocsResult = await sqlGateway.query(`
+    SELECT COUNT(*) as doc_count FROM pm_task_docs 
+    WHERE (task_id = @projectTaskId OR task_id IN (SELECT id FROM pm_tasks WHERE project_id = @projectId))
+    AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
+  `, { projectTaskId: `pa_${id}`, projectId: id });
+
   return {
     ...project,
     statuses,
     tasks,
+    _count: {
+      tasks: tasks.length,
+      docs: projectDocsResult.recordset[0]?.doc_count || 0
+    }
   };
 }
 
@@ -1042,11 +1056,22 @@ export async function getProjectDashboardStats(projectId: string) {
     WHERE t.project_id = @projectId
   `, { projectId });
 
+  // Get total attachments (project level + task level)
+  const attachmentsResult = await sqlGateway.query(`
+    SELECT COUNT(*) as total_attachments 
+    FROM pm_task_docs 
+    WHERE (task_id = @projectTaskId OR task_id IN (
+        SELECT t.id FROM pm_tasks t WHERE t.project_id = @projectId
+    ))
+    AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
+  `, { projectTaskId: `pa_${projectId}`, projectId });
+
   const row = result.recordset[0];
   const totalTasks = row.total_tasks || 0;
   const completedTasks = row.completed_tasks || 0;
   const overdueTasks = row.overdue_tasks || 0;
   const totalHoursSpent = row.total_hours_spent || 0;
+  const totalAttachments = attachmentsResult.recordset[0]?.total_attachments || 0;
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // Get tasks by status
@@ -1094,6 +1119,7 @@ export async function getProjectDashboardStats(projectId: string) {
     progressPercentage,
     overdueTasks,
     totalHoursSpent,
+    totalAttachments,
     dueSoonTasks: 0,
     tasksByStatus,
     recentActivities,
@@ -1136,15 +1162,32 @@ export async function getGlobalRecentActivities(limit: number = 10) {
 
 export async function getAttachmentsByProject(projectId: string): Promise<Attachment[]> {
   // Use a special taskId naming convention for project-level assets
-  // Use pa_ prefix (short for project assets) to stay under 50 chars
   const projectAssetsTaskId = `pa_${projectId}`;
-  const result = await sqlGateway.query(`
-    SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at FROM pm_task_docs
-    WHERE task_id = @taskId AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
-    ORDER BY created_at DESC
-  `, { taskId: projectAssetsTaskId });
+  console.log('[getAttachmentsByProject] Querying for projectId:', projectId, 'taskId:', projectAssetsTaskId);
 
-  return result.recordset.map((row: any) => {
+  const result = await sqlGateway.query(`
+    SELECT 
+      d.id, 
+      d.task_id, 
+      d.title, 
+      CAST(d.content AS NVARCHAR(MAX)) as content, 
+      d.created_at,
+      CASE 
+        WHEN d.task_id LIKE 'pa_%' THEN 'Project Assets'
+        ELSE (SELECT TOP 1 title FROM pm_tasks WHERE id = d.task_id)
+      END as source_title
+    FROM pm_task_docs d
+    WHERE (d.task_id = @taskId OR d.task_id IN (
+        SELECT t.id 
+        FROM pm_tasks t
+        JOIN pm_task_statuses s ON t.status_id = s.id
+        WHERE s.project_id = @projectId
+    ))
+    AND CAST(d.content AS NVARCHAR(MAX)) LIKE '[FILE]%'
+    ORDER BY d.created_at DESC
+  `, { taskId: projectAssetsTaskId, projectId: projectId });
+
+  const attachments = result.recordset.map((row: any) => {
     try {
       const content = row.content || '';
       if (!content.startsWith('[FILE]')) return null;
@@ -1153,10 +1196,12 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
       const meta = JSON.parse(jsonStr);
       return {
         id: row.id,
-        taskId: null,
+        taskId: row.task_id.startsWith('pa_') ? null : row.task_id,
         projectId: projectId,
         fileName: row.title,
         fileUrl: meta.url,
+        previewUrl: meta.previewUrl || meta.url,
+        sourceTitle: row.source_title,
         fileType: meta.type,
         fileSize: meta.size,
         createdAt: row.created_at
@@ -1166,14 +1211,21 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
       return null;
     }
   }).filter(Boolean) as Attachment[];
+
+  console.log('[getAttachmentsByProject] Returning', attachments.length, 'attachments');
+  return attachments;
 }
 
 export async function getAttachmentsByTask(taskId: string): Promise<Attachment[]> {
+  console.log('[getAttachmentsByTask] Querying for taskId:', taskId);
+
   const result = await sqlGateway.query(`
     SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at FROM pm_task_docs
     WHERE task_id = @taskId AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
     ORDER BY created_at DESC
   `, { taskId });
+
+  console.log('[getAttachmentsByTask] Found records:', result.recordset.length);
 
   return result.recordset.map((row: any) => {
     try {
@@ -1188,6 +1240,7 @@ export async function getAttachmentsByTask(taskId: string): Promise<Attachment[]
         projectId: null,
         fileName: row.title,
         fileUrl: meta.url,
+        previewUrl: meta.previewUrl || meta.url,
         fileType: meta.type,
         fileSize: meta.size,
         createdAt: row.created_at
@@ -1204,6 +1257,7 @@ export async function createAttachment(data: {
   projectId?: string;
   fileName: string;
   fileUrl: string;
+  previewUrl?: string | null;
   fileType: string;
   fileSize: number;
 }): Promise<Attachment> {
@@ -1218,10 +1272,11 @@ export async function createAttachment(data: {
     taskId = taskId.substring(0, 50);
   }
 
-  console.log('[createAttachment API] Creating attachment:', { id, taskId, fileName: data.fileName });
+  console.log('[createAttachment API] Creating attachment:', { id, taskId, fileName: data.fileName, projectId: data.projectId });
 
   const content = `[FILE]${JSON.stringify({
     url: data.fileUrl,
+    previewUrl: data.previewUrl || data.fileUrl,
     type: data.fileType,
     size: data.fileSize
   })}`;
@@ -1268,10 +1323,16 @@ export async function deleteAttachment(id: string): Promise<void> {
 export async function getProjectDocs(projectId: string): Promise<TaskDoc[]> {
   const projectDocTaskId = `pd_${projectId}`;
   const result = await sqlGateway.query(`
-    SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at, updated_at FROM pm_task_docs
-    WHERE task_id = @taskId AND (content IS NULL OR CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%')
+    SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at, updated_at 
+    FROM pm_task_docs
+    WHERE (task_id = @taskId OR task_id IN (
+        SELECT t.id FROM pm_tasks t 
+        JOIN pm_task_statuses s ON t.status_id = s.id 
+        WHERE s.project_id = @projectId
+    )) 
+    AND (content IS NULL OR CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%')
     ORDER BY created_at DESC
-  `, { taskId: projectDocTaskId });
+  `, { taskId: projectDocTaskId, projectId: projectId });
   return toCamelCase<TaskDoc[]>(result.recordset);
 }
 

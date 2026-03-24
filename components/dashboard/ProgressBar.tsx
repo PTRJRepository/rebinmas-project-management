@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ProgressBarProps {
   progress: number;
@@ -18,21 +19,21 @@ export function ProgressBar({ progress, totalTasks, completedTasks }: ProgressBa
   };
 
   return (
-    <Card>
+    <Card className="glass-card border-slate-800">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">
+        <CardTitle className="text-sm font-medium text-slate-400">
           Project Progress
         </CardTitle>
-        <TrendingUp className="w-4 h-4 text-gray-500" />
+        <TrendingUp className="w-4 h-4 text-slate-500" />
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-2xl font-bold">{progress}%</span>
-          <span className="text-sm text-gray-500">
+          <span className="text-2xl font-bold text-slate-100">{progress}%</span>
+          <span className="text-sm text-slate-400">
             {completedTasks} of {totalTasks} tasks
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-slate-800 rounded-full h-3">
           <div
             className={cn('h-3 rounded-full transition-all', getColor(progress))}
             style={{ width: `${progress}%` }}
@@ -41,8 +42,4 @@ export function ProgressBar({ progress, totalTasks, completedTasks }: ProgressBa
       </CardContent>
     </Card>
   );
-}
-
-function cn(...classes: (string | undefined | false)[]) {
-  return classes.filter(Boolean).join(' ');
 }

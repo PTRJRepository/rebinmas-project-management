@@ -42,34 +42,34 @@ export default function BoardPageClient({ projectId, project, tasks }: BoardPage
     }, [])
 
     return (
-        <div className="h-screen flex flex-col bg-white dark:bg-gray-900">
+        <div className="h-screen flex flex-col bg-slate-950 text-slate-100">
             {/* Header */}
-            <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 py-4 flex justify-between items-center no-print-hide">
+            <div className="bg-slate-900/50 backdrop-blur-md border-b border-white/5 py-4 px-6 flex justify-between items-center no-print-hide">
                 <div className="flex items-center gap-4">
                     <Link href={`/projects/${projectId}`}>
-                        <Button variant="outline" size="icon" className="print:hidden">
+                        <Button variant="outline" size="icon" className="print:hidden border-white/10 hover:bg-white/5 text-slate-400">
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
                             {project.name}
                         </h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Kanban Board</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Kanban Board</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button
                         variant="outline"
                         onClick={handlePrint}
-                        className="print:hidden"
+                        className="print:hidden border-white/10 hover:bg-white/5 text-slate-300"
                     >
                         <Printer className="mr-2 h-4 w-4" />
                         Print Tasks
                     </Button>
                     <CreateTaskDialog projectId={projectId} statuses={project.statuses} />
                     <Link href={`/projects/${projectId}`}>
-                        <Button variant="outline" className="print:hidden">
+                        <Button variant="outline" className="print:hidden border-white/10 hover:bg-white/5 text-slate-300">
                             <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
                         </Button>
                     </Link>
@@ -86,23 +86,25 @@ export default function BoardPageClient({ projectId, project, tasks }: BoardPage
             {/* Deadline Alert Bar */}
             <div className="print:hidden">
                 <DeadlineAlertBar
-                    tasks={displayTasks}
+                    tasks={displayTasks as any}
                     onFilterTasks={handleFilterTasks}
                 />
             </div>
 
             {/* Filter Indicator */}
             {filteredTaskIds.length > 0 && (
-                <div className="bg-amber-50 border-b border-amber-200 py-2 flex items-center justify-between print:hidden">
-                    <span className="text-sm text-amber-800">
+                <div className="bg-sky-500/10 border-b border-sky-500/20 py-2 px-6 flex items-center justify-between print:hidden">
+                    <span className="text-xs font-bold text-sky-400 uppercase tracking-widest">
                         Showing {filteredTaskIds.length} urgent task{filteredTaskIds.length !== 1 ? 's' : ''}
                     </span>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={clearFilter}
-                        className="text-sm text-amber-700 hover:text-amber-900 font-medium"
+                        className="h-6 text-[10px] font-black text-sky-400 hover:text-white hover:bg-sky-500/20"
                     >
-                        Clear Filter
-                    </button>
+                        CLEAR FILTER
+                    </Button>
                 </div>
             )}
 

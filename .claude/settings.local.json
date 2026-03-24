@@ -8,7 +8,10 @@
       "Bash(taskkill:*)",
       "Bash(findstr:*)",
       "Bash(node:*)",
-      "Bash(SQL_GATEWAY_TOKEN=\"2a993486e7a448474de66bfaea4adba7a99784defbcaba420e7f906176b94df6\" node:*)"
+      "Bash(SQL_GATEWAY_TOKEN=\"2a993486e7a448474de66bfaea4adba7a99784defbcaba420e7f906176b94df6\" node:*)",
+      "Bash(rm:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist)"
     ]
   }
 }

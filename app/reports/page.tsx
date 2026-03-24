@@ -3,6 +3,8 @@ import { ReportPage } from '@/components/ReportPage'
 import { getCurrentUser } from '@/app/actions/auth'
 import { sqlGateway } from '@/lib/api/sql-gateway'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ReportsPage() {
   const session = await getCurrentUser()
   if (!session) {

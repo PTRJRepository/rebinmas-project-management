@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Plus,
   FolderKanban,
+  FolderOpen,
   Calendar,
   Users,
   Search,
@@ -15,6 +16,16 @@ import {
   Printer,
   CheckCircle2,
   Clock,
+  LayoutGrid,
+  Tag,
+  User,
+  BarChart3,
+  ChevronDown,
+  ArrowUpDown,
+  Trash2,
+  RotateCcw,
+  XCircle,
+  MoreHorizontal
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -24,7 +35,6 @@ import { QuickActions } from '@/components/QuickActions';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, RotateCcw, XCircle, MoreHorizontal } from "lucide-react";
 import {
   deleteProjectAction,
   restoreProjectAction,
@@ -33,6 +43,7 @@ import {
   getRecentActivitiesAction
 } from '@/app/actions/project';
 import { Project, Task } from '@/lib/api/projects';
+import { isToday, isTomorrow, isThisWeek, isThisMonth, parseISO, addDays, startOfWeek, endOfWeek, startOfMonth, isWithinInterval } from 'date-fns';
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -48,6 +59,7 @@ export default function DashboardPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [starredProjects, setStarredProjects] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [groupBy, setGroupBy] = useState<'status' | 'date' | 'priority' | 'owner' | 'none'>('status');
   const [isMounted, setIsMounted] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
@@ -526,12 +538,108 @@ export default function DashboardPage() {
     return { rencana, sekarang, selesai };
   };
 
+  // Smart Grouping: Group projects by various criteria
+  interface GroupedProjects {
+    id: string;
+    name: string;
+    projects: Project[];
+  }
+
+  const groupProjects = (projectList: Project[]): GroupedProjects[] => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = addDays(today, 1);
+    const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+    const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+    const monthStart = startOfMonth(today);
+
+    if (groupBy === 'none') {
+      return [{ id: 'all', name: 'All Projects', projects: projectList }];
+    }
+
+    if (groupBy === 'date') {
+      const todayProjects: Project[] = [];
+      const tomorrowProjects: Project[] = [];
+      const thisWeekProjects: Project[] = [];
+      const thisMonthProjects: Project[] = [];
+      const laterProjects: Project[] = [];
+      const noDeadlineProjects: Project[] = [];
+      const overdueProjects: Project[] = [];
+
+      projectList.forEach(project => {
+        if (!project.endDate) {
+          noDeadlineProjects.push(project);
+          return;
+        }
+        const endDate = new Date(project.endDate);
+
+        if (endDate < today) {
+          overdueProjects.push(project);
+        } else if (isToday(endDate)) {
+          todayProjects.push(project);
+        } else if (isTomorrow(endDate)) {
+          tomorrowProjects.push(project);
+        } else if (isWithinInterval(endDate, { start: weekStart, end: weekEnd })) {
+          thisWeekProjects.push(project);
+        } else if (isThisMonth(endDate)) {
+          thisMonthProjects.push(project);
+        } else {
+          laterProjects.push(project);
+        }
+      });
+
+      return [
+        { id: 'overdue', name: 'Terlambat', projects: overdueProjects },
+        { id: 'today', name: `Hari Ini (${today.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}))`, projects: todayProjects },
+        { id: 'tomorrow', name: `Besok (${tomorrow.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})`, projects: tomorrowProjects },
+        { id: 'thisweek', name: 'Minggu Ini', projects: thisWeekProjects },
+        { id: 'thismonth', name: 'Bulan Ini', projects: thisMonthProjects },
+        { id: 'later', name: 'Nanti', projects: laterProjects },
+        { id: 'nodeadline', name: 'Tanpa Deadline', projects: noDeadlineProjects },
+      ].filter(g => g.projects.length > 0);
+    }
+
+    if (groupBy === 'priority') {
+      const priorities = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+      return priorities.map(priority => ({
+        id: priority,
+        name: priority === 'CRITICAL' ? 'Kritis' :
+              priority === 'HIGH' ? 'Tinggi' :
+              priority === 'MEDIUM' ? 'Sedang' : 'Rendah',
+        projects: projectList.filter(p => p.priority === priority)
+      })).filter(g => g.projects.length > 0);
+    }
+
+    if (groupBy === 'owner') {
+      const ownerGroups: Record<string, Project[]> = {};
+      projectList.forEach(project => {
+        const ownerName = project.owner?.name || project.ownerName || 'Unknown';
+        if (!ownerGroups[ownerName]) ownerGroups[ownerName] = [];
+        ownerGroups[ownerName].push(project);
+      });
+      return Object.keys(ownerGroups)
+        .sort()
+        .map(name => ({ id: name, name, projects: ownerGroups[name] }));
+    }
+
+    // Default: group by status (Sekarang/Rencana/Selesai)
+    const { rencana, sekarang, selesai } = categorizeProjects(projectList);
+    return [
+      { id: 'sekarang', name: 'Sekarang', projects: sekarang },
+      { id: 'rencana', name: 'Rencana', projects: rencana },
+      { id: 'selesai', name: 'Selesai', projects: selesai },
+    ].filter(g => g.projects.length > 0);
+  };
+
   // Filter and categorize
   const filteredProjects = (projects || []).filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const { rencana, sekarang, selesai } = categorizeProjects(filteredProjects);
+
+  // Use groupProjects for rendering when groupBy is not 'status'
+  const groupedProjects = groupProjects(filteredProjects);
 
   const stats = {
     totalProjects: (projects || []).length,
@@ -544,8 +652,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen">
       {/* Header with Neon Styling */}
-      <div className="glass-panel border-b border-cyan-500/10 px-6 py-6 sticky top-0 z-40">
-        <div className="max-w-full mx-auto flex items-center justify-between gap-4">
+      <div className="glass-panel border-b border-cyan-500/10 p-4 sticky top-0 z-40">
+        <div className="max-w-full mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-sky-100 heading-glow">
               Dashboard Proyek
@@ -554,9 +662,9 @@ export default function DashboardPage() {
               {viewMode === 'active' ? 'Kelola proyek Anda dari rencana hingga selesai' : 'Kelola proyek yang dihapus'}
             </p>
           </div>
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
             {/* View Toggle */}
-            <div className="flex rounded-lg bg-slate-800/60 p-1 border border-cyan-500/20">
+            <div className="flex rounded-lg bg-slate-800/60 p-1 border border-cyan-500/20 shrink-0">
               <button
                 onClick={() => setViewMode('active')}
                 className={cn(
@@ -578,24 +686,78 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {/* Smart Group Selector */}
+            {viewMode === 'active' && (
+              <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-white/5 shrink-0 overflow-x-auto max-w-full">
+                <Button
+                  variant={groupBy === 'status' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={cn(
+                    "h-7 text-[10px] font-bold px-3 gap-1.5 whitespace-nowrap",
+                    groupBy === 'status' ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30" : "text-slate-400"
+                  )}
+                  onClick={() => setGroupBy('status')}
+                >
+                  <LayoutGrid className="w-3 h-3" />
+                  STATUS
+                </Button>
+                <Button
+                  variant={groupBy === 'date' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={cn(
+                    "h-7 text-[10px] font-bold px-3 gap-1.5 whitespace-nowrap",
+                    groupBy === 'date' ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30" : "text-slate-400"
+                  )}
+                  onClick={() => setGroupBy('date')}
+                >
+                  <Calendar className="w-3 h-3" />
+                  TANGGAL
+                </Button>
+                <Button
+                  variant={groupBy === 'priority' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={cn(
+                    "h-7 text-[10px] font-bold px-3 gap-1.5 whitespace-nowrap",
+                    groupBy === 'priority' ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30" : "text-slate-400"
+                  )}
+                  onClick={() => setGroupBy('priority')}
+                >
+                  <BarChart3 className="w-3 h-3" />
+                  PRIORITAS
+                </Button>
+                <Button
+                  variant={groupBy === 'owner' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={cn(
+                    "h-7 text-[10px] font-bold px-3 gap-1.5 whitespace-nowrap",
+                    groupBy === 'owner' ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30" : "text-slate-400"
+                  )}
+                  onClick={() => setGroupBy('owner')}
+                >
+                  <User className="w-3 h-3" />
+                  OWNER
+                </Button>
+              </div>
+            )}
+
             {/* Bulk Actions Toolbar */}
             {selectedProjects.size > 0 && (
-              <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-cyan-500/30 animate-in fade-in slide-in-from-top-2">
-                <span className="text-xs text-slate-300 font-medium mr-2">{selectedProjects.size} dipilih</span>
+              <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-cyan-500/30 animate-in fade-in slide-in-from-top-2 shrink-0">
+                <span className="text-xs text-slate-300 font-medium mr-2 hidden sm:inline">{selectedProjects.size} dipilih</span>
                 {viewMode === 'active' ? (
                   <Button size="sm" variant="destructive" onClick={handleBulkMoveToTrash} className="h-7 text-xs">
-                    <Trash2 className="w-3 h-3 mr-1" />
-                    Buang
+                    <Trash2 className="w-3 h-3 sm:mr-1" />
+                    <span className="hidden sm:inline">Buang</span>
                   </Button>
                 ) : (
                   <>
                     <Button size="sm" variant="outline" onClick={handleBulkRestore} className="h-7 text-xs border-green-500/30 text-green-400 hover:bg-green-500/10">
-                      <RotateCcw className="w-3 h-3 mr-1" />
-                      Pulihkan
+                      <RotateCcw className="w-3 h-3 sm:mr-1" />
+                      <span className="hidden sm:inline">Pulihkan</span>
                     </Button>
                     <Button size="sm" variant="destructive" onClick={handleBulkPermanentDelete} className="h-7 text-xs">
-                      <XCircle className="w-3 h-3 mr-1" />
-                      Hapus Permanen
+                      <XCircle className="w-3 h-3 sm:mr-1" />
+                      <span className="hidden sm:inline">Hapus Permanen</span>
                     </Button>
                   </>
                 )}
@@ -604,11 +766,11 @@ export default function DashboardPage() {
                 </Button>
               </div>
             )}
-            <div className="relative">
+            <div className="relative shrink-1 w-full sm:w-auto min-w-[150px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400/50" />
               <Input
                 placeholder="Cari proyek..."
-                className="pl-10 pr-4 py-2 border border-cyan-500/20 rounded-lg text-sm w-64 bg-slate-800/60 text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)]"
+                className="pl-10 pr-4 py-2 border border-cyan-500/20 rounded-lg text-sm w-full sm:w-64 bg-slate-800/60 text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)] transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -617,10 +779,10 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               onClick={handlePrint}
-              className="border-cyan-500/30 text-sky-400 hover:bg-cyan-500/10 hover:shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+              className="border-cyan-500/30 text-sky-400 hover:bg-cyan-500/10 hover:shadow-[0_0_10px_rgba(34,211,238,0.3)] shrink-0"
             >
-              <Printer className="w-4 h-4 mr-2" />
-              Print
+              <Printer className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Print</span>
             </Button>
 
             <Button
@@ -629,10 +791,10 @@ export default function DashboardPage() {
                 setFormData({ name: '', description: '', startDate: '', endDate: '', bannerImage: '', status: '' });
                 setDialogOpen(true);
               }}
-              className="btn-neon-primary"
+              className="btn-neon-primary shrink-0 whitespace-nowrap"
               disabled={viewMode === 'trash'}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
               Proyek Baru
             </Button>
 
@@ -764,7 +926,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="p-4">
                     {sekarang.length === 0 ? (
-                      <p className="text-sm text-gray-400 text-center py-8">
+                      <p className="text-sm text-slate-500 text-center py-8">
                         {draggedProject ? 'Drop proyek di sini' : 'Tidak ada proyek aktif'}
                       </p>
                     ) : (
@@ -808,7 +970,7 @@ export default function DashboardPage() {
                                   </div>
                                 )}
                                 {/* Banner Image */}
-                                <div className="relative h-32 overflow-hidden bg-gray-100">
+                                <div className="relative h-32 overflow-hidden bg-slate-800">
                                   <img
                                     src={project.bannerImage || 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg'}
                                     alt={project.name}
@@ -849,39 +1011,39 @@ export default function DashboardPage() {
                                 </div>
 
                                 <CardContent className="p-4 flex-1 flex flex-col">
-                                  <p className="text-xs text-gray-500 line-clamp-2 mb-3 h-8">
+                                  <p className="text-xs text-slate-400 line-clamp-2 mb-3 h-8">
                                     {project.description || 'Tidak ada deskripsi'}
                                   </p>
 
                                   {/* Highlighted Deadline Section */}
                                   {project.endDate && deadlineInfo ? (
                                     <div className={cn(
-                                      "rounded-lg p-3 mb-3 border-2",
-                                      deadlineInfo.color === 'red' ? "bg-red-50 border-red-400" :
-                                        deadlineInfo.color === 'amber' ? "bg-amber-50 border-amber-400" :
-                                          "bg-blue-50 border-blue-300"
+                                      "rounded-lg p-3 mb-3 border",
+                                      deadlineInfo.color === 'red' ? "bg-red-500/10 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]" :
+                                        deadlineInfo.color === 'amber' ? "bg-amber-500/10 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]" :
+                                          "bg-sky-500/10 border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.1)]"
                                     )}>
                                       <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs font-semibold uppercase text-gray-500">Deadline</span>
+                                        <span className="text-xs font-semibold uppercase text-slate-500">Deadline</span>
                                         <Clock className={cn(
                                           "w-4 h-4",
-                                          deadlineInfo.color === 'red' ? "text-red-500 animate-pulse" :
-                                            deadlineInfo.color === 'amber' ? "text-amber-500" : "text-blue-500"
+                                          deadlineInfo.color === 'red' ? "text-red-400 animate-pulse" :
+                                            deadlineInfo.color === 'amber' ? "text-amber-400" : "text-sky-400"
                                         )} />
                                       </div>
                                       <div className="flex items-baseline gap-2">
                                         <span className={cn(
-                                          "text-2xl font-black",
-                                          deadlineInfo.color === 'red' ? "text-red-600" :
-                                            deadlineInfo.color === 'amber' ? "text-amber-600" : "text-blue-600"
+                                          "text-2xl font-black heading-glow",
+                                          deadlineInfo.color === 'red' ? "text-red-400" :
+                                            deadlineInfo.color === 'amber' ? "text-amber-400" : "text-sky-400"
                                         )}>
                                           {deadlineInfo.days === 0 ? 'HARI INI' : `${deadlineInfo.days}`}
                                         </span>
-                                        <span className="text-xs text-gray-600">
+                                        <span className="text-xs text-slate-400">
                                           {deadlineInfo.days === 0 ? '' : 'hari lagi'}
                                         </span>
                                       </div>
-                                      <div className="text-xs text-gray-500 mt-1 font-medium">
+                                      <div className="text-[10px] text-slate-500 mt-1 font-medium">
                                         {new Date(project.endDate).toLocaleDateString('id-ID', {
                                           weekday: 'short',
                                           day: 'numeric',
@@ -891,21 +1053,25 @@ export default function DashboardPage() {
                                       </div>
                                     </div>
                                   ) : (
-                                    <div className="rounded-lg p-3 mb-3 bg-gray-50 border border-gray-200">
-                                      <span className="text-xs text-gray-400">Tidak ada deadline</span>
+                                    <div className="rounded-lg p-3 mb-3 bg-slate-800/50 border border-white/5">
+                                      <span className="text-xs text-slate-500">Tidak ada deadline</span>
                                     </div>
                                   )}
 
-                                  <div className="mt-auto pt-3 border-t border-gray-100">
+                                  <div className="mt-auto pt-3 border-t border-white/5">
                                     <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                                      <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
                                         <div className="flex items-center gap-1">
-                                          <Users className="w-3 h-3" />
-                                          <span>{project.owner?.username || 'Unknown'}</span>
+                                          <Users className="w-3 h-3 text-sky-400" />
+                                          <span className="truncate max-w-[60px]">{project.owner?.username || 'Unknown'}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                          <CheckCircle2 className="w-3 h-3" />
-                                          <span>{project._count?.tasks || 0} tugas</span>
+                                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                          <span>{project._count?.tasks || 0} tasks</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <FolderOpen className="w-3 h-3 text-amber-400" />
+                                          <span>{project._count?.docs || 0} Assets</span>
                                         </div>
                                       </div>
                                       <QuickActions
@@ -951,7 +1117,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="p-4">
                     {rencana.length === 0 ? (
-                      <p className="text-sm text-gray-400 text-center py-8">
+                      <p className="text-sm text-slate-500 text-center py-8">
                         {draggedProject ? 'Drop proyek di sini' : 'Tidak ada proyek terencana'}
                       </p>
                     ) : (
@@ -995,7 +1161,7 @@ export default function DashboardPage() {
                                   </div>
                                 )}
                                 {/* Banner Image */}
-                                <div className="relative h-32 overflow-hidden bg-gray-100">
+                                <div className="relative h-32 overflow-hidden bg-slate-800">
                                   <img
                                     src={project.bannerImage || 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg'}
                                     alt={project.name}
@@ -1004,7 +1170,7 @@ export default function DashboardPage() {
                                       (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
                                     }}
                                   />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent"></div>
 
                                   {/* Top badges */}
                                   <div className={cn("absolute top-2 left-2 flex gap-2", (selectionMode || selectedProjects.size > 0) ? "pl-6" : "")}>
@@ -1022,44 +1188,46 @@ export default function DashboardPage() {
 
                                   {/* Project name overlay at bottom */}
                                   <div className="absolute bottom-2 left-3 right-3">
-                                    <h3 className="font-bold text-white text-sm drop-shadow-lg whitespace-normal break-words">{project.name}</h3>
+                                    <div className="bg-slate-950/60 backdrop-blur-md px-3 py-2 rounded-lg border border-white/5 shadow-lg">
+                                      <h3 className="font-bold text-white text-sm whitespace-normal break-words leading-tight">{project.name}</h3>
+                                    </div>
                                   </div>
                                 </div>
 
                                 <CardContent className="p-4 flex-1 flex flex-col">
-                                  <p className="text-xs text-gray-500 line-clamp-2 mb-3 h-8">
+                                  <p className="text-xs text-slate-400 line-clamp-2 mb-3 h-8">
                                     {project.description || 'Tidak ada deskripsi'}
                                   </p>
 
                                   {/* Highlighted Deadline Section */}
                                   {project.endDate && deadlineInfo ? (
                                     <div className={cn(
-                                      "rounded-lg p-3 mb-3 border-2",
-                                      deadlineInfo.color === 'red' ? "bg-red-50 border-red-300" :
-                                        deadlineInfo.color === 'amber' ? "bg-amber-50 border-amber-300" :
-                                          "bg-blue-50 border-blue-200"
+                                      "rounded-lg p-3 mb-3 border",
+                                      deadlineInfo.color === 'red' ? "bg-red-500/10 border-red-500/30" :
+                                        deadlineInfo.color === 'amber' ? "bg-amber-500/10 border-amber-500/30" :
+                                          "bg-sky-500/10 border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.1)]"
                                     )}>
                                       <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs font-semibold uppercase text-gray-500">Deadline</span>
+                                        <span className="text-xs font-semibold uppercase text-slate-500">Deadline</span>
                                         {deadlineInfo.status !== 'normal' && (
                                           <Clock className={cn(
                                             "w-4 h-4",
-                                            deadlineInfo.color === 'red' ? "text-red-500 animate-pulse" :
-                                              deadlineInfo.color === 'amber' ? "text-amber-500" : "text-blue-500"
+                                            deadlineInfo.color === 'red' ? "text-red-400 animate-pulse" :
+                                              deadlineInfo.color === 'amber' ? "text-amber-400" : "text-sky-400"
                                           )} />
                                         )}
                                       </div>
                                       <div className="flex items-baseline gap-2">
                                         <span className={cn(
                                           "text-xl font-bold",
-                                          deadlineInfo.color === 'red' ? "text-red-600" :
-                                            deadlineInfo.color === 'amber' ? "text-amber-600" : "text-blue-600"
+                                          deadlineInfo.color === 'red' ? "text-red-400" :
+                                            deadlineInfo.color === 'amber' ? "text-amber-400" : "text-sky-400"
                                         )}>
                                           {deadlineInfo.days} hari
                                         </span>
-                                        <span className="text-xs text-gray-600">lagi</span>
+                                        <span className="text-xs text-slate-400">lagi</span>
                                       </div>
-                                      <div className="text-xs text-gray-500 mt-1">
+                                      <div className="text-[10px] text-slate-500 mt-1">
                                         {new Date(project.endDate).toLocaleDateString('id-ID', {
                                           weekday: 'short',
                                           day: 'numeric',
@@ -1069,14 +1237,14 @@ export default function DashboardPage() {
                                       </div>
                                     </div>
                                   ) : (
-                                    <div className="rounded-lg p-3 mb-3 bg-gray-50 border border-gray-200">
-                                      <span className="text-xs text-gray-400">Tidak ada deadline</span>
+                                    <div className="rounded-lg p-3 mb-3 bg-slate-800/50 border border-white/5">
+                                      <span className="text-xs text-slate-500">Tidak ada deadline</span>
                                     </div>
                                   )}
 
                                   {/* Start Date */}
                                   {project.startDate && (
-                                    <div className="flex items-center gap-2 text-xs text-blue-600 mb-3">
+                                    <div className="flex items-center gap-2 text-xs text-sky-400 mb-3">
                                       <Calendar className="w-3 h-3" />
                                       <span>
                                         Mulai: {new Date(project.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -1084,16 +1252,20 @@ export default function DashboardPage() {
                                     </div>
                                   )}
 
-                                  <div className="mt-auto pt-3 border-t border-gray-100">
+                                  <div className="mt-auto pt-3 border-t border-white/5">
                                     <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                                      <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
                                         <div className="flex items-center gap-1">
-                                          <Users className="w-3 h-3" />
-                                          <span>{project.owner?.username || 'Unknown'}</span>
+                                          <Users className="w-3 h-3 text-sky-400" />
+                                          <span className="truncate max-w-[60px]">{project.owner?.username || 'Unknown'}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                          <CheckCircle2 className="w-3 h-3" />
-                                          <span>{project._count?.tasks || 0} tugas</span>
+                                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                          <span>{project._count?.tasks || 0} tasks</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <FolderOpen className="w-3 h-3 text-amber-400" />
+                                          <span>{project._count?.docs || 0} Assets</span>
                                         </div>
                                       </div>
                                       <QuickActions
@@ -1141,7 +1313,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="p-4">
                     {selesai.length === 0 ? (
-                      <p className="text-sm text-gray-400 text-center py-8">
+                      <p className="text-sm text-slate-500 text-center py-8">
                         {draggedProject ? 'Drop proyek di sini' : 'Belum ada proyek selesai'}
                       </p>
                     ) : (
@@ -1171,7 +1343,7 @@ export default function DashboardPage() {
                                 )}
                               >
                                 {/* Banner Image */}
-                                <div className="relative h-32 overflow-hidden bg-gray-100">
+                                <div className="relative h-32 overflow-hidden bg-slate-800">
                                   <img
                                     src={project.bannerImage || 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg'}
                                     alt={project.name}
@@ -1180,18 +1352,18 @@ export default function DashboardPage() {
                                       (e.target as HTMLImageElement).src = 'https://www.shutterstock.com/image-photo/successful-business-development-plan-path-260nw-1994345504.jpg';
                                     }}
                                   />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-green-900/40 via-transparent to-transparent"></div>
+                                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent"></div>
 
                                   {/* Top badges */}
                                   <div className={cn("absolute top-2 left-2 flex gap-2", (selectionMode || selectedProjects.size > 0) ? "pl-6" : "")}>
                                     {/* Priority Badge */}
                                     <span className={cn(
-                                      "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-green-100 text-green-700",
+                                      "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-green-500/20 text-green-400 border border-green-500/30",
                                     )}>
                                       {priority}
                                     </span>
                                     {/* Completed Badge */}
-                                    <span className="bg-green-600 text-white px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1">
+                                    <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1">
                                       <CheckCircle2 className="w-3 h-3" />
                                       Selesai
                                     </span>
@@ -1202,23 +1374,25 @@ export default function DashboardPage() {
 
                                   {/* Project name overlay at bottom */}
                                   <div className="absolute bottom-2 left-3 right-3">
-                                    <h3 className="font-bold text-white text-sm drop-shadow-lg line-through whitespace-normal break-words">{project.name}</h3>
+                                    <div className="bg-slate-950/60 backdrop-blur-md px-3 py-2 rounded-lg border border-white/5 shadow-lg">
+                                      <h3 className="font-bold text-white text-sm drop-shadow-lg line-through whitespace-normal break-words leading-tight">{project.name}</h3>
+                                    </div>
                                   </div>
                                 </div>
 
                                 <CardContent className="p-4 flex-1 flex flex-col">
-                                  <p className="text-xs text-gray-500 line-clamp-2 mb-3 h-8">
+                                  <p className="text-xs text-slate-400 line-clamp-2 mb-3 h-8">
                                     {project.description || 'Tidak ada deskripsi'}
                                   </p>
 
                                   {/* Completed Date Section */}
                                   {project.endDate && (
-                                    <div className="rounded-lg p-3 mb-3 bg-green-50 border-2 border-green-300">
+                                    <div className="rounded-lg p-3 mb-3 bg-green-500/10 border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
                                       <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs font-semibold uppercase text-green-600">Selesai Tanggal</span>
-                                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                        <span className="text-xs font-semibold uppercase text-slate-500">Selesai Tanggal</span>
+                                        <CheckCircle2 className="w-4 h-4 text-green-400" />
                                       </div>
-                                      <div className="text-sm font-bold text-green-700">
+                                      <div className="text-sm font-bold text-green-400 heading-glow">
                                         {new Date(project.endDate).toLocaleDateString('id-ID', {
                                           weekday: 'short',
                                           day: 'numeric',
@@ -1229,16 +1403,20 @@ export default function DashboardPage() {
                                     </div>
                                   )}
 
-                                  <div className="mt-auto pt-3 border-t border-gray-100">
+                                  <div className="mt-auto pt-3 border-t border-white/5">
                                     <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                                      <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
                                         <div className="flex items-center gap-1">
-                                          <Users className="w-3 h-3" />
-                                          <span>{project.owner?.username || 'Unknown'}</span>
+                                          <Users className="w-3 h-3 text-sky-400" />
+                                          <span className="truncate max-w-[60px]">{project.owner?.username || 'Unknown'}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                          <CheckCircle2 className="w-3 h-3" />
-                                          <span>{project._count?.tasks || 0} tugas</span>
+                                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                          <span>{project._count?.tasks || 0} tasks</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <FolderOpen className="w-3 h-3 text-amber-400" />
+                                          <span>{project._count?.docs || 0} Assets</span>
                                         </div>
                                       </div>
                                       <QuickActions
@@ -1317,6 +1495,126 @@ export default function DashboardPage() {
                               </div>
                             )}
                           </>
+                        ) : groupBy !== 'status' && groupBy !== 'none' ? (
+          /* Smart Grouping View */
+          <div className="space-y-6">
+            {groupedProjects.map((group) => (
+              <div
+                key={group.id}
+                className="glass-card rounded-xl border border-cyan-500/20 overflow-hidden"
+              >
+                {/* Group Header */}
+                <div className="bg-cyan-500/10 border-b border-cyan-500/20 px-5 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.7)]"></div>
+                      <div>
+                        <h2 className="text-base font-semibold text-cyan-400" style={{ textShadow: '0 0 10px rgba(34,211,238,0.5)' }}>
+                          {group.name}
+                        </h2>
+                        <p className="text-xs text-cyan-400/70">
+                          {group.projects.length} {group.projects.length === 1 ? 'proyek' : 'proyek'}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xl font-bold text-cyan-400">{group.projects.length}</span>
+                  </div>
+                </div>
+
+                {/* Group Projects Grid */}
+                <div className="p-4">
+                  {group.projects.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-8">Tidak ada proyek</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                      {group.projects.map((project) => {
+                        const deadlineInfo = getDeadlineInfo(project.endDate || null);
+                        const priority = project.priority || 'MEDIUM';
+                        const priorityColors = {
+                          LOW: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-400/30', shadow: 'shadow-[0_0_10px_rgba(74,222,128,0.3)]' },
+                          MEDIUM: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-400/30', shadow: 'shadow-[0_0_10px_rgba(250,204,21,0.3)]' },
+                          HIGH: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-400/30', shadow: 'shadow-[0_0_10px_rgba(251,146,60,0.3)]' },
+                          CRITICAL: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-400/30', shadow: 'shadow-[0_0_10px_rgba(248,113,113,0.3)]' },
+                        };
+                        const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
+
+                        return (
+                          <div key={project.id} className="w-full">
+                            <Card
+                              draggable
+                              onDragStart={() => handleDragStart(project)}
+                              onDragEnd={handleDragEnd}
+                              onClick={() => router.push(`/projects/${project.id}`)}
+                              className={cn(
+                                "glass-card h-full border hover:shadow-[0_0_25px_rgba(34,211,238,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col relative group",
+                                draggedProject?.id === project.id ? "opacity-50 scale-95" : "",
+                                deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
+                                  deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
+                                    "border-cyan-400/20",
+                                starredProjects.has(project.id) && "ring-2 ring-cyan-400/40 shadow-[0_0_20px_rgba(34,211,238,0.3)]",
+                                selectedProjects.has(project.id) && "ring-2 ring-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] transform scale-[1.02]"
+                              )}
+                            >
+                              {(selectionMode || selectedProjects.size > 0) && (
+                                <div className="absolute top-2 left-2 z-20" onClick={(e) => e.stopPropagation()}>
+                                  <Checkbox
+                                    checked={selectedProjects.has(project.id)}
+                                    onCheckedChange={() => toggleSelection(project.id)}
+                                    className="border-white/50 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 w-5 h-5"
+                                  />
+                                </div>
+                              )}
+                              <div className="relative h-24 bg-slate-900 border-b border-white/5">
+                                <img src={project.bannerImage || ""} className="w-full h-full object-cover opacity-60" alt="" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent" />
+                                <div className="absolute bottom-2 left-3 right-3">
+                                  <h3 className="font-bold text-white text-sm truncate">{project.name}</h3>
+                                </div>
+                                {/* Priority Badge */}
+                                <div className={cn("absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase", priorityStyle.bg, priorityStyle.text)}>
+                                  {priority}
+                                </div>
+                              </div>
+                              <CardContent className="p-3 flex-1 flex flex-col gap-2">
+                                {project.description && (
+                                  <p className="text-xs text-slate-400 line-clamp-2">{project.description}</p>
+                                )}
+                                <div className="flex items-center justify-between mt-auto pt-2">
+                                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                                    <Users className="w-3 h-3" />
+                                    <span>{(project as any)._count?.tasks || 0}</span>
+                                  </div>
+                                  {project.endDate && (
+                                    <div className={cn("flex items-center gap-1 text-xs", deadlineInfo?.color === 'red' ? 'text-red-400' : deadlineInfo?.color === 'amber' ? 'text-amber-400' : 'text-slate-400')}>
+                                      <Calendar className="w-3 h-3" />
+                                      <span>{deadlineInfo?.text}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                                  <div className="flex items-center gap-1">
+                                    {(project.owner as any)?.avatarUrl ? (
+                                      <img src={(project.owner as any).avatarUrl} className="w-5 h-5 rounded-full" alt="" />
+                                    ) : (
+                                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                                        <span className="text-[10px] font-bold text-cyan-400">{(project.owner?.name || project.ownerName || 'U')[0].toUpperCase()}</span>
+                                      </div>
+                                    )}
+                                    <span className="text-[10px] text-slate-400 truncate max-w-[80px]">{project.owner?.name || project.ownerName || 'Unknown'}</span>
+                                  </div>
+                                  {starredProjects.has(project.id) && <Star className="w-3 h-3 text-amber-400 fill-amber-400" />}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
                         ) : (
           /* Trash View */
           <div className="space-y-6">
@@ -1359,7 +1657,7 @@ export default function DashboardPage() {
                         </Button>
                       </div>
 
-                      <div className="relative h-24 bg-gray-900 border-b border-white/5">
+                      <div className="relative h-24 bg-slate-900 border-b border-white/5">
                         <img src={project.bannerImage || ""} className="w-full h-full object-cover opacity-50 grayscale" alt="" />
                       </div>
                       <CardContent className="p-4">
@@ -1416,77 +1714,82 @@ export default function DashboardPage() {
           </DialogHeader>
           <form onSubmit={handleSaveProject} className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Nama Proyek *</Label>
+              <Label htmlFor="name" className="text-sky-100/80">Nama Proyek *</Label>
               <Input
                 id="name"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Contoh: Membuat Integrasi Verifikasi Absen Muka"
+                className="bg-slate-800/60 border-cyan-500/20 text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)] placeholder:text-slate-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Deskripsi</Label>
+              <Label htmlFor="description" className="text-sky-100/80">Deskripsi</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Tentang apa proyek ini?"
+                className="bg-slate-800/60 border-cyan-500/20 text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)] placeholder:text-slate-500 min-h-[100px]"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Tanggal Mulai</Label>
+                <Label htmlFor="startDate" className="text-sky-100/80">Tanggal Mulai</Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="bg-slate-800/60 border-cyan-500/20 text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)] [color-scheme:dark]"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">Tanggal Selesai</Label>
+                <Label htmlFor="endDate" className="text-sky-100/80">Tanggal Selesai</Label>
                 <Input
                   id="endDate"
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  className="bg-slate-800/60 border-cyan-500/20 text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)] [color-scheme:dark]"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Kategori Proyek</Label>
+              <Label htmlFor="status" className="text-sky-100/80">Kategori Proyek</Label>
               <select
                 id="status"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-800/60 border border-cyan-500/20 rounded-lg text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)]"
               >
-                <option value="">Otomatis (berdasarkan tanggal)</option>
-                <option value="SEKARANG">Sekarang (sedang berjalan)</option>
-                <option value="RENCANA">Rencana (akan datang)</option>
-                <option value="SELESAI">Selesai (sudah selesai)</option>
+                <option value="" className="bg-slate-900">Otomatis (berdasarkan tanggal)</option>
+                <option value="SEKARANG" className="bg-slate-900">Sekarang (sedang berjalan)</option>
+                <option value="RENCANA" className="bg-slate-900">Rencana (akan datang)</option>
+                <option value="SELESAI" className="bg-slate-900">Selesai (sudah selesai)</option>
               </select>
-              <p className="text-xs text-sky-400/70">Pilih kategori secara manual, atau biarkan kosong untuk otomatis berdasarkan tanggal</p>
+              <p className="text-[10px] text-sky-400/50">Pilih kategori secara manual, atau biarkan kosong untuk otomatis berdasarkan tanggal</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bannerImage">URL Banner Proyek</Label>
+              <Label htmlFor="bannerImage" className="text-sky-100/80">URL Banner Proyek</Label>
               <Input
                 id="bannerImage"
                 type="url"
                 value={formData.bannerImage}
                 onChange={(e) => setFormData({ ...formData, bannerImage: e.target.value })}
                 placeholder="https://example.com/banner.jpg"
+                className="bg-slate-800/60 border-cyan-500/20 text-sky-100 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(34,211,238,0.3)] placeholder:text-slate-500"
               />
-              <p className="text-xs text-gray-500">Masukkan URL gambar banner untuk proyek ini</p>
+              <p className="text-[10px] text-slate-500">Masukkan URL gambar banner untuk proyek ini</p>
               {formData.bannerImage && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-gray-200">
+                <div className="mt-2 rounded-lg overflow-hidden border border-white/5 shadow-inner bg-slate-900/50">
                   <img
                     src={formData.bannerImage}
                     alt="Banner preview"
-                    className="w-full h-32 object-cover"
+                    className="w-full h-32 object-cover opacity-80"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x100?text=Invalid+Image+URL';
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x100/0f172a/38bdf8?text=Invalid+Image+URL';
                     }}
                   />
                 </div>

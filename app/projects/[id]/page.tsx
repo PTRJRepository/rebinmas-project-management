@@ -10,6 +10,8 @@ import ProjectBoardClient from './ProjectBoardClient'
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/app/actions/auth'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ProjectDashboard({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const { success, data: stats } = await getProjectStats(id)

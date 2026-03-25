@@ -1,0 +1,22 @@
+{
+  "status": "success",
+  "logs": [
+    "Using Project: proj_mmo9g1m8z99m80i69jb",
+    "Creating attachment dummy-clean-asset-1774368794486.png",
+    "Fetching assets for project..."
+  ],
+  "totalAssets": 4,
+  "message": "Successfully uploaded and retrieved the asset!",
+  "foundAsset": {
+    "id": "att_mn4td852mh01buuwgf",
+    "taskId": null,
+    "projectId": "proj_mmo9g1m8z99m80i69jb",
+    "fileName": "dummy-clean-asset-1774368794486.png",
+    "fileUrl": "https://example.com/uploads/dummy-clean-asset-1774368794486.png",
+    "previewUrl": "https://example.com/uploads/dummy-clean-asset-1774368794486.png",
+    "sourceTitle": "Project Assets",
+    "fileType": "image/png",
+    "fileSize": 4096,
+    "createdAt": "2026-03-24T16:13:14.487Z"
+  }
+}

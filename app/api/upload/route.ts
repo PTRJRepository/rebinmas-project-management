@@ -3,7 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { writeFile } from 'fs/promises';
 
-const GDRIVE_GATEWAY_URL = 'http://223.25.98.220:3001/file/upload';
+const isDev = process.env.NODE_ENV === 'development';
+const GDRIVE_BASE_URL = isDev ? 'http://10.0.0.110:5178' : 'http://223.25.98.220:3001';
+const GDRIVE_GATEWAY_URL = `${GDRIVE_BASE_URL}/file/upload`;
 
 export async function POST(request: NextRequest) {
     try {
@@ -42,13 +44,12 @@ export async function POST(request: NextRequest) {
                 
                 if (!url && (result.file_id || result.fileId || result.id)) {
                     const fileId = result.file_id || result.fileId || result.id;
-                    url = `http://223.25.98.220:3001/file/download/${fileId}`;
+                    url = `${GDRIVE_BASE_URL}/file/download/${fileId}`;
                 }
 
                 if (url) {
                     if (!url.startsWith('http')) {
-                        const baseUrl = 'http://223.25.98.220:3001';
-                        url = url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
+                        url = url.startsWith('/') ? `${GDRIVE_BASE_URL}${url}` : `${GDRIVE_BASE_URL}/${url}`;
                     }
                     
                     const previewUrl = result.webViewLink || result.viewUrl || url;

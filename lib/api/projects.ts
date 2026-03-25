@@ -212,7 +212,7 @@ export interface User {
   username: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'PM' | 'MEMBER';
+  role: 'ADMIN' | 'MANAGER' | 'PM' | 'MEMBER';
   avatarUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -491,7 +491,7 @@ export async function getProjectWithTasks(id: string): Promise<Project & { statu
   const projectDocsResult = await sqlGateway.query(`
     SELECT COUNT(*) as doc_count FROM pm_task_docs 
     WHERE (task_id = @projectTaskId OR task_id IN (SELECT id FROM pm_tasks WHERE project_id = @projectId))
-    AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
+    AND CAST(content AS NVARCHAR(MAX)) LIKE '[[]FILE]%'
   `, { projectTaskId: `pa_${id}`, projectId: id });
 
   return {
@@ -676,8 +676,8 @@ export async function getTasks(projectId: string): Promise<Task[]> {
       u.username as assignee_username,
       u.name as assignee_name,
       u.email as assignee_email,
-      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%') as doc_count,
-      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%') as attachment_count
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) NOT LIKE '[[]FILE]%') as doc_count,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) LIKE '[[]FILE]%') as attachment_count
     FROM pm_tasks t
     LEFT JOIN pm_projects p ON t.project_id = p.id
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
@@ -736,8 +736,8 @@ export async function getTaskById(id: string): Promise<Task | null> {
       u.username as assignee_username,
       u.name as assignee_name,
       u.email as assignee_email,
-      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%') as doc_count,
-      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%') as attachment_count
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) NOT LIKE '[[]FILE]%') as doc_count,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) LIKE '[[]FILE]%') as attachment_count
     FROM pm_tasks t
     LEFT JOIN pm_projects p ON t.project_id = p.id
     LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
@@ -1185,7 +1185,7 @@ export async function getAttachmentsByProject(projectId: string): Promise<Attach
     WHERE (d.task_id = @taskId OR d.task_id IN (
         SELECT t.id FROM pm_tasks t WHERE t.project_id = @projectId
     ))
-    AND CAST(d.content AS NVARCHAR(MAX)) LIKE '[FILE]%'
+    AND CAST(d.content AS NVARCHAR(MAX)) LIKE '[[]FILE]%'
     ORDER BY d.created_at DESC
   `, { taskId: projectAssetsTaskId, projectId: projectId });
 
@@ -1223,7 +1223,7 @@ export async function getAttachmentsByTask(taskId: string): Promise<Attachment[]
 
   const result = await sqlGateway.query(`
     SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at FROM pm_task_docs
-    WHERE task_id = @taskId AND CAST(content AS NVARCHAR(MAX)) LIKE '[FILE]%'
+    WHERE task_id = @taskId AND CAST(content AS NVARCHAR(MAX)) LIKE '[[]FILE]%'
     ORDER BY created_at DESC
   `, { taskId });
 
@@ -1332,7 +1332,7 @@ export async function getProjectDocs(projectId: string): Promise<TaskDoc[]> {
         JOIN pm_task_statuses s ON t.status_id = s.id 
         WHERE s.project_id = @projectId
     )) 
-    AND (content IS NULL OR CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%')
+    AND (content IS NULL OR CAST(content AS NVARCHAR(MAX)) NOT LIKE '[[]FILE]%')
     ORDER BY created_at DESC
   `, { taskId: projectDocTaskId, projectId: projectId });
   return toCamelCase<TaskDoc[]>(result.recordset);
@@ -1375,7 +1375,7 @@ export const deleteProjectDoc = deleteTaskDoc;
 export async function getTaskDocs(taskId: string): Promise<TaskDoc[]> {
   const result = await sqlGateway.query(`
     SELECT id, task_id, title, CAST(content AS NVARCHAR(MAX)) as content, created_at, updated_at FROM pm_task_docs
-    WHERE task_id = @taskId AND (content IS NULL OR CAST(content AS NVARCHAR(MAX)) NOT LIKE '[FILE]%')
+    WHERE task_id = @taskId AND (content IS NULL OR CAST(content AS NVARCHAR(MAX)) NOT LIKE '[[]FILE]%')
     ORDER BY created_at DESC
   `, { taskId });
   return toCamelCase<TaskDoc[]>(result.recordset);

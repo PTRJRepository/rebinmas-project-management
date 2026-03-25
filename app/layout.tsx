@@ -49,7 +49,7 @@ export default async function RootLayout({
           <LayoutProvider defaultLayout="grid">
             <AnimatedBackground />
             <SkipLink />
-            <AppShell isAuthenticated={isAuthenticated}>{children}</AppShell>
+            <AppShell isAuthenticated={isAuthenticated} userRole={session?.role as string}>{children}</AppShell>
             <Toaster />
           </LayoutProvider>
         </ThemeProvider>

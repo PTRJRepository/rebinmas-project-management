@@ -14,7 +14,7 @@ import { sqlGateway } from './sql-gateway';
 // ==================================================
 
 export type ProjectRole = 'OWNER' | 'PM' | 'MEMBER';
-export type UserRole = 'ADMIN' | 'PM' | 'MEMBER';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'PM' | 'MEMBER';
 
 export interface ProjectMember {
   id: string;
@@ -95,8 +95,8 @@ export async function checkProjectAccess(
     }
 
     const userRole = userResult.recordset[0].role;
-    if (userRole === 'ADMIN') {
-      return { hasAccess: true, role: 'ADMIN' };
+    if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+      return { hasAccess: true, role: userRole as any }; // Bypassing strict check since they are global access
     }
 
     // Check project membership
@@ -154,8 +154,8 @@ export async function getAccessibleProjects(
   userRole?: UserRole
 ): Promise<any[]> {
   try {
-    // ADMIN sees all projects
-    if (userRole === 'ADMIN') {
+    // ADMIN and MANAGER see all projects
+    if (userRole === 'ADMIN' || userRole === 'MANAGER') {
       const result = await sqlGateway.query(
         `SELECT 
           p.id, p.name, p.description, p.start_date, p.end_date, 
@@ -165,11 +165,11 @@ export async function getAccessibleProjects(
           u.email as owner_email, u.name as owner_name,
           (SELECT COUNT(*) FROM pm_tasks t WHERE t.project_id = p.id) as task_count,
           (SELECT COUNT(*) FROM pm_task_docs d WHERE d.task_id = 'pa_' + p.id OR d.task_id IN (SELECT t2.id FROM pm_tasks t2 WHERE t2.project_id = p.id)) as doc_count,
-          'ADMIN' as member_role
+          @userRole as member_role
         FROM pm_projects p
         LEFT JOIN pm_users u ON p.owner_id = u.id
         ORDER BY p.created_at DESC`,
-        {}
+        { userRole }
       );
 
       return result.recordset.map((row: any) => ({
@@ -194,7 +194,7 @@ export async function getAccessibleProjects(
           tasks: row.task_count,
           docs: row.doc_count 
         },
-        memberRole: 'ADMIN',
+        memberRole: userRole,
       }));
     }
 

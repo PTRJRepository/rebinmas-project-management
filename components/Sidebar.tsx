@@ -13,7 +13,8 @@ import {
     PanelLeftOpen,
     ChevronDown,
     ChevronRight,
-    Search
+    Search,
+    ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserMenu } from '@/components/auth/user-menu';
@@ -25,9 +26,10 @@ interface SidebarProps {
     }>;
     collapsed?: boolean;
     onCollapse?: (collapsed: boolean) => void;
+    userRole?: string;
 }
 
-export function Sidebar({ projects = [], collapsed: controlledCollapsed, onCollapse }: SidebarProps) {
+export function Sidebar({ projects = [], collapsed: controlledCollapsed, onCollapse, userRole }: SidebarProps) {
     const [localCollapsed, setLocalCollapsed] = useState(false);
     const [projectsExpanded, setProjectsExpanded] = useState(true);
     const pathname = usePathname();
@@ -51,8 +53,13 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Projects', href: '/projects', icon: FolderKanban },
         { name: 'Reports', href: '/reports', icon: FileText },
-        { name: 'Settings', href: '/settings', icon: Settings },
     ];
+    
+    if (userRole === 'ADMIN') {
+        navItems.push({ name: 'Admin Panel', href: '/admin', icon: ShieldCheck });
+    }
+    
+    navItems.push({ name: 'Settings', href: '/settings', icon: Settings });
 
     return (
         <aside

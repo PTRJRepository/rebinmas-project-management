@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 
-type ViewState = 'overview' | 'simple' | 'canvas' | 'details'
+type ViewState = 'overview' | 'simple' | 'assets' | 'canvas' | 'details'
 
 interface Project {
   id: string
@@ -96,6 +96,7 @@ export default function ProjectBoardClient({
 }: ProjectBoardClientProps) {
   const router = useRouter()
   const [viewState, setViewState] = useState<ViewState>('overview')
+  const [activeSection, setActiveSection] = useState<'tasks' | 'assets' | 'details'>('tasks')
   const [filteredTaskIds, setFilteredTaskIds] = useState<string[]>([])
   const [isCanvasFullscreen, setIsCanvasFullscreen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -114,6 +115,23 @@ export default function ProjectBoardClient({
   useEffect(() => {
     setTaskList(tasks)
   }, [tasks])
+
+  // ScrollSpy Intersection Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.id.replace('section-', '')
+          setActiveSection(sectionId as any)
+        }
+      })
+    }, { threshold: 0.2, rootMargin: '-10% 0px -50% 0px' })
+
+    const sections = document.querySelectorAll('div[id^="section-"]')
+    sections.forEach(section => observer.observe(section))
+
+    return () => sections.forEach(section => observer.unobserve(section))
+  }, [])
 
   const handleFilterTasks = (taskIds: string[]) => {
     setFilteredTaskIds(taskIds)
@@ -276,10 +294,13 @@ export default function ProjectBoardClient({
             {/* View Switcher */}
             <div className="inline-flex items-center bg-slate-800/50 rounded-lg p-1 gap-1 border border-white/5">
               <button
-                onClick={() => setViewState('overview')}
+                onClick={() => {
+                  setViewState('overview')
+                  document.getElementById('section-tasks')?.scrollIntoView({ behavior: 'smooth' })
+                }}
                 className={cn(
                   "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
-                  viewState === 'overview'
+                  activeSection === 'tasks' && viewState === 'overview'
                     ? "bg-sky-500/20 text-sky-400 shadow-lg shadow-sky-500/10"
                     : "text-slate-500 hover:text-slate-300"
                 )}
@@ -288,16 +309,33 @@ export default function ProjectBoardClient({
                 BOARD
               </button>
               <button
-                onClick={() => setViewState('simple')}
+                onClick={() => {
+                  setViewState('simple')
+                  document.getElementById('section-tasks')?.scrollIntoView({ behavior: 'smooth' })
+                }}
                 className={cn(
                   "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
-                  viewState === 'simple'
+                  activeSection === 'tasks' && viewState === 'simple'
                     ? "bg-sky-500/20 text-sky-400 shadow-lg shadow-sky-500/10"
                     : "text-slate-500 hover:text-slate-300"
                 )}
               >
                 <ListTodo className="w-3.5 h-3.5" />
                 SIMPLE
+              </button>
+              <button
+                onClick={() => {
+                  document.getElementById('section-assets')?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
+                  activeSection === 'assets'
+                    ? "bg-sky-500/20 text-sky-400 shadow-lg shadow-sky-500/10"
+                    : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                <Paperclip className="w-3.5 h-3.5" />
+                ASSETS
               </button>
               <button
                 onClick={() => setIsCanvasFullscreen(true)}
@@ -346,16 +384,16 @@ export default function ProjectBoardClient({
       </div>
 
       {/* Project Banner Image */}
-      <div className="relative h-56 overflow-hidden bg-slate-900">
+      <div className="relative h-56 overflow-hidden bg-slate-950">
         <img
           src={project.bannerImage || 'https://images.unsplash.com/photo-1506784365847-bbad939e9335?auto=format&fit=crop&q=80&w=2000'}
           alt={project.name}
-          className="w-full h-full object-cover opacity-60"
+          className="w-full h-full object-cover opacity-30 mix-blend-luminosity"
           onError={(e) => {
             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1506784365847-bbad939e9335?auto=format&fit=crop&q=80&w=2000';
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/40"></div>
         <div className="absolute bottom-8 left-8 max-w-4xl">
           <div className="flex items-center gap-3 mb-3">
              <Badge variant="outline" className={cn(
@@ -457,7 +495,7 @@ export default function ProjectBoardClient({
         </div>
       )}
 
-      <main className="px-6 py-8">
+      <main id="section-tasks" className="px-6 py-8 scroll-mt-20">
         {/* Stats Cards - Always Visible */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-5 mb-8">
           {/* Total Completed */}
@@ -927,20 +965,23 @@ export default function ProjectBoardClient({
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-            {/* Project Documentation Cards */}
-            <div className="space-y-6">
-              <ProjectDocs projectId={project.id} />
-            </div>
+        {/* Assets & Docs Section */}
+        <div id="section-assets" className="pt-10 scroll-mt-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 mx-6">
+              {/* Project Documentation Cards */}
+              <div className="space-y-6">
+                <ProjectDocs projectId={project.id} />
+              </div>
 
-            {/* Project Assets & Attachments */}
-            <div className="space-y-6">
-              <ProjectAttachments projectId={project.id} />
-            </div>
+              {/* Project Assets & Attachments */}
+              <div className="space-y-6">
+                <ProjectAttachments projectId={project.id} />
+              </div>
+          </div>
         </div>
 
         {/* Project Details Card */}
-        <div className="bg-slate-900/40 backdrop-blur-sm border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+        <div id="section-details" className="bg-slate-900/40 backdrop-blur-sm border border-white/5 rounded-3xl overflow-hidden shadow-2xl mx-6 mb-10 scroll-mt-20">
           <div className="px-8 py-5 border-b border-white/5 bg-slate-900/60 flex items-center justify-between">
             <h3 className="text-lg font-bold text-white flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]" />

@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils';
 interface AppShellProps {
     children: React.ReactNode;
     isAuthenticated?: boolean;
+    userRole?: string;
 }
 
-export function AppShell({ children, isAuthenticated = false }: AppShellProps) {
+export function AppShell({ children, isAuthenticated = false, userRole }: AppShellProps) {
     const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
     const [collapsed, setCollapsed] = useState(false);
 
@@ -48,6 +49,7 @@ export function AppShell({ children, isAuthenticated = false }: AppShellProps) {
                 projects={projects} 
                 collapsed={collapsed} 
                 onCollapse={setCollapsed} 
+                userRole={userRole}
             />
             
             <main

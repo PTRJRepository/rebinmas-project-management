@@ -212,7 +212,7 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
             />
 
             {/* Top Filter Bar - Figma Style */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-900/40 backdrop-blur-md sticky top-0 z-40">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-900/90 backdrop-blur-xl sticky top-[73px] z-30">
                 <div className="flex items-center gap-6">
                     <div className="relative group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-hover:text-slate-400 transition-colors" />
@@ -398,7 +398,12 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
                                                                 {tasks.filter(t => t.statusId === status.id).length}
                                                             </span>
                                                         </div>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-500 hover:text-slate-300">
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-6 w-6 text-slate-500 hover:text-slate-300"
+                                                            onClick={() => setAddingToStatusId(status.id)}
+                                                        >
                                                             <Plus className="w-3.5 h-3.5" />
                                                         </Button>
                                                     </div>
@@ -414,6 +419,30 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
                                                                 snapshot.isDraggingOver ? "bg-white/5" : "bg-transparent"
                                                             )}
                                                         >
+                                                            {isAdding && (
+                                                                <div className="bg-slate-800/80 border border-sky-500/50 p-3 rounded-xl mb-3 animate-in fade-in slide-in-from-top-2">
+                                                                    <input
+                                                                        autoFocus
+                                                                        value={newTaskTitle}
+                                                                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter') handleCreateTask(status.id)
+                                                                            if (e.key === 'Escape') {
+                                                                                setAddingToStatusId(null);
+                                                                                setNewTaskTitle('');
+                                                                            }
+                                                                        }}
+                                                                        placeholder="Enter new task... (Press Enter)"
+                                                                        className="w-full bg-slate-900/50 border border-white/10 text-sm mb-3 text-white rounded p-2 focus:outline-none focus:border-sky-500/50"
+                                                                    />
+                                                                    <div className="flex justify-end gap-2">
+                                                                        <Button size="sm" variant="ghost" onClick={() => { setAddingToStatusId(null); setNewTaskTitle(''); }} className="h-7 text-[10px] uppercase font-bold text-slate-400 hover:text-white">Cancel</Button>
+                                                                        <Button size="sm" onClick={() => handleCreateTask(status.id)} disabled={isCreating || !newTaskTitle.trim()} className="h-7 text-[10px] uppercase font-bold bg-sky-500 hover:bg-sky-400 text-white">
+                                                                            {isCreating ? 'Adding...' : 'Add'}
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                             {statusTasks.map((task, taskIndex) => (
                                                                 <div 
                                                                     key={task.id} 

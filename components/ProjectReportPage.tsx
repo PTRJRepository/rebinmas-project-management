@@ -1,8 +1,9 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Printer, ArrowLeft, Calendar, Clock, User, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Printer, ArrowLeft, Calendar, Clock, User, CheckCircle, AlertTriangle, X } from 'lucide-react'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 interface Task {
   id: string
@@ -39,9 +40,10 @@ interface Project {
 interface ProjectReportPageProps {
   project: Project
   generatedAt: string
+  onClose?: () => void
 }
 
-export function ProjectReportPage({ project, generatedAt }: ProjectReportPageProps) {
+export function ProjectReportPage({ project, generatedAt, onClose }: ProjectReportPageProps) {
   const handlePrint = () => {
     window.print()
   }
@@ -122,7 +124,7 @@ export function ProjectReportPage({ project, generatedAt }: ProjectReportPagePro
           .no-print,
           nav,
           aside,
-          button,
+          button:not(.print-btn),
           [role="navigation"] {
             display: none !important;
           }
@@ -188,24 +190,48 @@ export function ProjectReportPage({ project, generatedAt }: ProjectReportPagePro
         }
       `}</style>
 
-      {/* Unified Layout - Same content for screen and print */}
-      <div className="min-h-screen bg-slate-900 text-slate-100 print:bg-white print:text-black">
+      {/* Modal Overlay - Hidden in print */}
+      {onClose && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-40 print:hidden" />
+      )}
+
+      {/* Report Content - Full Screen Modal or Page */}
+      <div className={cn(
+        "min-h-screen bg-slate-900 text-slate-100 print:bg-white print:text-black",
+        onClose ? "fixed inset-0 z-50 overflow-y-auto" : "relative"
+      )}>
         {/* Header - Hidden in print */}
-        <div className="no-print bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50">
+        <div className="no-print bg-slate-800/95 backdrop-blur-md border-b border-slate-700 p-4 sticky top-0 z-50 print:hidden">
           <div className="max-w-5xl mx-auto flex justify-between items-center">
-            <Link href={`/projects/${project.id}`} className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-              Kembali ke Project
-            </Link>
-            <Button onClick={handlePrint} className="gap-2 bg-sky-500 hover:bg-sky-600 text-white">
+            <div className="flex items-center gap-3">
+              {onClose ? (
+                <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-300 hover:text-white hover:bg-white/10">
+                  <X className="w-5 h-5" />
+                </Button>
+              ) : (
+                <Link href={`/projects/${project.id}`} className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors">
+                  <ArrowLeft className="w-5 h-5" />
+                  Kembali
+                </Link>
+              )}
+              <div>
+                <h2 className="font-bold text-lg text-white">Laporan Proyek</h2>
+                <p className="text-xs text-slate-400">{project.name}</p>
+              </div>
+            </div>
+            <Button onClick={handlePrint} className="print-btn gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold">
               <Printer className="w-4 h-4" />
               Cetak Laporan
             </Button>
           </div>
         </div>
 
-        {/* Report Content Container - Same for screen and print */}
-        <div className="max-w-5xl mx-auto p-8 bg-slate-800 min-h-screen print:bg-white print:p-0 print:max-w-none">
+        {/* Report Content Container */}
+        <div className={cn(
+          "max-w-5xl mx-auto",
+          onClose ? "py-8 px-4" : "p-8 bg-slate-800 min-h-screen",
+          "print:bg-white print:p-0 print:max-w-none"
+        )}>
           {/* Document - Screen View */}
           <div className="bg-white text-gray-900 rounded-lg shadow-xl p-8 print:shadow-none print:rounded-none print:p-0" style={{ minHeight: '297mm' }}>
             {renderReportContent({

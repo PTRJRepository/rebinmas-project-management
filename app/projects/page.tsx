@@ -129,8 +129,14 @@ export default function DashboardPage() {
           const canFilter = ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(data.user?.role);
           setCanFilterByUser(canFilter);
 
-          // Set default selected user to current user
-          if (data.user) {
+          // Check if there's a stored selected user from filter page
+          const storedSelectedUserId = localStorage.getItem('selectedUserId');
+          
+          if (storedSelectedUserId) {
+            // Use stored selection
+            setSelectedUserId(storedSelectedUserId);
+          } else if (data.user) {
+            // Default to current user
             setSelectedUserId(data.user.id);
           }
         }

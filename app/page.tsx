@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 
 export default function Home() {
-  redirect('/projects')
+  // Redirect to user filter page first
+  redirect('/user-filter')
 }

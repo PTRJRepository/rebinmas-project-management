@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProjects, createProject } from '@/lib/api/projects';
+import { getProjects, getProjectsByOwnerId, createProject } from '@/lib/api/projects';
 import { getCurrentUser } from '@/app/actions/auth';
 
 /**
@@ -9,14 +9,22 @@ import { getCurrentUser } from '@/app/actions/auth';
  * via SQL Gateway API instead of local SQLite.
  *
  * SECURITY: Only SERVER_PROFILE_1 and extend_db_ptrj are used for write operations.
- *
- * UPDATED: Authentication DISABLED for public access - All projects visible without login!
  */
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Get current user for ownership-based filtering
     const session = await getCurrentUser();
+    
+    // Get query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const filterUserId = searchParams.get('userId');
+
+    // If filterUserId is provided and user is admin/manager, use that
+    if (filterUserId && session && ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(session.role)) {
+      const projects = await getProjectsByOwnerId(filterUserId);
+      return NextResponse.json(projects);
+    }
 
     // Pass userId and userRole for ownership-based access control
     // If not authenticated, returns empty array

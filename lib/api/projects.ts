@@ -284,6 +284,50 @@ export async function getProjects(userId?: string, userRole?: string): Promise<P
   return projects as Project[];
 }
 
+/**
+ * Get projects by owner ID - used by admins/managers to filter projects
+ */
+export async function getProjectsByOwnerId(ownerId: string): Promise<Project[]> {
+  const sql = `
+    SELECT
+      p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at,
+      u.id as user_id,
+      u.username as owner_username,
+      u.email as owner_email,
+      u.name as owner_name,
+      COUNT(t.id) as task_count
+    FROM pm_projects p
+    LEFT JOIN pm_users u ON p.owner_id = u.id
+    LEFT JOIN pm_tasks t ON p.id = t.project_id
+    WHERE p.owner_id = @ownerId
+    GROUP BY p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at, u.id, u.username, u.email, u.name
+    ORDER BY p.created_at DESC
+  `;
+
+  const result = await sqlGateway.query(sql, { ownerId });
+
+  return result.recordset.map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    priority: row.priority,
+    bannerImage: row.banner_image,
+    status: row.status,
+    ownerId: row.owner_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    owner: {
+      id: row.user_id,
+      username: row.owner_username,
+      email: row.owner_email,
+      name: row.owner_name,
+    },
+    _count: { tasks: row.task_count },
+  })) as Project[];
+}
+
 export async function getDeletedProjects(userId?: string): Promise<Project[]> {
   let sql = `
     SELECT

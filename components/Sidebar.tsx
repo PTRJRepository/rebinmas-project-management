@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -55,7 +55,7 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
         { name: 'Reports', href: '/reports', icon: FileText },
     ];
     
-    if (userRole === 'ADMIN') {
+    if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
         navItems.push({ name: 'Admin Panel', href: '/admin', icon: ShieldCheck });
     }
     

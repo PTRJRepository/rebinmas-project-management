@@ -31,7 +31,7 @@ export interface SessionData {
   userId: string;
   email: string;
   name: string;
-  role: string;
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'PM' | 'MEMBER';
 }
 
 /**

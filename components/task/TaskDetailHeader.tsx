@@ -4,25 +4,37 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, Check, X } from 'lucide-react';
+import { ArrowLeft, Edit, Check, X, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { updateTask } from '@/app/actions/task';
 import { useRouter } from 'next/navigation';
+import { TicketPrintPreview } from '@/components/task/TicketPrintPreview';
 
 interface Task {
     id: string;
     title: string;
+    description?: string | null;
     priority: string;
+    statusId: string;
     status: {
         id: string;
         name: string;
     };
+    dueDate: Date | null;
+    estimatedHours?: number | null;
+    assignee?: {
+        id: string;
+        username: string;
+        name: string;
+        avatarUrl?: string | null;
+    } | null;
 }
 
 interface TaskDetailHeaderProps {
     task: Task;
     projectId: string;
+    projectName: string;
 }
 
 const getPriorityColor = (priority: string) => {
@@ -40,9 +52,10 @@ const getPriorityColor = (priority: string) => {
     }
 };
 
-export function TaskDetailHeader({ task, projectId }: TaskDetailHeaderProps) {
+export function TaskDetailHeader({ task, projectId, projectName }: TaskDetailHeaderProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(task.title);
+    const [showPrintPreview, setShowPrintPreview] = useState(false);
     const router = useRouter();
 
     const handleSave = async () => {
@@ -132,11 +145,25 @@ export function TaskDetailHeader({ task, projectId }: TaskDetailHeaderProps) {
                     </div>
                 </div>
 
-                {/* Edit Button - redundant now, maybe remove or keep for other actions?
-                    I'll remove the external onEdit prop handling and keep the UI clean
-                    since I added inline edit button
-                */}
+                {/* Right Side Actions */}
+                <div className="flex items-center gap-3 shrink-0">
+                    <Button
+                        onClick={() => setShowPrintPreview(true)}
+                        variant="outline"
+                        className="print:hidden border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                    >
+                        <Printer className="w-4 h-4 mr-2" />
+                        Print Ticket
+                    </Button>
+                </div>
             </div>
+            {showPrintPreview && (
+                <TicketPrintPreview
+                    tasks={[task as any]}
+                    projectName={projectName}
+                    onClose={() => setShowPrintPreview(false)}
+                />
+            )}
         </div>
     );
 }

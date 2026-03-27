@@ -212,7 +212,7 @@ export interface User {
   username: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'MANAGER' | 'PM' | 'MEMBER';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'PM' | 'MEMBER';
   avatarUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -1436,4 +1436,71 @@ export async function updateTaskDoc(id: string, data: {
 
 export async function deleteTaskDoc(id: string): Promise<void> {
   await sqlGateway.query('DELETE FROM pm_task_docs WHERE id = @id', { id });
+}
+
+// ==================================================
+// MANAGER TASK OPERATIONS
+// ==================================================
+
+/**
+ * Get all tasks for managers - returns tasks from all projects
+ * Manager role has global access to all projects and their tasks
+ */
+export async function getAllTasksForManager(): Promise<Task[]> {
+  const result = await sqlGateway.query(`
+    SELECT
+      t.id, t.title, t.description, t.priority, t.due_date, t.estimated_hours, t.actual_hours,
+      t.documentation, t.progress, t.last_alert_sent, t.completed_at, t.project_id, t.status_id, t.assignee_id,
+      t.created_at, t.updated_at,
+      p.id as proj_id,
+      p.name as project_name,
+      ts.id as status_id_ref,
+      ts.name as status_name,
+      ts.[order] as status_order,
+      u.id as assignee_id_ref,
+      u.username as assignee_username,
+      u.name as assignee_name,
+      u.email as assignee_email,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) NOT LIKE '[[]FILE]%') as doc_count,
+      (SELECT COUNT(*) FROM pm_task_docs WHERE task_id = t.id AND CAST(content AS NVARCHAR(MAX)) LIKE '[[]FILE]%') as attachment_count
+    FROM pm_tasks t
+    LEFT JOIN pm_projects p ON t.project_id = p.id
+    LEFT JOIN pm_task_statuses ts ON t.status_id = ts.id
+    LEFT JOIN pm_users u ON t.assignee_id = u.id
+    ORDER BY t.created_at DESC
+  `);
+
+  return await Promise.all(result.recordset.map(async (row: any): Promise<Task> => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    priority: row.priority,
+    dueDate: row.due_date,
+    estimatedHours: row.estimated_hours,
+    actualHours: row.actual_hours,
+    documentation: row.documentation,
+    progress: row.progress,
+    lastAlertSent: row.last_alert_sent,
+    completedAt: row.completed_at,
+    projectId: row.project_id,
+    statusId: row.status_id,
+    assigneeId: row.assignee_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    docCount: row.doc_count || 0,
+    attachmentCount: row.attachment_count || 0,
+    status: {
+      id: row.status_id_ref,
+      name: row.status_name,
+      order: row.status_order,
+    },
+    assignee: row.assignee_id_ref ? {
+      id: row.assignee_id_ref,
+      username: row.assignee_username,
+      name: row.assignee_name,
+      email: row.assignee_email,
+    } : null,
+    docs: await getTaskDocs(row.id),
+    attachments: await getAttachmentsByTask(row.id),
+  })));
 }

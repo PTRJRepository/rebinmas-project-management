@@ -1,4 +1,5 @@
 import { getTask } from '@/app/actions/task'
+import { getProject } from '@/app/actions/project'
 import { TaskDetailHeader } from '@/components/task/TaskDetailHeader'
 import { TaskMetadata } from '@/components/task/TaskMetadata'
 import { TaskDescriptionEditor } from '@/components/task/TaskDescriptionEditor'
@@ -11,6 +12,7 @@ export default async function TaskDetailPage({
 }) {
     const { id, taskId } = await params
     const { data: task, success } = await getTask(taskId)
+    const { data: project } = await getProject(id)
 
     if (!success || !task) {
         notFound()
@@ -22,6 +24,7 @@ export default async function TaskDetailPage({
             <TaskDetailHeader
                 task={task as any}
                 projectId={id}
+                projectName={project?.name || 'Unknown Project'}
             />
 
             {/* Main Content */}

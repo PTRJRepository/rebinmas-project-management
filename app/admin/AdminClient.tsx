@@ -5,7 +5,6 @@ import { updateUserRole } from '@/app/actions/admin'
 import { ShieldAlert, Users, FolderKanban, CheckSquare, HardDrive, ShieldCheck, Mail, UserCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
-import { Button } from '@/components/ui/button'
 
 interface AdminClientProps {
     currentUser: any;
@@ -135,12 +134,13 @@ export default function AdminClient({ currentUser, users, stats }: AdminClientPr
                                     </td>
                                     <td className="px-6 py-4">
                                         <Badge variant="outline" className={
+                                            user.role === 'SUPER_ADMIN' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
                                             user.role === 'ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                                             user.role === 'MANAGER' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
                                             'bg-slate-500/10 text-slate-400 border-slate-500/20'
                                         }>
                                             <ShieldAlert className="w-3 h-3 mr-1.5" />
-                                            {user.role}
+                                            {user.role === 'SUPER_ADMIN' ? 'Super Admin' : user.role}
                                         </Badge>
                                     </td>
                                     <td className="px-6 py-4 text-slate-400 font-medium">
@@ -151,13 +151,14 @@ export default function AdminClient({ currentUser, users, stats }: AdminClientPr
                                             <select
                                                 value={user.role}
                                                 onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                                                disabled={updatingId === user.id || (user.id === currentUser.userId && user.role === 'ADMIN')}
-                                                className="bg-slate-900 border border-white/10 text-slate-300 text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block w-32 p-2"
+                                                disabled={updatingId === user.id || (user.id === currentUser.userId && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN'))}
+                                                className="bg-slate-900 border border-white/10 text-slate-300 text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block w-40 p-2"
                                             >
                                                 <option value="MEMBER">Member</option>
                                                 <option value="PM">Project Manager</option>
                                                 <option value="MANAGER">Global Manager</option>
                                                 <option value="ADMIN">Administrator</option>
+                                                <option value="SUPER_ADMIN">Super Admin</option>
                                             </select>
                                         </div>
                                     </td>

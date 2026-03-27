@@ -6,8 +6,8 @@ import AdminClient from './AdminClient'
 export default async function AdminPage() {
     const session = await getSession()
     
-    // Verify Admin Request
-    if (!session || session.role !== 'ADMIN') {
+    // Verify Admin Request - SUPER_ADMIN and ADMIN can access
+    if (!session || (session.role !== 'SUPER_ADMIN' && session.role !== 'ADMIN')) {
         redirect('/projects')
     }
 

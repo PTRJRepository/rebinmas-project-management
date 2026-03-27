@@ -23,6 +23,7 @@ import {
 import { Attachment } from '@/lib/api/projects'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
+import { AssetPreviewDialog } from '@/components/ui/AssetPreviewDialog'
 
 interface TaskAttachmentsProps {
     taskId: string
@@ -40,6 +41,7 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
     const prevTaskIdRef = useRef<string | null>(null)
+    const [previewAsset, setPreviewAsset] = useState<Attachment | null>(null)
 
     // Fetch attachments from server
     const fetchAttachments = useCallback(async () => {
@@ -284,15 +286,13 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                                 </div>
                                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity print:opacity-100">
                                     {att.previewUrl && (
-                                        <a
-                                            href={att.previewUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <button
+                                            onClick={() => setPreviewAsset(att)}
                                             className="p-1.5 text-slate-400 hover:text-purple-400 transition-colors rounded hover:bg-slate-700 print:text-purple-600"
                                             title="Preview"
                                         >
                                             <Eye className="h-3.5 w-3.5" />
-                                        </a>
+                                        </button>
                                     )}
                                     <a
                                         href={att.fileUrl}
@@ -321,6 +321,12 @@ export function TaskAttachments({ taskId, projectId, initialAttachments = [] }: 
                     )}
                 </div>
             </CardContent>
+
+            <AssetPreviewDialog
+                isOpen={!!previewAsset}
+                onClose={() => setPreviewAsset(null)}
+                asset={previewAsset}
+            />
         </Card>
     )
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
-import "./globals.css";
 import "@excalidraw/excalidraw/index.css";
+import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { SkipLink } from "@/components/SkipLink";
 import { Toaster } from "@/components/ui/toaster";
@@ -41,9 +41,9 @@ export default async function RootLayout({
   const isAuthenticated = !!session;
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="dark bg-slate-950" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased bg-slate-950 text-slate-50`}
       >
         <ThemeProvider defaultTheme="dark">
           <LayoutProvider defaultLayout="grid">

@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { ProjectReportPage } from '@/components/ProjectReportPage'
-import { getProjectById } from '@/lib/api/projects'
+import { getProjectById, getTaskStatuses } from '@/lib/api/projects'
 import { getCurrentUser } from '@/app/actions/auth'
 import { getTasks } from '@/app/actions/task'
 
@@ -22,6 +22,7 @@ export default async function ReportPage({
   }
 
   const { data: tasks } = await getTasks(id)
+  const statuses = await getTaskStatuses(id)
 
   const generatedAt = new Date().toLocaleString('id-ID', {
     dateStyle: 'full',
@@ -30,9 +31,9 @@ export default async function ReportPage({
 
   const formattedTasks = tasks?.map(task => ({
     ...task,
-    dueDate: task.dueDate ? task.dueDate.toISOString() : null,
-    createdAt: task.createdAt.toISOString(),
-    updatedAt: task.updatedAt.toISOString(),
+    dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+    createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: task.updatedAt ? new Date(task.updatedAt).toISOString() : new Date().toISOString(),
   })) || []
 
   const formattedProject = {
@@ -42,7 +43,7 @@ export default async function ReportPage({
     priority: (project as any).priority,
     bannerImage: (project as any).bannerImage,
     owner: project.owner || { username: 'Unknown' },
-    statuses: (project as any).statuses,
+    statuses: statuses || [],
     startDate: project.startDate ? project.startDate.toISOString() : null,
     endDate: project.endDate ? project.endDate.toISOString() : null,
     tasks: formattedTasks

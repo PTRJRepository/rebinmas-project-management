@@ -44,6 +44,7 @@ import {
 } from '@/app/actions/project';
 import { Project, Task } from '@/lib/api/projects';
 import { isToday, isTomorrow, isThisWeek, isThisMonth, parseISO, addDays, startOfWeek, endOfWeek, startOfMonth, isWithinInterval } from 'date-fns';
+import { ProjectListPrintPreview } from '@/components/project/ProjectListPrintPreview';
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -62,6 +63,7 @@ export default function DashboardPage() {
   const [groupBy, setGroupBy] = useState<'status' | 'date' | 'priority' | 'owner' | 'none'>('status');
   const [isMounted, setIsMounted] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -347,7 +349,7 @@ export default function DashboardPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    setShowPrintPreview(true);
   };
 
   const handleEditClick = (project: Project) => {
@@ -744,6 +746,10 @@ export default function DashboardPage() {
             {selectedProjects.size > 0 && (
               <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-cyan-500/30 animate-in fade-in slide-in-from-top-2 shrink-0">
                 <span className="text-xs text-slate-300 font-medium mr-2 hidden sm:inline">{selectedProjects.size} dipilih</span>
+                <Button size="sm" variant="outline" onClick={handlePrint} className="h-7 text-xs border-sky-500/30 text-sky-400 hover:bg-sky-500/10">
+                    <Printer className="w-3 h-3 sm:mr-1" />
+                    <span className="hidden sm:inline">Print</span>
+                </Button>
                 {viewMode === 'active' ? (
                   <Button size="sm" variant="destructive" onClick={handleBulkMoveToTrash} className="h-7 text-xs">
                     <Trash2 className="w-3 h-3 sm:mr-1" />
@@ -1834,6 +1840,17 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {showPrintPreview && (
+        <ProjectListPrintPreview
+          projects={selectedProjects.size > 0 
+            ? projects.filter(p => selectedProjects.has(p.id)) 
+            : groupedProjects.flatMap(g => g.projects)
+          }
+          allTasks={allTasks}
+          onClose={() => setShowPrintPreview(false)}
+        />
+      )}
     </div>
   );
 }

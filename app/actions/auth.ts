@@ -20,7 +20,7 @@ export interface AuthResult {
     id: string;
     email: string;
     name: string;
-    role: string;
+    role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'PM' | 'MEMBER';
   };
 }
 

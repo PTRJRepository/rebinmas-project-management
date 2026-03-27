@@ -188,8 +188,8 @@ export function ProjectReportPage({ project, generatedAt }: ProjectReportPagePro
         }
       `}</style>
 
-      {/* Screen Layout */}
-      <div className="min-h-screen bg-slate-900 text-slate-100">
+      {/* Unified Layout - Same content for screen and print */}
+      <div className="min-h-screen bg-slate-900 text-slate-100 print:bg-white print:text-black">
         {/* Header - Hidden in print */}
         <div className="no-print bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50">
           <div className="max-w-5xl mx-auto flex justify-between items-center">
@@ -204,27 +204,16 @@ export function ProjectReportPage({ project, generatedAt }: ProjectReportPagePro
           </div>
         </div>
 
-        {/* Report Content Container - Screen View */}
-        <div className="max-w-5xl mx-auto p-8 bg-slate-800 min-h-screen">
-          {/* Document preview for screen */}
-          <div className="bg-white text-gray-900 rounded-lg shadow-xl p-8" style={{ minHeight: '297mm' }}>
+        {/* Report Content Container - Same for screen and print */}
+        <div className="max-w-5xl mx-auto p-8 bg-slate-800 min-h-screen print:bg-white print:p-0 print:max-w-none">
+          {/* Document - Screen View */}
+          <div className="bg-white text-gray-900 rounded-lg shadow-xl p-8 print:shadow-none print:rounded-none print:p-0" style={{ minHeight: '297mm' }}>
             {renderReportContent({
               project, generatedAt, priorityInfo, deadlineInfo,
               tasksByStatus, totalTasks, completedTasks, overallProgress,
               taskStats, getDeadlineInfo, getPriorityInfo, getProgressColor
             })}
           </div>
-        </div>
-      </div>
-
-      {/* Print Layout - Separate structure for actual printing */}
-      <div className="print-only print:block hidden">
-        <div className="print-bg-white" style={{ padding: '0' }}>
-          {renderReportContent({
-            project, generatedAt, priorityInfo, deadlineInfo,
-            tasksByStatus, totalTasks, completedTasks, overallProgress,
-            taskStats, getDeadlineInfo, getPriorityInfo, getProgressColor
-          })}
         </div>
       </div>
     </>

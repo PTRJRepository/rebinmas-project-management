@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { ProjectReportPage } from '@/components/ProjectReportPage'
 
 type ViewState = 'overview' | 'simple' | 'assets' | 'canvas' | 'details'
 
@@ -100,6 +101,7 @@ export default function ProjectBoardClient({
   const [filteredTaskIds, setFilteredTaskIds] = useState<string[]>([])
   const [isCanvasFullscreen, setIsCanvasFullscreen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [showPrintPreview, setShowPrintPreview] = useState(false)
   const [editForm, setEditForm] = useState({
     name: project.name,
     description: project.description || '',
@@ -154,7 +156,7 @@ export default function ProjectBoardClient({
   }
 
   const handlePrint = () => {
-    window.print()
+    setShowPrintPreview(true)
   }
 
   const handleSaveProject = async (e?: React.FormEvent) => {
@@ -275,7 +277,7 @@ export default function ProjectBoardClient({
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Page Header */}
-      <div className="bg-slate-900/50 backdrop-blur-md border-b border-white/5 px-6 py-4 sticky top-0 z-40">
+      <div className="bg-slate-900/95 backdrop-blur-xl border-b border-white/10 px-6 py-4 sticky top-0 z-40 shadow-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/projects">
@@ -359,15 +361,14 @@ export default function ProjectBoardClient({
               </button>
             </div>
 
-            <Link href={`/projects/${project.id}/report`}>
-              <Button
-                variant="outline"
-                className="print:hidden border-white/10 hover:bg-white/5 text-slate-300"
-              >
-                <Printer className="mr-2 h-4 w-4" />
-                Print Report
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              onClick={handlePrint}
+              className="print:hidden border-white/10 hover:bg-white/5 text-slate-300"
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Print Report
+            </Button>
             <ProjectMembersDialog
               projectId={project.id}
               projectName={project.name}
@@ -896,7 +897,7 @@ export default function ProjectBoardClient({
 
         {/* Kanban Board */}
         {viewState === 'overview' && (
-          <div className="bg-slate-900/40 backdrop-blur-sm rounded-3xl border border-white/5 overflow-hidden mb-10 shadow-2xl">
+          <div className="bg-slate-900/40 backdrop-blur-sm rounded-t-3xl border border-white/5 overflow-hidden mb-10 shadow-2xl">
             <div className="border-b border-white/5 px-8 py-5 bg-slate-900/60 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-black text-white tracking-tight">Kanban Board</h2>
@@ -913,6 +914,7 @@ export default function ProjectBoardClient({
                 initialTasks={taskList}
                 statuses={project.statuses || []}
                 projectId={project.id}
+                projectName={project.name}
                 currentUserId={currentUserId}
                 onMoveToNext={handleMoveToNext}
               />
@@ -966,17 +968,26 @@ export default function ProjectBoardClient({
         )}
 
         {/* Assets & Docs Section */}
-        <div id="section-assets" className="pt-10 scroll-mt-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 mx-6">
-              {/* Project Documentation Cards */}
-              <div className="space-y-6">
-                <ProjectDocs projectId={project.id} />
-              </div>
+        <div id="section-assets" className="bg-slate-900/40 backdrop-blur-sm border border-white/5 rounded-3xl overflow-hidden shadow-2xl mx-6 mb-10 mt-10 scroll-mt-20">
+          <div className="px-8 py-5 border-b border-white/5 bg-slate-900/60 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-white flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
+              Workspace Assets & Documentation
+            </h3>
+            <Paperclip className="h-5 w-5 text-purple-400" />
+          </div>
+          <div className="p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Project Documentation Cards */}
+                <div className="space-y-6">
+                  <ProjectDocs projectId={project.id} />
+                </div>
 
-              {/* Project Assets & Attachments */}
-              <div className="space-y-6">
-                <ProjectAttachments projectId={project.id} />
-              </div>
+                {/* Project Assets & Attachments */}
+                <div className="space-y-6">
+                  <ProjectAttachments projectId={project.id} />
+                </div>
+            </div>
           </div>
         </div>
 
@@ -1159,6 +1170,31 @@ export default function ProjectBoardClient({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Print Preview - Project Report */}
+      {showPrintPreview && (
+        <ProjectReportPage
+          project={{
+            ...project,
+            priority: project.priority || 'MEDIUM',
+            startDate: project.startDate ? new Date(project.startDate).toISOString() : null,
+            endDate: project.endDate ? new Date(project.endDate).toISOString() : null,
+            tasks: displayTasks.map(t => ({
+              ...t,
+              dueDate: t.dueDate ? new Date(t.dueDate).toISOString() : null,
+              status: {
+                name: project.statuses.find(s => s.id === t.statusId)?.name || 'Unknown',
+                order: project.statuses.find(s => s.id === t.statusId)?.order || 0
+              }
+            })) || [],
+            statuses: project.statuses || []
+          }}
+          generatedAt={new Date().toLocaleString('id-ID', {
+            dateStyle: 'full',
+            timeStyle: 'long'
+          })}
+        />
+      )}
     </div>
   )
 }

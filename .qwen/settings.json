@@ -9,7 +9,13 @@
       "Bash(git restore *)",
       "Bash(git checkout *)",
       "Bash(git commit *)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(netstat *)",
+      "Bash(findstr *)",
+      "Bash(get-nettcpconnection *)",
+      "Bash(select-object *)",
+      "Bash(npx *)",
+      "Bash(npm run *)"
     ]
   },
   "$version": 3

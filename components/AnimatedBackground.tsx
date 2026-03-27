@@ -108,12 +108,6 @@ export function AnimatedBackground() {
 
   return (
     <>
-      {/* Ambient Gradient Background */}
-      <div className="ambient-bg" />
-
-      {/* Grid Pattern Overlay */}
-      <div className="grid-pattern" />
-
       {/* Floating Particles Canvas */}
       <canvas
         ref={canvasRef}

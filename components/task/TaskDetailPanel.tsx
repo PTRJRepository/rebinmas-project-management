@@ -15,9 +15,12 @@ import {
     ChevronRight,
     ArrowRight,
     FileText,
+    LayoutList,
     XCircle,
     RefreshCw,
-    Loader2
+    Loader2,
+    Printer,
+    Ticket
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,17 +34,22 @@ import { TaskMetadata } from './TaskMetadata';
 
 import { TaskAttachments } from './TaskAttachments';
 import { getPlainTextPreview } from '@/lib/utils';
+import { ResizableImage } from './ResizableImage';
+import { TaskDocs } from './TaskDocs';
+import { TicketPrintPreview } from './TicketPrintPreview';
 
 interface TaskDetailPanelProps {
     taskId: string | null;
     projectId: string;
+    projectName?: string;
     onClose: () => void;
 }
 
-export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelProps) {
+export function TaskDetailPanel({ taskId, projectId, projectName = 'Project', onClose }: TaskDetailPanelProps) {
     const [task, setTask] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [showPrintPreview, setShowPrintPreview] = useState(false);
 
     useEffect(() => {
         if (taskId) {
@@ -118,10 +126,19 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                             variant="ghost" 
                             size="icon"
                             onClick={handleRefresh}
-                            className="text-slate-400 hover:text-white print:hidden"
+                            className="text-slate-400 hover:text-white hover:bg-white/5 rounded-xl print:hidden"
                             title="Refresh"
                         >
                             <RefreshCw className="w-5 h-5" />
+                        </Button>
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setShowPrintPreview(true)}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20 print:hidden"
+                        >
+                            <Printer className="w-4 h-4 mr-2" />
+                            Print
                         </Button>
                         <Badge variant="outline" className="bg-slate-800/50 border-white/5 text-slate-400 font-bold px-3">
                             TASK-{task?.id?.substring(0, 4).toUpperCase() || 'LOAD'}
@@ -193,44 +210,32 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                                     </div>
 
                                     {/* Task Documentation Section */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between px-1">
-                                            <div className="flex items-center gap-2 text-slate-300 font-bold text-xs uppercase tracking-widest">
-                                                <FileText className="w-4 h-4 text-sky-400" />
-                                                Documentation Cards
-                                                <Badge variant="outline" className="ml-2 bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
-                                                    {task.docs?.length || 0} cards
-                                                </Badge>
+                                    <div className="pt-2">
+                                        <TaskDocs taskId={task.id} projectId={projectId} />
+                                    </div>
+
+                                    {/* Printable Documentation Images Section */}
+                                    {task.attachments?.filter((a: any) => a.fileType === 'image').length > 0 && (
+                                        <div className="space-y-4 pt-8 border-t border-white/5 print:border-gray-200">
+                                            <div className="flex items-center gap-2 text-slate-300 font-bold text-xs uppercase tracking-widest px-1 print:text-black">
+                                                <FileText className="w-4 h-4 text-sky-400 print:text-sky-600" />
+                                                Printable Image Documentation
+                                            </div>
+                                            <div className="bg-slate-900/40 rounded-3xl p-6 border border-white/5 shadow-inner print:bg-transparent print:border-none print:p-0 print:shadow-none space-y-8">
+                                                {task.attachments
+                                                    .filter((att: any) => att.fileType === 'image')
+                                                    .map((att: any) => (
+                                                        <ResizableImage 
+                                                            key={`res-img-${att.id}`}
+                                                            src={att.previewUrl || att.fileUrl}
+                                                            alt={att.fileName}
+                                                            title={att.fileName}
+                                                        />
+                                                    ))
+                                                }
                                             </div>
                                         </div>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {task.docs && task.docs.length > 0 ? (
-                                                task.docs.map((doc: any) => (
-                                                    <Card key={doc.id} className="bg-slate-900/40 border-white/5 group hover:border-sky-500/30 transition-all cursor-pointer print:bg-white print:border-gray-300">
-                                                        <CardHeader className="p-4 pb-2 border-b border-white/5 flex flex-row items-center justify-between space-y-0 print:border-gray-200">
-                                                            <CardTitle className="text-xs font-bold text-slate-200 uppercase truncate print:text-black">
-                                                                {doc.title}
-                                                            </CardTitle>
-                                                        </CardHeader>
-                                                        <CardContent className="p-4 pt-3">
-                                                            <div className="text-xs text-slate-400 line-clamp-3 leading-relaxed opacity-80 print:text-gray-700">
-                                                                <div dangerouslySetInnerHTML={{ __html: doc.content || 'No content' }} />
-                                                            </div>
-                                                            <p className="text-[9px] font-black text-slate-600 mt-3 uppercase tracking-tighter print:text-gray-500">
-                                                                Updated: {new Date(doc.updatedAt).toLocaleDateString()}
-                                                            </p>
-                                                        </CardContent>
-                                                    </Card>
-                                                ))
-                                            ) : (
-                                                <div className="md:col-span-2 bg-slate-900/20 rounded-2xl p-8 border border-dashed border-white/5 text-center print:bg-gray-100 print:border-gray-300">
-                                                    <FileText className="w-6 h-6 text-slate-700 mx-auto mb-2" />
-                                                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">No documentation cards</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
 
                                 {/* Right Side: Meta Data (4 cols) */}
@@ -261,6 +266,13 @@ export function TaskDetailPanel({ taskId, projectId, onClose }: TaskDetailPanelP
                     )}
                 </div>
             </div>
+            {showPrintPreview && task && (
+                <TicketPrintPreview
+                    tasks={[task]}
+                    projectName={projectName}
+                    onClose={() => setShowPrintPreview(false)}
+                />
+            )}
         </>
     );
 }

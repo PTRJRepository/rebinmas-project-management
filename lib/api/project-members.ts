@@ -14,7 +14,7 @@ import { sqlGateway } from './sql-gateway';
 // ==================================================
 
 export type ProjectRole = 'OWNER' | 'PM' | 'MEMBER';
-export type UserRole = 'ADMIN' | 'MANAGER' | 'PM' | 'MEMBER';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'PM' | 'MEMBER';
 
 export interface ProjectMember {
   id: string;
@@ -34,7 +34,7 @@ export interface ProjectMember {
 
 export interface AccessCheckResult {
   hasAccess: boolean;
-  role?: ProjectRole | 'ADMIN';
+  role?: ProjectRole | 'SUPER_ADMIN' | 'ADMIN';
   reason?: string;
 }
 
@@ -95,7 +95,7 @@ export async function checkProjectAccess(
     }
 
     const userRole = userResult.recordset[0].role;
-    if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+    if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'MANAGER') {
       return { hasAccess: true, role: userRole as any }; // Bypassing strict check since they are global access
     }
 
@@ -154,8 +154,8 @@ export async function getAccessibleProjects(
   userRole?: UserRole
 ): Promise<any[]> {
   try {
-    // ADMIN and MANAGER see all projects
-    if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+    // SUPER_ADMIN, ADMIN, and MANAGER see all projects
+    if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'MANAGER') {
       const result = await sqlGateway.query(
         `SELECT 
           p.id, p.name, p.description, p.start_date, p.end_date, 
@@ -558,8 +558,8 @@ export async function canPerformAction(
     return false;
   }
 
-  // ADMIN can do everything
-  if (access.role === 'ADMIN') {
+  // SUPER_ADMIN and ADMIN can do everything
+  if (access.role === 'SUPER_ADMIN' || access.role === 'ADMIN') {
     return true;
   }
 

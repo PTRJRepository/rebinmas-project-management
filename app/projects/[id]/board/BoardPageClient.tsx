@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowLeft, LayoutDashboard, Printer } from 'lucide-react'
 import { CreateTaskDialog } from '@/components/CreateTaskDialog'
 import { DeadlineAlertBar } from '@/components/notifications/DeadlineAlertBar'
 import KanbanBoard from '@/components/KanbanBoard'
+import { ProjectPrintPreview } from '@/components/task/ProjectPrintPreview'
 import { Project, Task } from '@prisma/client'
 
 interface BoardPageClientProps {
@@ -17,6 +18,7 @@ interface BoardPageClientProps {
 
 export default function BoardPageClient({ projectId, project, tasks }: BoardPageClientProps) {
     const [filteredTaskIds, setFilteredTaskIds] = useState<string[]>([])
+    const [showPrintPreview, setShowPrintPreview] = useState(false)
 
     const handleFilterTasks = (taskIds: string[]) => {
         setFilteredTaskIds(taskIds)
@@ -27,19 +29,13 @@ export default function BoardPageClient({ projectId, project, tasks }: BoardPage
     }
 
     const handlePrint = () => {
-        window.print()
+        setShowPrintPreview(true)
     }
 
     // Filter tasks if filter is active
     const displayTasks = filteredTaskIds.length > 0
         ? tasks.filter(task => filteredTaskIds.includes(task.id))
         : tasks
-
-    const [currentDate, setCurrentDate] = useState('')
-
-    useEffect(() => {
-        setCurrentDate(new Date().toLocaleDateString())
-    }, [])
 
     return (
         <div className="h-screen flex flex-col bg-slate-950 text-slate-100">
@@ -76,13 +72,6 @@ export default function BoardPageClient({ projectId, project, tasks }: BoardPage
                 </div>
             </div>
 
-            {/* Print Header (only visible when printing) */}
-            <div className="hidden print:block border-b-2 border-black pb-4 mb-6">
-                <h1 className="text-2xl font-bold">{project.name}</h1>
-                <p className="text-sm text-gray-600">Task Board - Printed on {currentDate}</p>
-                <p className="text-sm text-gray-600">Total Tasks: {displayTasks.length}</p>
-            </div>
-
             {/* Deadline Alert Bar */}
             <div className="print:hidden">
                 <DeadlineAlertBar
@@ -116,6 +105,17 @@ export default function BoardPageClient({ projectId, project, tasks }: BoardPage
                     projectId={projectId}
                 />
             </div>
+
+            {/* Print Preview Modal */}
+            {showPrintPreview && (
+                <ProjectPrintPreview
+                    tasks={displayTasks}
+                    projectName={project.name}
+                    projectId={projectId}
+                    statuses={project.statuses || []}
+                    onClose={() => setShowPrintPreview(false)}
+                />
+            )}
         </div>
     )
 }

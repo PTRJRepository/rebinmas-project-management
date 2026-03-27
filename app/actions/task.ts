@@ -13,6 +13,7 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentUser } from '@/app/actions/auth'
 import {
   getTasks as apiGetTasks,
+  getAllTasksForManager,
   createTask as apiCreateTask,
   getTaskById,
   updateTask as apiUpdateTask,
@@ -33,6 +34,29 @@ import {
 export async function getTasks(projectId: string) {
     try {
         const tasks = await apiGetTasks(projectId)
+        return { success: true, data: tasks }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * Get all tasks for managers - returns tasks from all projects
+ * Manager role has global access to all projects and their tasks
+ */
+export async function getManagerTasks() {
+    try {
+        const session = await getCurrentUser()
+        if (!session) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        // Only MANAGER, ADMIN, and SUPER_ADMIN can access all tasks
+        if (session.role !== 'MANAGER' && session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') {
+            return { success: false, error: 'Only managers can access all tasks' }
+        }
+
+        const tasks = await getAllTasksForManager()
         return { success: true, data: tasks }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -198,6 +222,15 @@ export async function deleteCommentAction(commentId: string, taskId: string, pro
 // ==================================================
 // TASK DOCUMENTATION ACTIONS
 // ==================================================
+
+export async function getTaskDocsAction(taskId: string) {
+    try {
+        const docs = await getTaskDocs(taskId)
+        return { success: true, data: docs }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
 
 export async function createTaskDocAction(taskId: string, title: string, content: string, projectId: string) {
     try {

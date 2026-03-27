@@ -3,35 +3,35 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DragDropContext, DropResult, Droppable } from '@hello-pangea/dnd'
 import { updateTaskStatus } from '@/app/actions/task'
-import { 
-    Calendar, 
-    Plus, 
-    X, 
-    Filter, 
-    ChevronDown, 
-    LayoutGrid, 
-    ListFilter, 
-    Group,
+import {
+    Calendar,
+    Plus,
+    X,
+    Filter,
+    ChevronDown,
+    LayoutGrid,
     Search,
-    MoreHorizontal,
     ArrowUpDown,
     CheckSquare,
     Trash2,
-    Tag
+    Tag,
+    Printer,
+    FileText,
+    Loader2,
+    ListFilter
 } from 'lucide-react'
 import { KanbanTask } from '@/components/KanbanTask'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createTask } from '@/app/actions/task'
-import { Loader2 } from 'lucide-react'
-import { KanbanColumn, getStatusColor } from '@/components/kanban/KanbanColumn'
 import { DeadlineAlertBar } from '@/components/notifications/DeadlineAlertBar'
 import { useToast } from '@/components/ui/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { TaskDetailPanel } from './task/TaskDetailPanel'
+import { TicketPrintPreview } from './task/TicketPrintPreview'
+import { ProjectPrintPreview } from './task/ProjectPrintPreview'
 import { isToday, isTomorrow, isThisWeek, isThisMonth, parseISO } from 'date-fns'
-
 interface Task {
     id: string
     title: string
@@ -58,11 +58,12 @@ interface KanbanBoardProps {
     initialTasks: Task[]
     statuses: Status[]
     projectId: string
+    projectName?: string
     currentUserId?: string
     onMoveToNext?: (taskId: string) => Promise<void>
 }
 
-export default function KanbanBoard({ initialTasks, statuses, projectId, currentUserId, onMoveToNext }: KanbanBoardProps) {
+export default function KanbanBoard({ initialTasks, statuses, projectId, projectName = 'Project', currentUserId, onMoveToNext }: KanbanBoardProps) {
     const [tasks, setTasks] = useState(initialTasks)
     const [addingToStatusId, setAddingToStatusId] = useState<string | null>(null)
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -72,6 +73,7 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
     const [filterHighPriority, setFilterHighPriority] = useState(false)
     const [filteredByDeadlineIds, setFilteredByDeadlineIds] = useState<string[] | null>(null)
     const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
+    const [showPrintPreview, setShowPrintPreview] = useState<'tickets' | 'project' | false>(false)
     const { toast } = useToast()
 
     useEffect(() => {
@@ -204,16 +206,40 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
 
     const clearSelection = () => setSelectedTaskIds(new Set())
 
+    // If project print preview is requested
+    if (showPrintPreview === 'project') {
+        return (
+            <ProjectPrintPreview
+                tasks={tasks}
+                projectName={projectName}
+                projectId={projectId}
+                statuses={statuses}
+                onClose={() => setShowPrintPreview(false)}
+            />
+        )
+    }
+
+    // If ticket print preview is requested, isolate the DOM
+    if (showPrintPreview === 'tickets') {
+        return (
+            <TicketPrintPreview
+                tasks={tasks.filter(t => selectedTaskIds.has(t.id))}
+                projectName={projectName}
+                onClose={() => setShowPrintPreview(false)}
+            />
+        )
+    }
+
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-slate-950/20 relative">
+        <div className="flex flex-col min-h-[calc(100vh-220px)] w-full overflow-hidden bg-slate-950/20 relative">
             <DeadlineAlertBar 
                 tasks={tasks as any} 
                 onFilterTasks={(ids) => setFilteredByDeadlineIds(ids)} 
             />
 
             {/* Top Filter Bar - Figma Style */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-900/90 backdrop-blur-xl sticky top-[73px] z-30">
-                <div className="flex items-center gap-6">
+            <div className="flex flex-col items-start md:flex-row md:items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-900/95 backdrop-blur-xl sticky top-[68px] z-30 shadow-md">
+                <div className="flex items-center gap-6 w-full md:w-auto overflow-x-auto custom-scrollbar pb-2 md:pb-0">
                     <div className="relative group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-hover:text-slate-400 transition-colors" />
                         <Input 
@@ -298,8 +324,17 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
                         </Button>
                     </div>
                     <div className="h-4 w-[1px] bg-white/10 mx-1" />
-                    <Button 
-                        size="sm" 
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-white/10 text-slate-300 hover:bg-white/10 font-bold h-9 gap-2"
+                        onClick={() => setShowPrintPreview('project')}
+                    >
+                        <FileText className="w-4 h-4" />
+                        PRINT PROJECT
+                    </Button>
+                    <Button
+                        size="sm"
                         className="bg-sky-500 hover:bg-sky-600 text-white font-bold h-9 gap-2 shadow-lg shadow-sky-500/20"
                         onClick={() => setAddingToStatusId(statuses[0].id)}
                     >
@@ -324,8 +359,8 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
                         <Button size="sm" variant="ghost" className="hover:bg-white/20 text-white gap-2">
                             <ArrowUpDown className="w-4 h-4" /> Priority
                         </Button>
-                        <Button size="sm" variant="ghost" className="hover:bg-white/20 text-white gap-2">
-                            <Calendar className="w-4 h-4" /> Date
+                        <Button size="sm" variant="ghost" className="hover:bg-white/20 text-white gap-2" onClick={() => setShowPrintPreview('tickets')}>
+                            <Printer className="w-4 h-4" /> Print Labels
                         </Button>
                         <Button size="sm" variant="ghost" className="hover:bg-red-500/80 text-white gap-2 ml-2">
                             <Trash2 className="w-4 h-4" /> Delete
@@ -363,7 +398,7 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
             )}
 
             {/* Kanban Board with Rows (Swimlanes) */}
-            <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar p-6">
+            <div className="flex-1 w-full p-6 bg-transparent">
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="flex flex-col gap-10 min-w-max pb-20">
                         {groupedRows.map((row) => (
@@ -384,43 +419,64 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
                                 <div className="flex gap-6">
                                     {statuses.map((status, statusIndex) => {
                                         const statusTasks = row.tasks.filter(t => t.statusId === status.id)
-                                        const isAdding = addingToStatusId === status.id && row.id === 'all' // Simplify quick add to first row or if no swimlanes
-                                        
+                                        const isAdding = addingToStatusId === status.id && row.id === 'all'
+
+                                        // Status-specific gradient colors
+                                        const statusGradients = [
+                                            'from-gray-500/5 via-gray-600/5 to-gray-700/5',
+                                            'from-blue-500/5 via-blue-600/5 to-blue-700/5',
+                                            'from-purple-500/5 via-purple-600/5 to-purple-700/5',
+                                            'from-green-500/5 via-green-600/5 to-green-700/5',
+                                        ]
+                                        const statusGradient = statusGradients[statusIndex % statusGradients.length]
+
                                         return (
-                                            <div key={status.id} className="w-80 flex-shrink-0 flex flex-col min-h-[150px]">
-                                                {/* Status Column Header (Only show once at top) */}
+                                            <div key={status.id} className="w-[350px] flex-shrink-0 flex flex-col h-full min-h-[500px]">
+                                                {/* Status Column Header with gradient accent */}
                                                 {groupedRows.indexOf(row) === 0 && (
-                                                    <div className="flex items-center justify-between mb-4 px-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(statusIndex, statuses.length).replace('bg-', 'bg-'))} />
-                                                            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">{status.name}</span>
-                                                            <span className="ml-1 text-[10px] text-slate-500 font-bold bg-white/5 px-1.5 py-0.5 rounded">
+                                                    <div className="flex items-center justify-between mb-4 px-4 sticky top-[136px] z-20 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 backdrop-blur-xl py-4 -mt-4 rounded-xl border border-white/10 shadow-xl mx-1">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={cn(
+                                                                "w-2.5 h-2.5 rounded-full",
+                                                                statusIndex === 0 ? "bg-gradient-to-br from-gray-400 to-gray-500 shadow-[0_0_8px_rgba(156,163,175,0.6)]" :
+                                                                statusIndex === statuses.length - 1 ? "bg-gradient-to-br from-green-400 to-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.6)]" :
+                                                                statusIndex === statuses.length - 2 ? "bg-gradient-to-br from-yellow-400 to-amber-500 shadow-[0_0_8px_rgba(251,191,36,0.6)]" :
+                                                                "bg-gradient-to-br from-blue-400 to-cyan-500 shadow-[0_0_8px_rgba(56,189,248,0.6)]"
+                                                            )} />
+                                                            <span className="text-xs font-black text-white uppercase tracking-widest drop-shadow-md">{status.name}</span>
+                                                            <span className="ml-1 text-[10px] text-slate-400 font-bold bg-white/10 px-2 py-0.5 rounded-md border border-white/5">
                                                                 {tasks.filter(t => t.statusId === status.id).length}
                                                             </span>
                                                         </div>
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            size="icon" 
-                                                            className="h-6 w-6 text-slate-500 hover:text-slate-300"
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
                                                             onClick={() => setAddingToStatusId(status.id)}
                                                         >
-                                                            <Plus className="w-3.5 h-3.5" />
+                                                            <Plus className="w-4 h-4" />
                                                         </Button>
                                                     </div>
                                                 )}
 
                                                 <Droppable droppableId={`${row.id}||${status.id}`}>
                                                     {(provided, snapshot) => (
-                                                        <div
-                                                            ref={provided.innerRef}
-                                                            {...provided.droppableProps}
-                                                            className={cn(
-                                                                "flex-1 rounded-xl transition-colors duration-200",
-                                                                snapshot.isDraggingOver ? "bg-white/5" : "bg-transparent"
-                                                            )}
-                                                        >
+                                                            <div
+                                                                ref={provided.innerRef}
+                                                                {...provided.droppableProps}
+                                                                className={cn(
+                                                                    "flex-1 rounded-xl transition-colors duration-300 pb-20 px-1 h-full",
+                                                                    snapshot.isDraggingOver
+                                                                        ? `bg-gradient-to-b ${statusGradient} border border-white/20 shadow-lg shadow-black/20`
+                                                                        : "bg-transparent"
+                                                                )}
+                                                            >
                                                             {isAdding && (
-                                                                <div className="bg-slate-800/80 border border-sky-500/50 p-3 rounded-xl mb-3 animate-in fade-in slide-in-from-top-2">
+                                                                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-sky-500/50 p-4 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2 shadow-lg shadow-sky-500/10">
+                                                                    <div className="flex items-center gap-2 mb-3">
+                                                                        <div className="w-2 h-2 bg-sky-400 rounded-full animate-pulse" />
+                                                                        <span className="text-xs font-bold text-sky-400 uppercase tracking-widest">New Task</span>
+                                                                    </div>
                                                                     <input
                                                                         autoFocus
                                                                         value={newTaskTitle}
@@ -433,19 +489,19 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
                                                                             }
                                                                         }}
                                                                         placeholder="Enter new task... (Press Enter)"
-                                                                        className="w-full bg-slate-900/50 border border-white/10 text-sm mb-3 text-white rounded p-2 focus:outline-none focus:border-sky-500/50"
+                                                                        className="w-full bg-slate-900/80 border border-white/10 text-sm text-white rounded-lg p-3 focus:outline-none focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/20 transition-all"
                                                                     />
-                                                                    <div className="flex justify-end gap-2">
-                                                                        <Button size="sm" variant="ghost" onClick={() => { setAddingToStatusId(null); setNewTaskTitle(''); }} className="h-7 text-[10px] uppercase font-bold text-slate-400 hover:text-white">Cancel</Button>
-                                                                        <Button size="sm" onClick={() => handleCreateTask(status.id)} disabled={isCreating || !newTaskTitle.trim()} className="h-7 text-[10px] uppercase font-bold bg-sky-500 hover:bg-sky-400 text-white">
-                                                                            {isCreating ? 'Adding...' : 'Add'}
+                                                                    <div className="flex justify-end gap-2 mt-3">
+                                                                        <Button size="sm" variant="ghost" onClick={() => { setAddingToStatusId(null); setNewTaskTitle(''); }} className="h-8 text-[10px] uppercase font-bold text-slate-400 hover:text-white hover:bg-white/10">Cancel</Button>
+                                                                        <Button size="sm" onClick={() => handleCreateTask(status.id)} disabled={isCreating || !newTaskTitle.trim()} className="h-8 text-[10px] uppercase font-bold bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white shadow-lg shadow-sky-500/20">
+                                                                            {isCreating ? <><Loader2 className="w-3 h-3 animate-spin" /> Adding...</> : 'Add Task'}
                                                                         </Button>
                                                                     </div>
                                                                 </div>
                                                             )}
                                                             {statusTasks.map((task, taskIndex) => (
-                                                                <div 
-                                                                    key={task.id} 
+                                                                <div
+                                                                    key={task.id}
                                                                     onClick={() => setSelectedTaskId(task.id)}
                                                                 >
                                                                     <KanbanTask
@@ -477,6 +533,7 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, current
             <TaskDetailPanel 
                 taskId={selectedTaskId} 
                 projectId={projectId} 
+                projectName={projectName}
                 onClose={() => setSelectedTaskId(null)} 
             />
         </div>

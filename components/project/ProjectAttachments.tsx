@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Attachment } from '@/lib/api/projects'
+import { Card, CardContent } from '@/components/ui/card'
+import { AssetPreviewDialog } from '@/components/ui/AssetPreviewDialog'
 import { Button } from '@/components/ui/button'
 import { 
     FileIcon, 
@@ -23,17 +25,6 @@ import {
 } from '@/app/actions/attachment'
 import { cn } from '@/lib/utils'
 
-interface Attachment {
-    id: string
-    fileName: string
-    fileUrl: string
-    previewUrl?: string | null
-    sourceTitle?: string | null
-    fileType: string
-    fileSize: number
-    createdAt: Date
-}
-
 interface ProjectAttachmentsProps {
     projectId: string
 }
@@ -47,6 +38,7 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
     const { toast } = useToast()
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [previewAsset, setPreviewAsset] = useState<Attachment | null>(null)
 
     // Fetch attachments from server
     const fetchAttachments = useCallback(async () => {
@@ -207,20 +199,19 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
 
     // Separate images and documents
     const imageAttachments = attachments.filter(a => a.fileType === 'image')
-    const documentAttachments = attachments.filter(a => a.fileType !== 'image')
 
     return (
         <div className="space-y-6">
             {/* Documentation Gallery Section (Images Only) */}
             {imageAttachments.length > 0 && (
                 <Card className="bg-slate-900/50 border-white/5 shadow-sm overflow-hidden glass-card print:border-gray-300 print:bg-white">
-                    <CardHeader className="border-b border-white/5 py-4 print:border-gray-200">
-                        <CardTitle className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk print:text-black">
+                    <div className="border-b border-white/5 py-4 print:border-gray-200 px-6">
+                        <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk print:text-black">
                             <ImageIcon className="h-5 w-5 text-purple-400 print:text-purple-600" />
                             Project Documentation Gallery ({imageAttachments.length})
                             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-purple-400" />}
-                        </CardTitle>
-                    </CardHeader>
+                        </h2>
+                    </div>
                     <CardContent className="p-6">
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {imageAttachments.map((att) => (
@@ -234,15 +225,13 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                                         }}
                                     />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px] print:hidden">
-                                        <a 
-                                            href={att.previewUrl || att.fileUrl} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
+                                        <button 
+                                            onClick={() => setPreviewAsset(att)}
                                             className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors border border-white/10"
                                             title="View Full Size"
                                         >
                                             <Eye className="h-5 w-5" />
-                                        </a>
+                                        </button>
                                         <a 
                                             href={att.fileUrl} 
                                             target="_blank" 
@@ -272,12 +261,12 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
             )}
 
             <Card className="bg-slate-900/50 border-white/5 shadow-sm overflow-hidden glass-card print:border-gray-300 print:bg-white">
-                <CardHeader className="border-b border-white/5 flex flex-row items-center justify-between py-4 print:border-gray-200">
-                    <CardTitle className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk print:text-black">
+                <div className="border-b border-white/5 flex flex-row items-center justify-between py-4 px-6 print:border-gray-200">
+                    <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2 font-space-grotesk print:text-black">
                         <Paperclip className="h-5 w-5 text-sky-400 print:text-sky-600" />
                         All Assets ({attachments.length})
                         {isLoading && <Loader2 className="h-4 w-4 animate-spin text-sky-400" />}
-                    </CardTitle>
+                    </h2>
                     <div className="flex items-center gap-2">
                         <Button
                             size="sm"
@@ -305,7 +294,7 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                             Upload
                         </Button>
                     </div>
-                </CardHeader>
+                </div>
                 <CardContent className="p-0">
                     {/* Drop Zone */}
                     <div 
@@ -369,15 +358,13 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                                     </div>
                                     <div className="flex items-center gap-1 print:gap-2">
                                         {att.previewUrl && (
-                                            <a 
-                                                href={att.previewUrl} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
+                                            <button 
+                                                onClick={() => setPreviewAsset(att)}
                                                 className="p-2 text-slate-500 hover:text-purple-400 transition-colors rounded-md hover:bg-white/5 print:text-purple-600"
                                                 title="Preview File"
                                             >
                                                 <Eye className="h-4 w-4" />
-                                            </a>
+                                            </button>
                                         )}
                                         <a 
                                             href={att.fileUrl} 
@@ -411,6 +398,12 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
                     )}
                 </CardContent>
             </Card>
+
+            <AssetPreviewDialog
+                isOpen={!!previewAsset}
+                onClose={() => setPreviewAsset(null)}
+                asset={previewAsset}
+            />
         </div>
     )
 }

@@ -126,9 +126,9 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
     };
 
     return (
-        <div className="bg-slate-900 rounded-lg border border-slate-700">
+        <div className="bg-slate-900 rounded-lg border border-slate-700 flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 flex-shrink-0">
                 <div className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-sky-400" />
                     <h2 className="text-lg font-semibold text-slate-100">
@@ -136,10 +136,10 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
                     </h2>
                 </div>
                 {!isEditing ? (
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setIsEditing(true)} 
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsEditing(true)}
                         className="text-slate-400 hover:text-slate-200 hover:bg-slate-800"
                     >
                         <Edit2 className="h-4 w-4 mr-2" />
@@ -147,18 +147,18 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
                     </Button>
                 ) : (
                     <div className="flex items-center gap-2">
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={handleCancel} 
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCancel}
                             className="text-slate-400 hover:text-slate-200 hover:bg-slate-800"
                             disabled={isSaving}
                         >
                             <X className="h-4 w-4 mr-1" />
                             Cancel
                         </Button>
-                        <Button 
-                            size="sm" 
+                        <Button
+                            size="sm"
                             onClick={handleSave}
                             disabled={isSaving}
                             className="bg-sky-600 hover:bg-sky-700"
@@ -179,16 +179,19 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
                 )}
             </div>
 
-            {/* Content */}
-            <div className="p-6">
+            {/* Content - Full height editor */}
+            <div className="flex-1 p-6 overflow-auto">
                 {isEditing ? (
-                    <NovelEditor
-                        content={documentation}
-                        onChange={(content) => setDocumentation(content)}
-                        onImageUpload={handleImageUpload}
-                        placeholder="Tambahkan dokumentasi (drag & drop gambar didukung)..."
-                        className="min-h-[200px]"
-                    />
+                    <div className="h-full min-h-[500px]">
+                        <NovelEditor
+                            content={documentation}
+                            onChange={(content) => setDocumentation(content)}
+                            onImageUpload={handleImageUpload}
+                            placeholder="Tambahkan dokumentasi (drag & drop gambar didukung)..."
+                            showMenuBar={true}
+                            className="h-full"
+                        />
+                    </div>
                 ) : (
                     <div className="min-h-[100px]">
                         {hasContent(documentation) ? (
@@ -202,8 +205,8 @@ export function TaskDescriptionEditor({ task, projectId }: TaskDescriptionEditor
                                     <FileText className="h-6 w-6 text-slate-500" />
                                 </div>
                                 <p className="text-slate-500 text-sm">Belum ada dokumentasi</p>
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     size="sm"
                                     onClick={() => setIsEditing(true)}
                                     className="mt-3 border-slate-600 text-slate-400 hover:bg-slate-800"

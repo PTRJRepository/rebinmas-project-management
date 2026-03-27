@@ -25,8 +25,17 @@ import {
   Trash2,
   RotateCcw,
   XCircle,
-  MoreHorizontal
+  MoreHorizontal,
+  Filter,
+  UserCircle
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,6 +55,17 @@ import { Project, Task } from '@/lib/api/projects';
 import { isToday, isTomorrow, isThisWeek, isThisMonth, parseISO, addDays, startOfWeek, endOfWeek, startOfMonth, isWithinInterval } from 'date-fns';
 import { TicketPrintPreview } from '@/components/task/TicketPrintPreview';
 
+interface FilterUser {
+  id: string;
+  username: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: string;
+  projectCount: number;
+  taskCount: number;
+}
+
 export default function DashboardPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -64,6 +84,12 @@ export default function DashboardPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+
+  // User filter states
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [allUsers, setAllUsers] = useState<FilterUser[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  const [canFilterByUser, setCanFilterByUser] = useState(false);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -90,12 +116,64 @@ export default function DashboardPage() {
     setIsMounted(true);
   }, []);
 
+  // Fetch current user on mount
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch('/api/user');
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentUser(data.user);
+
+          // Check if user can filter by other users (Manager, Admin, Super Admin)
+          const canFilter = ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(data.user?.role);
+          setCanFilterByUser(canFilter);
+
+          // Set default selected user to current user
+          if (data.user) {
+            setSelectedUserId(data.user.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  // Fetch all users for filter (only for managers/admins)
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      if (!canFilterByUser) return;
+
+      try {
+        const res = await fetch('/api/admin/users');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setAllUsers(data.users || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching all users:', error);
+      }
+    };
+    fetchAllUsers();
+  }, [canFilterByUser]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
       console.log('Fetching projects, tasks and activities...');
+
+      // Build URL with user filter
+      let projectsUrl = '/api/projects';
+      if (selectedUserId !== 'all') {
+        projectsUrl += `?userId=${selectedUserId}`;
+      }
+
       const results = await Promise.allSettled([
-        fetch('/api/projects'),
+        fetch(projectsUrl),
         fetch('/api/tasks'),
         getRecentActivitiesAction(10)
       ]);
@@ -161,6 +239,13 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  // Refetch when selected user changes
+  useEffect(() => {
+    if (currentUser) {
+      fetchData();
+    }
+  }, [selectedUserId]);
 
   const fetchDeletedProjects = async () => {
     setLoading(true);
@@ -663,6 +748,68 @@ export default function DashboardPage() {
             <p className="text-sm text-sky-400/70 mt-1">
               {viewMode === 'active' ? 'Kelola proyek Anda dari rencana hingga selesai' : 'Kelola proyek yang dihapus'}
             </p>
+            {/* User Filter Dropdown - Only visible for Manager/Admin/Super Admin */}
+            {canFilterByUser && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <Filter className="w-3.5 h-3.5 text-cyan-400/70" />
+                <span className="text-xs text-cyan-400/70">Filter:</span>
+                <Select value={selectedUserId} onValueChange={(value: string) => setSelectedUserId(value)}>
+                  <SelectTrigger className="h-7 w-[220px] bg-slate-800/60 border border-cyan-500/20 text-xs font-medium text-sky-100 focus:ring-cyan-500/30">
+                    <SelectValue placeholder="Pilih user" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border border-cyan-500/20 max-h-[300px]">
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="font-medium">Semua User</span>
+                      </div>
+                    </SelectItem>
+                    {allUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        <div className="flex items-center justify-between w-full gap-4">
+                          <div className="flex items-center gap-2">
+                            <UserCircle className={cn(
+                              "w-3.5 h-3.5",
+                              user.role === 'SUPER_ADMIN' ? "text-amber-400" :
+                              user.role === 'ADMIN' ? "text-red-400" :
+                              user.role === 'MANAGER' ? "text-purple-400" :
+                              "text-slate-400"
+                            )} />
+                            <span>{user.name}</span>
+                            <span className="text-[10px] text-slate-500">@{user.username}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-500">{user.projectCount} proj</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedUserId !== 'all' && allUsers.find(u => u.id === selectedUserId) && (
+                  <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/20">
+                    <div className={cn(
+                      "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold",
+                      allUsers.find(u => u.id === selectedUserId)?.role === 'SUPER_ADMIN' ? "bg-amber-500/20 text-amber-400" :
+                      allUsers.find(u => u.id === selectedUserId)?.role === 'ADMIN' ? "bg-red-500/20 text-red-400" :
+                      allUsers.find(u => u.id === selectedUserId)?.role === 'MANAGER' ? "bg-purple-500/20 text-purple-400" :
+                      "bg-slate-700 text-slate-400"
+                    )}>
+                      {allUsers.find(u => u.id === selectedUserId)?.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs text-cyan-400 font-medium">
+                      {allUsers.find(u => u.id === selectedUserId)?.name}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedUserId('all')}
+                      className="h-4 w-4 p-0 text-cyan-400/70 hover:text-cyan-400"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
             {/* View Toggle */}

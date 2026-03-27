@@ -188,7 +188,9 @@ export function TaskDetailPanel({ taskId, projectId, projectName = 'Project', on
                                             Detailed Description
                                         </div>
                                         <div className="bg-slate-900/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm shadow-inner print:bg-white print:text-black print:border-gray-300">
-                                            <TaskDescriptionEditor task={task} projectId={projectId} />
+                                            <div className="min-h-[600px]">
+                                                <TaskDescriptionEditor task={task} projectId={projectId} />
+                                            </div>
                                         </div>
                                     </div>
 

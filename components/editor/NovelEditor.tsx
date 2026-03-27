@@ -131,7 +131,7 @@ export const NovelEditor = ({
           'prose-hr:border-slate-700',
           'prose-img:rounded-lg prose-img:shadow-md prose-img:max-w-full',
           'prose-figure:my-4 prose-figcaption:text-sm prose-figcaption:text-slate-500 prose-figcaption:text-center',
-          'min-h-[150px] px-4 py-3'
+          'px-6 py-4 min-h-[400px]'
         ),
       },
     },
@@ -199,19 +199,22 @@ export const NovelEditor = ({
   }, [editable])
 
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
+    <div className={cn('flex flex-col gap-2 h-full', className)}>
       {showMenuBar && (
-        <EditorMenuBar
-          editor={editor}
-          onImageUpload={handleImageUpload}
-          isUploading={isUploading}
-        />
+        <div className="flex-shrink-0">
+          <EditorMenuBar
+            editor={editor}
+            onImageUpload={handleImageUpload}
+            isUploading={isUploading}
+          />
+        </div>
       )}
       <div
         className={cn(
-          'rounded-lg border overflow-hidden transition-colors',
+          'flex-1 rounded-lg border overflow-hidden transition-colors',
           'border-slate-700 bg-slate-900',
-          'focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500'
+          'focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500',
+          'overflow-y-auto'
         )}
         onPaste={handlePaste}
         onDrop={handleDrop}
@@ -222,7 +225,7 @@ export const NovelEditor = ({
 
       {/* Help text for images */}
       {editable && (
-        <div className="text-xs text-slate-500 px-2">
+        <div className="text-xs text-slate-500 px-2 flex-shrink-0">
           Tip: Drag & drop images, copy-paste images, or use the image button. Images are compressed automatically.
         </div>
       )}

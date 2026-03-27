@@ -44,7 +44,7 @@ import {
 } from '@/app/actions/project';
 import { Project, Task } from '@/lib/api/projects';
 import { isToday, isTomorrow, isThisWeek, isThisMonth, parseISO, addDays, startOfWeek, endOfWeek, startOfMonth, isWithinInterval } from 'date-fns';
-import { ProjectListPrintPreview } from '@/components/project/ProjectListPrintPreview';
+import { TicketPrintPreview } from '@/components/task/TicketPrintPreview';
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -1841,16 +1841,23 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
       
-      {showPrintPreview && (
-        <ProjectListPrintPreview
-          projects={selectedProjects.size > 0 
+      {showPrintPreview && (() => {
+        const printedProjects = selectedProjects.size > 0 
             ? projects.filter(p => selectedProjects.has(p.id)) 
-            : groupedProjects.flatMap(g => g.projects)
-          }
-          allTasks={allTasks}
-          onClose={() => setShowPrintPreview(false)}
-        />
-      )}
+            : groupedProjects.flatMap(g => g.projects);
+        
+        const projectIds = new Set(printedProjects.map(p => p.id));
+        const tasksToPrint = allTasks.filter(t => projectIds.has(t.projectId));
+        const printName = printedProjects.length === 1 ? printedProjects[0].name : "Selected Projects";
+
+        return (
+          <TicketPrintPreview
+            tasks={tasksToPrint as any}
+            projectName={printName}
+            onClose={() => setShowPrintPreview(false)}
+          />
+        );
+      })()}
     </div>
   );
 }

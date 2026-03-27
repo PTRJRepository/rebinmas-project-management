@@ -276,6 +276,7 @@ export default function ProjectBoardClient({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className={cn(showPrintPreview ? "print:hidden" : "")}>
       {/* Page Header */}
       <div className="bg-slate-900/95 backdrop-blur-xl border-b border-white/10 px-6 py-4 sticky top-0 z-40 shadow-md">
         <div className="flex items-center justify-between">
@@ -1170,6 +1171,7 @@ export default function ProjectBoardClient({
           </form>
         </DialogContent>
       </Dialog>
+      </div>
 
       {/* Print Preview - Project Report */}
       {showPrintPreview && (
@@ -1193,6 +1195,7 @@ export default function ProjectBoardClient({
             dateStyle: 'full',
             timeStyle: 'long'
           })}
+          onClose={() => setShowPrintPreview(false)}
         />
       )}
     </div>

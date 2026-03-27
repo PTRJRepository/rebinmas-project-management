@@ -7,7 +7,7 @@ import { ArrowLeft, LayoutDashboard, Printer } from 'lucide-react'
 import { CreateTaskDialog } from '@/components/CreateTaskDialog'
 import { DeadlineAlertBar } from '@/components/notifications/DeadlineAlertBar'
 import KanbanBoard from '@/components/KanbanBoard'
-import { ProjectPrintPreview } from '@/components/task/ProjectPrintPreview'
+import { TicketPrintPreview } from '@/components/task/TicketPrintPreview'
 import { Project, Task } from '@prisma/client'
 
 interface BoardPageClientProps {
@@ -108,11 +108,9 @@ export default function BoardPageClient({ projectId, project, tasks }: BoardPage
 
             {/* Print Preview Modal */}
             {showPrintPreview && (
-                <ProjectPrintPreview
+                <TicketPrintPreview
                     tasks={displayTasks}
                     projectName={project.name}
-                    projectId={projectId}
-                    statuses={project.statuses || []}
                     onClose={() => setShowPrintPreview(false)}
                 />
             )}

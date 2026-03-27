@@ -15,7 +15,13 @@
       "Bash(get-nettcpconnection *)",
       "Bash(select-object *)",
       "Bash(npx *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(gh *)",
+      "Bash(git config *)",
+      "Bash(git *)",
+      "Bash(git push *)",
+      "Bash(taskkill *)",
+      "Bash(git remote *)"
     ]
   },
   "$version": 3

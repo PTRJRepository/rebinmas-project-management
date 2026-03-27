@@ -29,8 +29,8 @@ import { DeadlineAlertBar } from '@/components/notifications/DeadlineAlertBar'
 import { useToast } from '@/components/ui/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { TaskDetailPanel } from './task/TaskDetailPanel'
-import { TicketPrintPreview } from './task/TicketPrintPreview'
 import { ProjectPrintPreview } from './task/ProjectPrintPreview'
+import { TicketPrintPreview } from './task/TicketPrintPreview'
 import { isToday, isTomorrow, isThisWeek, isThisMonth, parseISO } from 'date-fns'
 interface Task {
     id: string
@@ -209,11 +209,9 @@ export default function KanbanBoard({ initialTasks, statuses, projectId, project
     // If project print preview is requested
     if (showPrintPreview === 'project') {
         return (
-            <ProjectPrintPreview
+            <TicketPrintPreview
                 tasks={tasks}
                 projectName={projectName}
-                projectId={projectId}
-                statuses={statuses}
                 onClose={() => setShowPrintPreview(false)}
             />
         )

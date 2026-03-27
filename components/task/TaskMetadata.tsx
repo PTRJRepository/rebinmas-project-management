@@ -126,8 +126,8 @@ export function TaskMetadata({ task, projectId }: TaskMetadataProps) {
 
     const handleEditorImageUpload = async (file: File): Promise<string> => {
         console.log('[TaskMetadata] Starting image upload:', file.name, file.type, file.size);
-        if (file.size > 10 * 1024 * 1024) { // Increased to 10MB
-            toast({ variant: "destructive", description: "File size too large (max 10MB)" });
+        if (file.size > 100 * 1024 * 1024) {
+            toast({ variant: "destructive", description: "Ukuran file terlalu besar (maksimal 100MB)" });
             throw new Error("File too large");
         }
 

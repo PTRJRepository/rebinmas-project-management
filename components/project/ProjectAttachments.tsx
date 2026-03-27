@@ -73,8 +73,8 @@ export function ProjectAttachments({ projectId }: ProjectAttachmentsProps) {
     }, [])
 
     const uploadFile = async (file: File) => {
-        if (file.size > 10 * 1024 * 1024) {
-            toast({ variant: 'destructive', title: 'File too large', description: 'Max file size is 10MB' })
+        if (file.size > 100 * 1024 * 1024) {
+            toast({ variant: 'destructive', title: 'File too large', description: 'Max file size is 100MB' })
             return
         }
 

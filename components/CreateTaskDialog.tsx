@@ -14,30 +14,55 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createTask } from '@/app/actions/task'
-import { Plus, Sparkles } from 'lucide-react'
+import { Plus, Sparkles, MapPin, Tag, Calendar, Clock, User, FileText, Flag } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
+import { Textarea } from '@/components/ui/textarea'
 
 interface CreateTaskDialogProps {
     projectId: string
     statuses: Array<{ id: string; name: string }>
+    users?: Array<{ id: string; username: string; name: string; email: string }>
     onTaskCreated?: (task: any) => void
 }
 
-export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ projectId, statuses, users = [], onTaskCreated }: CreateTaskDialogProps) {
     const [open, setOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [tags, setTags] = useState<string[]>([])
+    const [tagInput, setTagInput] = useState('')
     const router = useRouter()
     const { toast } = useToast()
+
+    const handleAddTag = (e?: React.KeyboardEvent) => {
+        if (e && e.key !== 'Enter') return
+        e?.preventDefault()
+        
+        const newTags = tagInput.split(',').map(t => t.trim()).filter(t => t.length > 0)
+        if (newTags.length > 0) {
+            setTags(prev => [...prev, ...newTags])
+            setTagInput('')
+        }
+    }
+
+    const handleRemoveTag = (tagToRemove: string) => {
+        setTags(prev => prev.filter(tag => tag !== tagToRemove))
+    }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsSubmitting(true)
-        
+
         try {
             const formData = new FormData(e.currentTarget)
+            
+            // Add tags to form data
+            if (tags.length > 0) {
+                formData.append('tags', tags.join(','))
+            }
+
             const dataObj = Object.fromEntries(formData)
             console.log('[CreateTaskDialog] START Submitting form:', dataObj)
-            
+
             if (!dataObj.statusId) {
                 console.error('[CreateTaskDialog] ERROR: statusId is missing from form data')
                 toast({ variant: 'destructive', description: 'Status ID is required' })
@@ -45,31 +70,42 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
                 return
             }
 
+            if (!dataObj.title || (dataObj.title as string).trim().length === 0) {
+                console.error('[CreateTaskDialog] ERROR: title is required')
+                toast({ variant: 'destructive', description: 'Judul task wajib diisi' })
+                setIsSubmitting(false)
+                return
+            }
+
             const result = await createTask(formData)
             setIsSubmitting(false)
-            
+
             console.log('[CreateTaskDialog] END result:', result)
-            
+
             if (result.success) {
                 console.log('[CreateTaskDialog] SUCCESS: Task created:', result.data)
-                toast({ title: 'Tugas Berhasil Dibuat', description: `"${dataObj.title}" telah ditambahkan.` })
+                toast({ 
+                    title: '✅ Task Berhasil Dibuat', 
+                    description: `"${dataObj.title}" telah ditambahkan ke project.` 
+                })
                 setOpen(false)
-                
+                setTags([])
+
                 if (onTaskCreated && result.data) {
                     onTaskCreated(result.data)
                 }
-                
+
                 setTimeout(() => {
                     router.refresh()
                 }, 100)
             } else {
                 console.error('[CreateTaskDialog] SERVER ERROR:', result.error)
-                toast({ variant: 'destructive', title: 'Gagal Membuat Tugas', description: result.error })
+                toast({ variant: 'destructive', title: '❌ Gagal Membuat Task', description: result.error })
             }
         } catch (err: any) {
             console.error('[CreateTaskDialog] CRITICAL CLIENT ERROR:', err)
             setIsSubmitting(false)
-            toast({ variant: 'destructive', title: 'Fatal Error', description: err.message })
+            toast({ variant: 'destructive', title: '❌ Fatal Error', description: err.message })
         }
     }
 
@@ -84,7 +120,7 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
                     Create Task
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] bg-slate-950 border border-white/10 shadow-2xl side-panel-content">
+            <DialogContent className="sm:max-w-[650px] bg-slate-950 border border-white/10 shadow-2xl side-panel-content max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-center gap-3 mb-2">
                         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg">
@@ -95,7 +131,7 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
                                 Create New Task
                             </DialogTitle>
                             <DialogDescription className="text-slate-400">
-                                Add a new task to your project
+                                Fill in the details below to create a new task
                             </DialogDescription>
                         </div>
                     </div>
@@ -106,37 +142,100 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
 
                     {/* Title Input */}
                     <div className="space-y-2">
-                        <Label htmlFor="title" className="text-sm font-semibold text-slate-300">
-                            Task Title
+                        <Label htmlFor="title" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-sky-400" />
+                            Task Title <span className="text-red-400">*</span>
                         </Label>
                         <Input
                             id="title"
                             name="title"
                             required
-                            placeholder="Enter task title..."
+                            placeholder="e.g., Implement user authentication system"
                             className="bg-slate-900/50 border-white/10 focus:border-sky-500 focus:ring-sky-500 h-11 text-slate-100"
                         />
                     </div>
 
                     {/* Description Input */}
                     <div className="space-y-2">
-                        <Label htmlFor="description" className="text-sm font-semibold text-slate-300">
-                            Description <span className="text-slate-500 font-normal">(optional)</span>
+                        <Label htmlFor="description" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-sky-400" />
+                            Description
                         </Label>
-                        <textarea
+                        <Textarea
                             id="description"
                             name="description"
-                            rows={3}
-                            placeholder="Provide task details..."
-                            className="flex w-full rounded-lg border border-white/10 bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                            rows={4}
+                            placeholder="Provide detailed information about this task, including requirements, acceptance criteria, and any relevant notes..."
+                            className="flex w-full rounded-lg border border-white/10 bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none"
                         />
+                    </div>
+
+                    {/* Location */}
+                    <div className="space-y-2">
+                        <Label htmlFor="location" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-sky-400" />
+                            Location <span className="text-slate-500 font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                            id="location"
+                            name="location"
+                            placeholder="e.g., Office, Remote, Building A - Room 301"
+                            className="bg-slate-900/50 border-white/10 focus:border-sky-500 focus:ring-sky-500 h-11 text-slate-100"
+                        />
+                    </div>
+
+                    {/* Tags */}
+                    <div className="space-y-2">
+                        <Label htmlFor="tags" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-sky-400" />
+                            Tags <span className="text-slate-500 font-normal">(optional)</span>
+                        </Label>
+                        <div className="flex gap-2">
+                            <Input
+                                id="tags"
+                                name="tags-input"
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                onKeyDown={handleAddTag}
+                                placeholder="Type tags and press Enter (e.g., frontend, urgent, bug)"
+                                className="bg-slate-900/50 border-white/10 focus:border-sky-500 focus:ring-sky-500 h-11 text-slate-100 flex-1"
+                            />
+                            <Button
+                                type="button"
+                                onClick={() => handleAddTag()}
+                                className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10"
+                            >
+                                Add
+                            </Button>
+                        </div>
+                        {tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {tags.map((tag, index) => (
+                                    <span
+                                        key={index}
+                                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-sky-900/30 text-sky-400 border border-sky-700/50 text-sm"
+                                    >
+                                        <Tag className="h-3 w-3" />
+                                        {tag}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveTag(tag)}
+                                            className="hover:text-sky-200 transition-colors"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         {/* Status Dropdown */}
                         <div className="space-y-2">
-                            <Label htmlFor="statusId" className="text-sm font-semibold text-slate-300">
-                                Status
+                            <Label htmlFor="statusId" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                <Flag className="h-4 w-4 text-sky-400" />
+                                Status <span className="text-red-400">*</span>
                             </Label>
                             <select
                                 id="statusId"
@@ -154,7 +253,8 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
 
                         {/* Priority Dropdown */}
                         <div className="space-y-2">
-                            <Label htmlFor="priority" className="text-sm font-semibold text-slate-300">
+                            <Label htmlFor="priority" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                <Flag className="h-4 w-4 text-sky-400" />
                                 Priority
                             </Label>
                             <select
@@ -174,8 +274,9 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
                     <div className="grid grid-cols-2 gap-4">
                         {/* Due Date */}
                         <div className="space-y-2">
-                            <Label htmlFor="dueDate" className="text-sm font-semibold text-slate-300">
-                                Due Date <span className="text-slate-500 font-normal">(optional)</span>
+                            <Label htmlFor="dueDate" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-sky-400" />
+                                Deadline <span className="text-slate-500 font-normal">(optional)</span>
                             </Label>
                             <Input
                                 id="dueDate"
@@ -187,8 +288,9 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
 
                         {/* Estimated Hours */}
                         <div className="space-y-2">
-                            <Label htmlFor="estimatedHours" className="text-sm font-semibold text-slate-300">
-                                Hours <span className="text-slate-500 font-normal">(optional)</span>
+                            <Label htmlFor="estimatedHours" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-sky-400" />
+                                Estimated Hours <span className="text-slate-500 font-normal">(optional)</span>
                             </Label>
                             <Input
                                 id="estimatedHours"
@@ -202,6 +304,28 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
                         </div>
                     </div>
 
+                    {/* Assignee */}
+                    {users.length > 0 && (
+                        <div className="space-y-2">
+                            <Label htmlFor="assigneeId" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                <User className="h-4 w-4 text-sky-400" />
+                                Assign To <span className="text-slate-500 font-normal">(optional)</span>
+                            </Label>
+                            <select
+                                id="assigneeId"
+                                name="assigneeId"
+                                className="flex h-11 w-full rounded-lg border border-white/10 bg-slate-900/50 px-3 py-2 text-sm text-slate-100 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-colors"
+                            >
+                                <option value="" className="bg-slate-950">— Unassigned —</option>
+                                {users.map((user) => (
+                                    <option key={user.id} value={user.id} className="bg-slate-950">
+                                        {user.name} ({user.username})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     {/* Action Buttons */}
                     <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
                         <Button
@@ -214,10 +338,20 @@ export function CreateTaskDialog({ projectId, statuses, onTaskCreated }: CreateT
                         </Button>
                         <Button
                             type="submit"
-                            className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 shadow-lg hover:shadow-sky-900/40 transition-all duration-200 px-6 border-0 text-white font-bold"
+                            disabled={isSubmitting}
+                            className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 shadow-lg hover:shadow-sky-900/40 transition-all duration-200 px-6 border-0 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Task
+                            {isSubmitting ? (
+                                <>
+                                    <span className="animate-spin mr-2">⏳</span>
+                                    Creating...
+                                </>
+                            ) : (
+                                <>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Task
+                                </>
+                            )}
                         </Button>
                     </div>
                 </form>

@@ -14,7 +14,8 @@ import {
     ChevronDown,
     ChevronRight,
     Search,
-    ShieldCheck
+    ShieldCheck,
+    LayoutGrid
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserMenu } from '@/components/auth/user-menu';
@@ -52,13 +53,19 @@ export function Sidebar({ projects = [], collapsed: controlledCollapsed, onColla
     const navItems = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Projects', href: '/projects', icon: FolderKanban },
-        { name: 'Reports', href: '/reports', icon: FileText },
     ];
-    
+
+    // Manager, Admin, Super Admin can see all tasks overview
+    if (userRole === 'MANAGER' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+        navItems.push({ name: 'Team Overview', href: '/overview', icon: LayoutGrid });
+    }
+
+    navItems.push({ name: 'Reports', href: '/reports', icon: FileText });
+
     if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
         navItems.push({ name: 'Admin Panel', href: '/admin', icon: ShieldCheck });
     }
-    
+
     navItems.push({ name: 'Settings', href: '/settings', icon: Settings });
 
     return (

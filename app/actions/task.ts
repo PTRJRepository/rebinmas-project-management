@@ -77,8 +77,21 @@ export async function createTask(formData: FormData) {
     const description = formData.get('description') as string
     const dueDate = formData.get('dueDate') as string
     const estimatedHours = formData.get('estimatedHours') as string
+    const location = formData.get('location') as string
+    const tags = formData.get('tags') as string
 
-    console.log('[createTask] Input:', { title, projectId, statusId, priority, description, dueDate, estimatedHours })
+    console.log('[createTask] Input:', { 
+        title, 
+        projectId, 
+        statusId, 
+        priority, 
+        description, 
+        dueDate, 
+        estimatedHours,
+        location,
+        tags,
+        assigneeId 
+    })
 
     if (!title || !projectId || !statusId) {
         console.error('[createTask] Missing required fields:', { title: !!title, projectId: !!projectId, statusId: !!statusId })
@@ -86,9 +99,30 @@ export async function createTask(formData: FormData) {
     }
 
     try {
+        // Combine location and tags with description if they exist
+        let fullDescription: string = description || ''
+        
+        // Add location to description if provided
+        if (location && location.trim().length > 0) {
+            fullDescription = fullDescription 
+                ? `${fullDescription}\n\n📍 Location: ${location}`
+                : `📍 Location: ${location}`
+        }
+        
+        // Add tags to description if provided
+        if (tags && tags.trim().length > 0) {
+            const tagList = tags.split(',').filter(t => t.trim().length > 0)
+            if (tagList.length > 0) {
+                const tagsFormatted = tagList.map(t => `#${t.trim()}`).join(' ')
+                fullDescription = fullDescription 
+                    ? `${fullDescription}\n\n${tagsFormatted}`
+                    : tagsFormatted
+            }
+        }
+
         const task = await apiCreateTask({
             title,
-            description,
+            description: fullDescription || undefined,
             priority: priority || 'MEDIUM',
             dueDate: dueDate ? new Date(dueDate) : undefined,
             estimatedHours: estimatedHours ? parseFloat(estimatedHours) : undefined,

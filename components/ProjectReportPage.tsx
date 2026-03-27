@@ -1,9 +1,10 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Printer, ArrowLeft, Calendar, Clock, User, CheckCircle, AlertTriangle, X } from 'lucide-react'
+import { Printer, ArrowLeft, Calendar, Clock, User, CheckCircle, AlertTriangle, X, LayoutGrid, List, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useState } from 'react'
 
 interface Task {
   id: string
@@ -43,7 +44,10 @@ interface ProjectReportPageProps {
   onClose?: () => void
 }
 
+type LayoutMode = 'compact' | 'normal' | 'detailed'
+
 export function ProjectReportPage({ project, generatedAt, onClose }: ProjectReportPageProps) {
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('normal')
   const handlePrint = () => {
     window.print()
   }
@@ -219,10 +223,42 @@ export function ProjectReportPage({ project, generatedAt, onClose }: ProjectRepo
                 <p className="text-xs text-slate-400">{project.name}</p>
               </div>
             </div>
-            <Button onClick={handlePrint} className="print-btn gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold">
-              <Printer className="w-4 h-4" />
-              Cetak Laporan
-            </Button>
+            <div className="flex items-center gap-3">
+              {/* Layout Mode Selector */}
+              <div className="flex items-center gap-1 bg-slate-700/50 rounded-lg p-1">
+                <Button
+                  variant={layoutMode === 'compact' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`h-8 px-3 gap-1 ${layoutMode === 'compact' ? 'bg-sky-600 text-white' : 'text-slate-300 hover:bg-white/10'}`}
+                  onClick={() => setLayoutMode('compact')}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                  <span className="text-xs font-bold">Compact</span>
+                </Button>
+                <Button
+                  variant={layoutMode === 'normal' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`h-8 px-3 gap-1 ${layoutMode === 'normal' ? 'bg-sky-600 text-white' : 'text-slate-300 hover:bg-white/10'}`}
+                  onClick={() => setLayoutMode('normal')}
+                >
+                  <List className="w-4 h-4" />
+                  <span className="text-xs font-bold">Normal</span>
+                </Button>
+                <Button
+                  variant={layoutMode === 'detailed' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`h-8 px-3 gap-1 ${layoutMode === 'detailed' ? 'bg-sky-600 text-white' : 'text-slate-300 hover:bg-white/10'}`}
+                  onClick={() => setLayoutMode('detailed')}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="text-xs font-bold">Detailed</span>
+                </Button>
+              </div>
+              <Button onClick={handlePrint} className="print-btn gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold">
+                <Printer className="w-4 h-4" />
+                Cetak
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -237,7 +273,8 @@ export function ProjectReportPage({ project, generatedAt, onClose }: ProjectRepo
             {renderReportContent({
               project, generatedAt, priorityInfo, deadlineInfo,
               tasksByStatus, totalTasks, completedTasks, overallProgress,
-              taskStats, getDeadlineInfo, getPriorityInfo, getProgressColor
+              taskStats, getDeadlineInfo, getPriorityInfo, getProgressColor,
+              layoutMode
             })}
           </div>
         </div>
@@ -250,19 +287,52 @@ export function ProjectReportPage({ project, generatedAt, onClose }: ProjectRepo
 function renderReportContent({
   project, generatedAt, priorityInfo, deadlineInfo,
   tasksByStatus, totalTasks, completedTasks, overallProgress,
-  taskStats, getDeadlineInfo, getPriorityInfo, getProgressColor
+  taskStats, getDeadlineInfo, getPriorityInfo, getProgressColor,
+  layoutMode = 'normal'
 }: any) {
+  // Adjust font sizes and spacing based on layout mode
+  const getLayoutConfig = () => {
+    switch (layoutMode) {
+      case 'compact':
+        return {
+          taskPadding: '8px 10px',
+          fontSize: '11px',
+          titleSize: '13px',
+          gap: '6px',
+          headingSize: '15px'
+        }
+      case 'detailed':
+        return {
+          taskPadding: '15px',
+          fontSize: '13px',
+          titleSize: '15px',
+          gap: '12px',
+          headingSize: '18px'
+        }
+      default: // normal
+        return {
+          taskPadding: '10px 12px',
+          fontSize: '12px',
+          titleSize: '14px',
+          gap: '8px',
+          headingSize: '16px'
+        }
+    }
+  }
+
+  const layout = getLayoutConfig()
+
   return (
     <div style={{ fontFamily: 'Arial, sans-serif' }}>
       {/* Report Header */}
-      <div style={{ textAlign: 'center', marginBottom: '30px', paddingBottom: '20px', borderBottom: '3px solid #1e40af' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#1e3a8a' }}>
+      <div style={{ textAlign: 'center', marginBottom: layoutMode === 'compact' ? '20px' : '30px', paddingBottom: '15px', borderBottom: '3px solid #1e40af' }}>
+        <h1 style={{ fontSize: layoutMode === 'compact' ? '22px' : '28px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#1e3a8a' }}>
           LAPORAN PROYEK
         </h1>
-        <p style={{ fontSize: '16px', color: '#6b7280', margin: '0 0 4px 0' }}>
+        <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 4px 0' }}>
           Sistem Manajemen Proyek Rebinmas
         </p>
-        <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>
+        <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>
           Dicetak: {generatedAt}
         </p>
       </div>
@@ -357,22 +427,22 @@ function renderReportContent({
       </div>
 
       {/* Tasks by Status */}
-      <div className="page-break-before" style={{ marginBottom: '30px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '20px', color: '#1e3a8a', borderBottom: '2px solid #e5e7eb', paddingBottom: '10px' }}>
+      <div className="page-break-before" style={{ marginBottom: layoutMode === 'compact' ? '20px' : '30px' }}>
+        <h3 style={{ fontSize: layout.headingSize, fontWeight: 'bold', marginBottom: layoutMode === 'compact' ? '12px' : '20px', color: '#1e3a8a', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>
           DAFTAR TUGAS
         </h3>
 
         {tasksByStatus.map((statusGroup: any) => (
-          <div key={statusGroup.id} style={{ marginBottom: '25px' }} className="avoid-break">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
-              <h4 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#374151' }}>
+          <div key={statusGroup.id} style={{ marginBottom: layoutMode === 'compact' ? '15px' : '25px' }} className="avoid-break">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <h4 style={{ fontSize: layout.headingSize, fontWeight: 'bold', margin: 0, color: '#374151' }}>
                 {statusGroup.name}
               </h4>
               <span style={{
-                padding: '4px 12px',
+                padding: '3px 10px',
                 backgroundColor: '#e5e7eb',
                 borderRadius: '20px',
-                fontSize: '12px',
+                fontSize: layout.fontSize,
                 fontWeight: '600',
                 color: '#4b5563'
               }}>
@@ -381,46 +451,46 @@ function renderReportContent({
             </div>
 
             {statusGroup.tasks.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: layout.gap }}>
                 {statusGroup.tasks.map((task: any) => {
                   const taskPriority = getPriorityInfo(task.priority)
                   const taskDeadline = getDeadlineInfo(task.dueDate || null)
 
                   return (
                     <div key={task.id} style={{
-                      padding: '12px 15px',
+                      padding: layout.taskPadding,
                       backgroundColor: 'white',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       borderLeft: `4px solid ${taskPriority.color}`
                     }} className="avoid-break">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: layoutMode === 'compact' ? '5px' : '8px' }}>
                         <div style={{ flex: 1 }}>
-                          <h5 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 6px 0', color: '#111827' }}>
+                          <h5 style={{ fontSize: layout.titleSize, fontWeight: '600', margin: '0 0 4px 0', color: '#111827' }}>
                             {task.title}
                           </h5>
                           {task.description && (
-                            <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: '1.4' }}>
+                            <p style={{ fontSize: layoutMode === 'compact' ? '10px' : '12px', color: '#6b7280', margin: 0, lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: layoutMode === 'compact' ? 2 : 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {task.description}
                             </p>
                           )}
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', fontSize: '11px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: layoutMode === 'compact' ? '5px' : '8px', alignItems: 'center', fontSize: layoutMode === 'compact' ? '10px' : '11px' }}>
                         <span style={{
-                          padding: '3px 10px',
+                          padding: layoutMode === 'compact' ? '2px 8px' : '3px 10px',
                           backgroundColor: taskPriority.bgColor,
                           color: taskPriority.color,
                           borderRadius: '4px',
                           fontWeight: '600',
-                          fontSize: '11px'
+                          fontSize: layoutMode === 'compact' ? '10px' : '11px'
                         }}>
                           {taskPriority.label}
                         </span>
                         {task.assignee && (
                           <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <User size={12} /> {task.assignee.username}
+                            <User size={layoutMode === 'compact' ? 10 : 12} /> {task.assignee.username}
                           </span>
                         )}
                         {task.estimatedHours && (
@@ -437,7 +507,7 @@ function renderReportContent({
                             alignItems: 'center',
                             gap: '4px'
                           }}>
-                            <Calendar size={12} />
+                            <Calendar size={layoutMode === 'compact' ? 10 : 12} />
                             {new Date(task.dueDate).toLocaleDateString('id-ID')}
                             {taskDeadline.status !== 'normal' && (
                               <span style={{ marginLeft: '4px', padding: '2px 6px', backgroundColor: '#fef2f2', borderRadius: '3px' }}>
@@ -449,8 +519,8 @@ function renderReportContent({
                       </div>
 
                       {task.progress !== undefined && task.progress !== null && (
-                        <div style={{ marginTop: '10px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px' }}>
+                        <div style={{ marginTop: layoutMode === 'compact' ? '6px' : '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px', fontSize: '10px' }}>
                             <span style={{ color: '#6b7280' }}>Progress</span>
                             <span style={{ fontWeight: '600', color: '#111827' }}>{task.progress}%</span>
                           </div>

@@ -1,6 +1,7 @@
 
 import { getProject, getProjectStats } from '@/app/actions/project'
 import { getTasks } from '@/app/actions/task'
+import { getAllUsers } from '@/lib/api/users'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -23,8 +24,11 @@ export default async function ProjectDashboard({ params }: { params: Promise<{ i
     if (code === 'FORBIDDEN') {
         redirect('/forbidden')
     }
-    
+
     const { data: tasks } = await getTasks(id)
+    
+    // Fetch all users for assignee selection
+    const users = await getAllUsers().catch(() => [])
 
     if (!success) return <div>Error loading stats</div>
     if (!project) return <div>Project not found</div>
@@ -62,6 +66,7 @@ export default async function ProjectDashboard({ params }: { params: Promise<{ i
             dueThisWeekTasks={dueThisWeekTasks as any}
             currentUserId={currentUser?.id || ''}
             currentUserRole={userRole as string}
+            users={users}
         />
     )
 }

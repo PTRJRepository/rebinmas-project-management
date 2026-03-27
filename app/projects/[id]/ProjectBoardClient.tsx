@@ -82,6 +82,7 @@ interface ProjectBoardClientProps {
   dueThisWeekTasks: Task[]
   currentUserId: string
   currentUserRole?: string
+  users?: Array<{ id: string; username: string; name: string; email: string }>
 }
 
 export default function ProjectBoardClient({
@@ -93,7 +94,8 @@ export default function ProjectBoardClient({
   dueTodayTasks,
   dueThisWeekTasks,
   currentUserId,
-  currentUserRole
+  currentUserRole,
+  users = []
 }: ProjectBoardClientProps) {
   const router = useRouter()
   const [viewState, setViewState] = useState<ViewState>('overview')
@@ -379,6 +381,7 @@ export default function ProjectBoardClient({
             <CreateTaskDialog
               projectId={project.id}
               statuses={project.statuses}
+              users={users}
               onTaskCreated={handleTaskCreated}
             />
           </div>

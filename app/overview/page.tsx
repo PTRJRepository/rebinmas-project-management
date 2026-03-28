@@ -143,7 +143,7 @@ export default function OverviewPage() {
     if (filters.assignee !== 'all' && task.assignee?.id !== filters.assignee) return false
     if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
     return true
-  })
+  });
 
   // Calculate stats
   const totalTasks = tasks.length

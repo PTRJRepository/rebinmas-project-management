@@ -251,7 +251,7 @@ export async function getProjects(userId?: string, userRole?: string): Promise<P
 
   sql += `
     GROUP BY p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at, u.id, u.username, u.email, u.name
-    ORDER BY p.created_at DESC
+    ORDER BY p.updated_at DESC
   `;
 
   const finalResult = await sqlGateway.query(sql);
@@ -301,7 +301,7 @@ export async function getProjectsByOwnerId(ownerId: string): Promise<Project[]> 
     LEFT JOIN pm_tasks t ON p.id = t.project_id
     WHERE p.owner_id = @ownerId
     GROUP BY p.id, p.name, p.description, p.start_date, p.end_date, p.priority, p.banner_image, p.status, p.owner_id, p.created_at, p.updated_at, u.id, u.username, u.email, u.name
-    ORDER BY p.created_at DESC
+    ORDER BY p.updated_at DESC
   `;
 
   const result = await sqlGateway.query(sql, { ownerId });

@@ -44,7 +44,7 @@ export async function GET() {
       INNER JOIN pm_projects p ON t.project_id = p.id
       INNER JOIN pm_task_statuses ts ON t.status_id = ts.id
       LEFT JOIN pm_users u ON t.assignee_id = u.id
-      ORDER BY t.created_at DESC
+      ORDER BY t.updated_at DESC
     `)
 
     const tasks = result.recordset.map((row: any) => ({

@@ -89,6 +89,8 @@ export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [allUsers, setAllUsers] = useState<FilterUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [canFilterByUser, setCanFilterByUser] = useState(false);
 
   // Form Data
@@ -610,16 +612,25 @@ export default function DashboardPage() {
       }
     });
 
-    // Sort each category: Start Date (asc) -> End Date (asc) -> Name (asc)
+    // Sort each category by time: Start Date (asc) -> End Date (asc) -> Name (asc)
     const sortProjects = (a: Project, b: Project) => {
-      const startA = a.startDate ? new Date(a.startDate).getTime() : 0;
-      const startB = b.startDate ? new Date(b.startDate).getTime() : 0;
-      if (startA !== startB) return startA - startB;
+      // First sort by start date (ascending - oldest first)
+      const startA = a.startDate ? new Date(a.startDate).getTime() : Infinity;
+      const startB = b.startDate ? new Date(b.startDate).getTime() : Infinity;
+      
+      if (startA !== startB) {
+        return startA - startB;
+      }
 
-      const endA = a.endDate ? new Date(a.endDate).getTime() : 0;
-      const endB = b.endDate ? new Date(b.endDate).getTime() : 0;
-      if (endA !== endB) return endA - endB;
+      // If same start date, sort by end date (ascending - earliest deadline first)
+      const endA = a.endDate ? new Date(a.endDate).getTime() : Infinity;
+      const endB = b.endDate ? new Date(b.endDate).getTime() : Infinity;
+      
+      if (endA !== endB) {
+        return endA - endB;
+      }
 
+      // If same dates, sort by name
       return a.name.localeCompare(b.name);
     };
 
@@ -725,9 +736,16 @@ export default function DashboardPage() {
   };
 
   // Filter and categorize
-  const filteredProjects = (projects || []).filter(project =>
-    project.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProjects = (projects || []).filter(project => {
+    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    const matchesPriority = priorityFilter === 'all' || project.priority === priorityFilter;
+    return matchesSearch && matchesStatus && matchesPriority;
+  }).sort((a, b) => {
+    const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+    const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+    return timeB - timeA;
+  });
 
   const { rencana, sekarang, selesai } = categorizeProjects(filteredProjects);
 
@@ -925,6 +943,51 @@ export default function DashboardPage() {
                 </Button>
               </div>
             )}
+            {/* Status & Priority Filters */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Select value={statusFilter} onValueChange={(v: string) => setStatusFilter(v)}>
+                <SelectTrigger className="h-9 w-[120px] bg-slate-800/60 border border-cyan-500/20 text-[10px] font-bold text-sky-100">
+                  <SelectValue placeholder="STATUS" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border border-cyan-500/20">
+                  <SelectItem value="all">SEMUA STATUS</SelectItem>
+                  <SelectItem value="SEKARANG">SEKARANG</SelectItem>
+                  <SelectItem value="RENCANA">RENCANA</SelectItem>
+                  <SelectItem value="SELESAI">SELESAI</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={priorityFilter} onValueChange={(v: string) => setPriorityFilter(v)}>
+                <SelectTrigger className="h-9 w-[120px] bg-slate-800/60 border border-cyan-500/20 text-[10px] font-bold text-sky-100">
+                  <SelectValue placeholder="PRIORITAS" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border border-cyan-500/20">
+                  <SelectItem value="all">SEMUA PRIORITAS</SelectItem>
+                  <SelectItem value="CRITICAL">KRITIS</SelectItem>
+                  <SelectItem value="HIGH">TINGGI</SelectItem>
+                  <SelectItem value="MEDIUM">SEDANG</SelectItem>
+                  <SelectItem value="LOW">RENDAH</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(statusFilter !== 'all' || priorityFilter !== 'all' || searchTerm !== '' || selectedUserId !== 'all') && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
+                    setStatusFilter('all');
+                    setPriorityFilter('all');
+                    setSearchTerm('');
+                    setSelectedUserId(currentUser?.id || 'all');
+                  }}
+                  className="h-9 px-2 text-[10px] font-bold text-slate-400 hover:text-white"
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  RESET
+                </Button>
+              )}
+            </div>
+
             <div className="relative shrink-1 w-full sm:w-auto min-w-[150px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400/50" />
               <Input
@@ -1093,13 +1156,43 @@ export default function DashboardPage() {
                         {sekarang.map((project) => {
                           const deadlineInfo = getDeadlineInfo(project.endDate || null);
                           const priority = project.priority || 'MEDIUM';
-                          const priorityColors = {
-                            LOW: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-400/30', shadow: 'shadow-[0_0_10px_rgba(74,222,128,0.3)]' },
-                            MEDIUM: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-400/30', shadow: 'shadow-[0_0_10px_rgba(250,204,21,0.3)]' },
-                            HIGH: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-400/30', shadow: 'shadow-[0_0_10px_rgba(251,146,60,0.3)]' },
-                            CRITICAL: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-400/30', shadow: 'shadow-[0_0_10px_rgba(248,113,113,0.3)]' },
+                          
+                          // Colorful gradients based on priority
+                          const priorityGradients = {
+                            LOW: {
+                              border: 'border-emerald-500/40',
+                              gradient: 'from-emerald-500/10 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_20px_rgba(16,185,129,0.2)]',
+                              badgeBg: 'bg-emerald-500/20',
+                              badgeText: 'text-emerald-400',
+                              badgeBorder: 'border-emerald-400/30',
+                            },
+                            MEDIUM: {
+                              border: 'border-amber-500/40',
+                              gradient: 'from-amber-500/10 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_20px_rgba(245,158,11,0.2)]',
+                              badgeBg: 'bg-amber-500/20',
+                              badgeText: 'text-amber-400',
+                              badgeBorder: 'border-amber-400/30',
+                            },
+                            HIGH: {
+                              border: 'border-orange-500/40',
+                              gradient: 'from-orange-500/10 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_20px_rgba(249,115,22,0.2)]',
+                              badgeBg: 'bg-orange-500/20',
+                              badgeText: 'text-orange-400',
+                              badgeBorder: 'border-orange-400/30',
+                            },
+                            CRITICAL: {
+                              border: 'border-red-500/40',
+                              gradient: 'from-red-500/10 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_20px_rgba(239,68,68,0.2)]',
+                              badgeBg: 'bg-red-500/20',
+                              badgeText: 'text-red-400',
+                              badgeBorder: 'border-red-400/30',
+                            },
                           };
-                          const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
+                          const priorityStyle = priorityGradients[priority as keyof typeof priorityGradients] || priorityGradients.MEDIUM;
 
                           return (
                             <div key={project.id} className="w-full">
@@ -1109,13 +1202,13 @@ export default function DashboardPage() {
                                 onDragEnd={handleDragEnd}
                                 onClick={() => router.push(`/projects/${project.id}`)}
                                 className={cn(
-                                  "glass-card h-full border hover:shadow-[0_0_25px_rgba(251,191,36,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col relative group",
+                                  "glass-card h-full border transition-all cursor-pointer overflow-hidden flex flex-col relative group",
+                                  "bg-gradient-to-br", priorityStyle.gradient,
+                                  priorityStyle.border, priorityStyle.glow,
+                                  "hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-[1.02]",
                                   draggedProject?.id === project.id ? "opacity-50 scale-95" : "",
-                                  deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
-                                    deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
-                                      "border-amber-400/20",
-                                  starredProjects.has(project.id) && "ring-2 ring-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.3)]",
-                                  selectedProjects.has(project.id) && "ring-2 ring-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] transform scale-[1.02]"
+                                  starredProjects.has(project.id) && "ring-2 ring-amber-400/40 shadow-[0_0_25px_rgba(251,191,36,0.4)]",
+                                  selectedProjects.has(project.id) && "ring-2 ring-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] transform scale-[1.02]"
                                 )}
                               >
                                 {/* Selection Checkbox */}
@@ -1144,14 +1237,14 @@ export default function DashboardPage() {
                                   <div className={cn("absolute top-2 left-2 flex gap-2", (selectionMode || selectedProjects.size > 0) ? "pl-6" : "")}>
                                     {/* Priority Badge */}
                                     <span className={cn(
-                                      "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide border",
-                                      priorityStyle.bg, priorityStyle.text, priorityStyle.border, priorityStyle.shadow
+                                      "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide border backdrop-blur-sm",
+                                      priorityStyle.badgeBg, priorityStyle.badgeText, priorityStyle.badgeBorder
                                     )}>
-                                      {priority}
+                                      {priority === 'LOW' ? '🟢 Low' : priority === 'MEDIUM' ? '🟡 Medium' : priority === 'HIGH' ? '🟠 High' : '🔴 Critical'}
                                     </span>
                                     {/* Urgent Badge */}
                                     {deadlineInfo && deadlineInfo.color === 'amber' && (
-                                      <span className="bg-red-500 text-white px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1 animate-pulse">
+                                      <span className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1 animate-pulse shadow-lg">
                                         <Clock className="w-3 h-3" />
                                         {deadlineInfo.days === 0 ? 'HARI INI' : `${deadlineInfo.days} HARI`}
                                       </span>
@@ -1284,13 +1377,43 @@ export default function DashboardPage() {
                         {rencana.map((project) => {
                           const deadlineInfo = getDeadlineInfo(project.endDate || null);
                           const priority = project.priority || 'MEDIUM';
-                          const priorityColors = {
-                            LOW: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-400/30', shadow: 'shadow-[0_0_10px_rgba(74,222,128,0.3)]' },
-                            MEDIUM: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-400/30', shadow: 'shadow-[0_0_10px_rgba(250,204,21,0.3)]' },
-                            HIGH: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-400/30', shadow: 'shadow-[0_0_10px_rgba(251,146,60,0.3)]' },
-                            CRITICAL: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-400/30', shadow: 'shadow-[0_0_10px_rgba(248,113,113,0.3)]' },
+                          
+                          // Colorful gradients based on priority
+                          const priorityGradients = {
+                            LOW: {
+                              border: 'border-emerald-500/40',
+                              gradient: 'from-emerald-500/10 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_20px_rgba(16,185,129,0.2)]',
+                              badgeBg: 'bg-emerald-500/20',
+                              badgeText: 'text-emerald-400',
+                              badgeBorder: 'border-emerald-400/30',
+                            },
+                            MEDIUM: {
+                              border: 'border-sky-500/40',
+                              gradient: 'from-sky-500/10 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_20px_rgba(14,165,233,0.2)]',
+                              badgeBg: 'bg-sky-500/20',
+                              badgeText: 'text-sky-400',
+                              badgeBorder: 'border-sky-400/30',
+                            },
+                            HIGH: {
+                              border: 'border-orange-500/40',
+                              gradient: 'from-orange-500/10 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_20px_rgba(249,115,22,0.2)]',
+                              badgeBg: 'bg-orange-500/20',
+                              badgeText: 'text-orange-400',
+                              badgeBorder: 'border-orange-400/30',
+                            },
+                            CRITICAL: {
+                              border: 'border-red-500/40',
+                              gradient: 'from-red-500/10 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_20px_rgba(239,68,68,0.2)]',
+                              badgeBg: 'bg-red-500/20',
+                              badgeText: 'text-red-400',
+                              badgeBorder: 'border-red-400/30',
+                            },
                           };
-                          const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
+                          const priorityStyle = priorityGradients[priority as keyof typeof priorityGradients] || priorityGradients.MEDIUM;
 
                           return (
                             <div key={project.id} className="w-full">
@@ -1300,13 +1423,13 @@ export default function DashboardPage() {
                                 onDragEnd={handleDragEnd}
                                 onClick={() => router.push(`/projects/${project.id}`)}
                                 className={cn(
-                                  "glass-card h-full border hover:shadow-[0_0_25px_rgba(56,189,248,0.25)] transition-all cursor-pointer overflow-hidden flex flex-col relative group",
+                                  "glass-card h-full border transition-all cursor-pointer overflow-hidden flex flex-col relative group",
+                                  "bg-gradient-to-br", priorityStyle.gradient,
+                                  priorityStyle.border, priorityStyle.glow,
+                                  "hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-[1.02]",
                                   draggedProject?.id === project.id ? "opacity-50 scale-95" : "",
-                                  deadlineInfo?.color === 'red' ? "border-red-400/50 shadow-[0_0_15px_rgba(248,113,113,0.3)]" :
-                                    deadlineInfo?.color === 'amber' ? "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]" :
-                                      "border-sky-400/20",
-                                  starredProjects.has(project.id) && "ring-2 ring-sky-400/40 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
-                                  selectedProjects.has(project.id) && "ring-2 ring-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] transform scale-[1.02]"
+                                  starredProjects.has(project.id) && "ring-2 ring-sky-400/40 shadow-[0_0_25px_rgba(56,189,248,0.4)]",
+                                  selectedProjects.has(project.id) && "ring-2 ring-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] transform scale-[1.02]"
                                 )}
                               >
                                 {/* Selection Checkbox */}
@@ -1335,10 +1458,10 @@ export default function DashboardPage() {
                                   <div className={cn("absolute top-2 left-2 flex gap-2", (selectionMode || selectedProjects.size > 0) ? "pl-6" : "")}>
                                     {/* Priority Badge */}
                                     <span className={cn(
-                                      "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide border",
-                                      priorityStyle.bg, priorityStyle.text, priorityStyle.border, priorityStyle.shadow
+                                      "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide border backdrop-blur-sm",
+                                      priorityStyle.badgeBg, priorityStyle.badgeText, priorityStyle.badgeBorder
                                     )}>
-                                      {priority}
+                                      {priority === 'LOW' ? '🟢 Low' : priority === 'MEDIUM' ? '🟡 Medium' : priority === 'HIGH' ? '🟠 High' : '🔴 Critical'}
                                     </span>
                                   </div>
                                   <div className="absolute top-2 right-2 flex gap-1">
@@ -1479,13 +1602,43 @@ export default function DashboardPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                         {selesai.map((project) => {
                           const priority = project.priority || 'MEDIUM';
-                          const priorityColors = {
-                            LOW: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-400/30', shadow: 'shadow-[0_0_10px_rgba(74,222,128,0.3)]' },
-                            MEDIUM: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-400/30', shadow: 'shadow-[0_0_10px_rgba(250,204,21,0.3)]' },
-                            HIGH: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-400/30', shadow: 'shadow-[0_0_10px_rgba(251,146,60,0.3)]' },
-                            CRITICAL: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-400/30', shadow: 'shadow-[0_0_10px_rgba(248,113,113,0.3)]' },
+                          
+                          // Colorful gradients based on priority for completed projects
+                          const priorityGradients = {
+                            LOW: {
+                              border: 'border-emerald-500/30',
+                              gradient: 'from-emerald-500/5 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_15px_rgba(16,185,129,0.15)]',
+                              badgeBg: 'bg-emerald-500/20',
+                              badgeText: 'text-emerald-400',
+                              badgeBorder: 'border-emerald-400/30',
+                            },
+                            MEDIUM: {
+                              border: 'border-violet-500/30',
+                              gradient: 'from-violet-500/5 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_15px_rgba(139,92,246,0.15)]',
+                              badgeBg: 'bg-violet-500/20',
+                              badgeText: 'text-violet-400',
+                              badgeBorder: 'border-violet-400/30',
+                            },
+                            HIGH: {
+                              border: 'border-fuchsia-500/30',
+                              gradient: 'from-fuchsia-500/5 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_15px_rgba(217,70,239,0.15)]',
+                              badgeBg: 'bg-fuchsia-500/20',
+                              badgeText: 'text-fuchsia-400',
+                              badgeBorder: 'border-fuchsia-400/30',
+                            },
+                            CRITICAL: {
+                              border: 'border-rose-500/30',
+                              gradient: 'from-rose-500/5 via-slate-900/40 to-slate-950/40',
+                              glow: 'shadow-[0_0_15px_rgba(244,63,94,0.15)]',
+                              badgeBg: 'bg-rose-500/20',
+                              badgeText: 'text-rose-400',
+                              badgeBorder: 'border-rose-400/30',
+                            },
                           };
-                          const priorityStyle = priorityColors[priority as keyof typeof priorityColors] || priorityColors.MEDIUM;
+                          const priorityStyle = priorityGradients[priority as keyof typeof priorityGradients] || priorityGradients.MEDIUM;
 
                           return (
                             <div key={project.id} className="w-full">
@@ -1495,10 +1648,12 @@ export default function DashboardPage() {
                                 onDragEnd={handleDragEnd}
                                 onClick={() => router.push(`/projects/${project.id}`)}
                                 className={cn(
-                                  "glass-card h-full border hover:shadow-[0_0_25px_rgba(74,222,128,0.25)] transition-all cursor-pointer opacity-60 hover:opacity-100 overflow-hidden flex flex-col",
+                                  "glass-card h-full border transition-all cursor-pointer opacity-60 hover:opacity-100 overflow-hidden flex flex-col relative group",
+                                  "bg-gradient-to-br", priorityStyle.gradient,
+                                  priorityStyle.border, priorityStyle.glow,
+                                  "hover:shadow-[0_0_25px_rgba(255,255,255,0.1)] hover:scale-[1.02]",
                                   draggedProject?.id === project.id ? "opacity-50 scale-95" : "",
-                                  "border-green-400/20",
-                                  starredProjects.has(project.id) && "ring-2 ring-green-400/40 shadow-[0_0_20px_rgba(74,222,128,0.3)]"
+                                  starredProjects.has(project.id) && "ring-2 ring-emerald-400/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
                                 )}
                               >
                                 {/* Banner Image */}
@@ -1519,10 +1674,10 @@ export default function DashboardPage() {
                                     <span className={cn(
                                       "px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-green-500/20 text-green-400 border border-green-500/30",
                                     )}>
-                                      {priority}
+                                      {priority === 'LOW' ? '🟢 Low' : priority === 'MEDIUM' ? '🟡 Medium' : priority === 'HIGH' ? '🟠 High' : '🔴 Critical'}
                                     </span>
                                     {/* Completed Badge */}
-                                    <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1">
+                                    <span className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1 backdrop-blur-sm">
                                       <CheckCircle2 className="w-3 h-3" />
                                       Selesai
                                     </span>

@@ -43,6 +43,7 @@ interface ProjectData {
   totalTasks: number
   completedTasks: number
   tasks: TaskData[]
+  updatedAt: string | Date
 }
 
 interface ReportPageProps {
@@ -195,6 +196,17 @@ function ReportContent({ projects, generatedAt }: { projects: ProjectData[]; gen
         sekarang.push(project)
       }
     })
+
+    const sortProjects = (a: ProjectData, b: ProjectData) => {
+      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+      if (timeB === timeA) return a.name.localeCompare(b.name)
+      return timeB - timeA
+    }
+
+    rencana.sort(sortProjects)
+    sekarang.sort(sortProjects)
+    selesai.sort(sortProjects)
 
     return { rencana, sekarang, selesai }
   }

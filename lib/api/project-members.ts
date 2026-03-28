@@ -168,7 +168,7 @@ export async function getAccessibleProjects(
           @userRole as member_role
         FROM pm_projects p
         LEFT JOIN pm_users u ON p.owner_id = u.id
-        ORDER BY p.created_at DESC`,
+        ORDER BY p.updated_at DESC`,
         { userRole }
       );
 

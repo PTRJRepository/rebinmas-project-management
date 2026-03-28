@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Users, Flame, Printer, Settings, KanbanSquare, PenTool, Edit, X, ListTodo, Loader2, Paperclip } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Users, Flame, Printer, Settings, KanbanSquare, PenTool, Edit, X, ListTodo, Loader2, Paperclip, GitGraph } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import KanbanBoard from '@/components/KanbanBoard'
 import { CanvasBoard } from '@/components/CanvasBoard'
@@ -19,8 +19,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { ProjectReportPage } from '@/components/ProjectReportPage'
+import { ProjectGraph } from '@/components/ProjectGraph'
 
-type ViewState = 'overview' | 'simple' | 'assets' | 'canvas' | 'details'
+type ViewState = 'overview' | 'simple' | 'assets' | 'canvas' | 'details' | 'graph'
 
 interface Project {
   id: string
@@ -351,6 +352,21 @@ export default function ProjectBoardClient({
               >
                 <PenTool className="w-3.5 h-3.5" />
                 CANVAS
+              </button>
+              <button
+                onClick={() => {
+                  setViewState('graph')
+                  document.getElementById('section-graph')?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
+                  viewState === 'graph'
+                    ? "bg-sky-500/20 text-sky-400 shadow-lg shadow-sky-500/10"
+                    : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                <GitGraph className="w-3.5 h-3.5" />
+                GRAPH
               </button>
               <button
                 onClick={() => setEditDialogOpen(true)}
@@ -896,6 +912,18 @@ export default function ProjectBoardClient({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Graph View */}
+        {viewState === 'graph' && (
+          <div id="section-graph" className="h-[calc(100vh-320px)] bg-slate-900/40 backdrop-blur-sm rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
+            <ProjectGraph
+              tasks={taskList}
+              statuses={project.statuses || []}
+              projectId={project.id}
+              projectName={project.name}
+            />
           </div>
         )}
 

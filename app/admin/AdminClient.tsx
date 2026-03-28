@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { updateUserRole } from '@/app/actions/admin'
 import {
     ShieldAlert,
@@ -17,10 +18,12 @@ import {
     ListTodo,
     Loader2,
     ChevronDown,
-    ChevronRight
+    ChevronRight,
+    BarChart3
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -207,6 +210,12 @@ export default function AdminClient({
                         <ShieldAlert className="w-4 h-4" />
                         Roles
                     </button>
+                    <Link href="/team-overview">
+                        <Button variant="ghost" size="sm" className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10">
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            Team Overview
+                        </Button>
+                    </Link>
                 </div>
 
                 {/* Overview Tab */}

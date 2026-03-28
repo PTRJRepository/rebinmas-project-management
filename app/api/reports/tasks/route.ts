@@ -15,7 +15,7 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 })
     }
 
-    // Fetch all tasks with project and assignee info
+    // Fetch all tasks with project, assignee, and owner info
     const result = await sqlGateway.query(`
       SELECT
         t.id,
@@ -33,6 +33,9 @@ export async function GET() {
         t.updated_at,
         p.id as project_id_ref,
         p.name as project_name,
+        p.owner_id as project_owner_id,
+        o.name as owner_name,
+        o.role as owner_role,
         ts.id as status_id_ref,
         ts.name as status_name,
         ts.[order] as status_order,
@@ -44,7 +47,8 @@ export async function GET() {
       INNER JOIN pm_projects p ON t.project_id = p.id
       INNER JOIN pm_task_statuses ts ON t.status_id = ts.id
       LEFT JOIN pm_users u ON t.assignee_id = u.id
-      ORDER BY t.updated_at DESC
+      LEFT JOIN pm_users o ON p.owner_id = o.id
+      ORDER BY o.name ASC, p.name ASC, t.updated_at DESC
     `)
 
     const tasks = result.recordset.map((row: any) => ({
@@ -64,6 +68,11 @@ export async function GET() {
       project: {
         id: row.project_id,
         name: row.project_name,
+      },
+      owner: {
+        id: row.project_owner_id,
+        name: row.owner_name,
+        role: row.owner_role,
       },
       status: {
         id: row.status_id_ref,
